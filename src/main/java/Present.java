@@ -1,9 +1,7 @@
+import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.commons.lang.builder.ToStringBuilder;
-
-import com.google.common.collect.Lists;
-import com.google.common.collect.Ordering;
 
 public class Present {
 
@@ -11,7 +9,7 @@ public class Present {
 	int xSize;
 	int ySize;
 	int zSize;
-	List<Point> boundaries = Lists.newLinkedList();
+	List<Point> boundaries = new ArrayList<Point>(8);
 
 	public Present(int order, int xSize, int ySize, int zSize) {
 		super();
@@ -22,13 +20,12 @@ public class Present {
 	}
 
 	public int maxZ() {
-		List<Integer> zs = Lists.newArrayList();
-		List<Point> boundaries = this.boundaries;
-		for (Point point : boundaries) {
-			zs.add(point.z);
+		int maxZ = -1;
+		for (Point point : this.boundaries) {
+			if (point.z > maxZ)
+				maxZ = point.z;
 		}
-		int z = Ordering.natural().max(zs);
-		return z;
+		return maxZ;
 	}
 
 	public String toString() {
