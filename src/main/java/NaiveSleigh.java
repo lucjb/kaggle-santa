@@ -19,7 +19,7 @@ public class NaiveSleigh {
 	int maxZ = 0;
 
 	List<Present> line = Lists.newArrayList();
-	int lineSize = 2;
+	int lineSize = 4;
 
 	public void addPresents(List<Present> presents) {
 		for (Present present : presents) {

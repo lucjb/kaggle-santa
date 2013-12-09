@@ -1,3 +1,4 @@
+import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.commons.lang.builder.ToStringBuilder;
@@ -11,7 +12,7 @@ public class Present {
 	int xSize;
 	int ySize;
 	int zSize;
-	List<Point> boundaries = Lists.newLinkedList();
+	List<Point> boundaries = new ArrayList<Point>(8);
 
 	public Present(int order, int xSize, int ySize, int zSize) {
 		super();

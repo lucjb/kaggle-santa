@@ -14,7 +14,8 @@ public class Presents {
 	public static void main(String[] args) throws IOException {
 		// List<Present> presents = new PresentsParser().parse("test.csv");
 		List<Present> presents = new PresentsParser().parse("presents.csv");
-		NaiveSleigh sleigh = new NaiveSleigh();
+		// NaiveSleigh sleigh = new NaiveSleigh();
+		ZCompressedSleigh sleigh = new ZCompressedSleigh();
 		sleigh.addPresents(presents);
 		CSVWriter writer = new CSVWriter(new FileWriter("submission.csv"), ',',
 				CSVWriter.NO_QUOTE_CHARACTER);
