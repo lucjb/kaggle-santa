@@ -19,7 +19,7 @@ public class NaiveSleigh {
 	int maxZ = 0;
 
 	List<Present> line = Lists.newArrayList();
-	int lineSize = 0;
+	int lineSize = 2;
 
 	int[][] topSurface = new int[1000][1000];
 
@@ -55,6 +55,9 @@ public class NaiveSleigh {
 
 	private boolean add(Present present, boolean fromLine, boolean force) {
 		present.leastSupRotation();
+		
+		if (Math.abs(present.xSize - nextY) < Math.abs(present.ySize - nextY))
+			present.rotate();
 
 		if (!fitsX(present)) {
 			present.rotate();
@@ -85,15 +88,15 @@ public class NaiveSleigh {
 				pushCurrentZ();
 			}
 		}
-		int sink = 1;
-		for (int x = currentX; x <= currentX + present.xSize - 1; x++) {
-			for (int y = currentY; y <= currentY + present.ySize - 1; y++) {
-				int zBelow = topSurface[x - 1][y - 1];
-				if (currentZ - zBelow <= present.zSize) {
-					sink = 0;
-				}
-			}
-		}
+		int sink = 0;
+//		for (int x = currentX; x <= currentX + present.xSize - 1; x++) {
+//			for (int y = currentY; y <= currentY + present.ySize - 1; y++) {
+//				int zBelow = topSurface[x - 1][y - 1];
+//				if (currentZ - zBelow <= present.zSize) {
+//					sink = 0;
+//				}
+//			}
+//		}
 		int zPut = currentZ - sink;
 		present.boundaries.add(new Point(currentX, currentY, zPut));
 		present.boundaries.add(new Point(currentX, currentY + present.ySize - 1, zPut));
@@ -105,11 +108,11 @@ public class NaiveSleigh {
 		present.boundaries.add(new Point(currentX + present.xSize - 1, currentY, zPut + present.zSize - 1));
 		present.boundaries.add(new Point(currentX + present.xSize - 1, currentY + present.ySize - 1, zPut + present.zSize - 1));
 
-		for (int x = currentX; x <= currentX + present.xSize - 1; x++) {
-			for (int y = currentY; y <= currentY + present.ySize - 1; y++) {
-				topSurface[x - 1][y - 1] = present.maxZ();
-			}
-		}
+//		for (int x = currentX; x <= currentX + present.xSize - 1; x++) {
+//			for (int y = currentY; y <= currentY + present.ySize - 1; y++) {
+//				topSurface[x - 1][y - 1] = present.maxZ();
+//			}
+//		}
 
 		currentX = currentX + present.xSize;
 		pushNextY(present.ySize);
