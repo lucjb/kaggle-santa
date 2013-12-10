@@ -19,7 +19,9 @@ public class NaiveSleigh {
 	int maxZ = 0;
 
 	List<Present> line = Lists.newArrayList();
-	int lineSize = 4;
+	int lineSize = 0;
+
+	int[][] topSurface = new int[1000][1000];
 
 	public void addPresents(List<Present> presents) {
 		for (Present present : presents) {
@@ -37,8 +39,7 @@ public class NaiveSleigh {
 		emptyLine();
 		for (Present present : presents) {
 			for (int i = 0; i < 8; i++) {
-				present.boundaries.get(i).z = maxZ
-						- present.boundaries.get(i).z + 1;
+				present.boundaries.get(i).z = maxZ - present.boundaries.get(i).z + 1;
 			}
 		}
 	}
@@ -54,6 +55,7 @@ public class NaiveSleigh {
 
 	private boolean add(Present present, boolean fromLine, boolean force) {
 		present.leastSupRotation();
+
 		if (!fitsX(present)) {
 			present.rotate();
 			if (!fitsX(present)) {
@@ -83,27 +85,35 @@ public class NaiveSleigh {
 				pushCurrentZ();
 			}
 		}
+		int sink = 1;
+		for (int x = currentX; x <= currentX + present.xSize - 1; x++) {
+			for (int y = currentY; y <= currentY + present.ySize - 1; y++) {
+				int zBelow = topSurface[x - 1][y - 1];
+				if (currentZ - zBelow <= present.zSize) {
+					sink = 0;
+				}
+			}
+		}
+		int zPut = currentZ - sink;
+		present.boundaries.add(new Point(currentX, currentY, zPut));
+		present.boundaries.add(new Point(currentX, currentY + present.ySize - 1, zPut));
+		present.boundaries.add(new Point(currentX + present.xSize - 1, currentY, zPut));
+		present.boundaries.add(new Point(currentX + present.xSize - 1, currentY + present.ySize - 1, zPut));
 
-		present.boundaries.add(new Point(currentX, currentY, currentZ));
-		present.boundaries.add(new Point(currentX,
-				currentY + present.ySize - 1, currentZ));
-		present.boundaries.add(new Point(currentX + present.xSize - 1,
-				currentY, currentZ));
-		present.boundaries.add(new Point(currentX + present.xSize - 1, currentY
-				+ present.ySize - 1, currentZ));
+		present.boundaries.add(new Point(currentX, currentY, zPut + present.zSize - 1));
+		present.boundaries.add(new Point(currentX, currentY + present.ySize - 1, zPut + present.zSize - 1));
+		present.boundaries.add(new Point(currentX + present.xSize - 1, currentY, zPut + present.zSize - 1));
+		present.boundaries.add(new Point(currentX + present.xSize - 1, currentY + present.ySize - 1, zPut + present.zSize - 1));
 
-		present.boundaries.add(new Point(currentX, currentY, currentZ
-				+ present.zSize - 1));
-		present.boundaries.add(new Point(currentX,
-				currentY + present.ySize - 1, currentZ + present.zSize - 1));
-		present.boundaries.add(new Point(currentX + present.xSize - 1,
-				currentY, currentZ + present.zSize - 1));
-		present.boundaries.add(new Point(currentX + present.xSize - 1, currentY
-				+ present.ySize - 1, currentZ + present.zSize - 1));
+		for (int x = currentX; x <= currentX + present.xSize - 1; x++) {
+			for (int y = currentY; y <= currentY + present.ySize - 1; y++) {
+				topSurface[x - 1][y - 1] = present.maxZ();
+			}
+		}
 
 		currentX = currentX + present.xSize;
 		pushNextY(present.ySize);
-		pushNextZ(present.zSize);
+		pushNextZ(present);
 		int z = present.maxZ();
 		if (z > maxZ) {
 			maxZ = z;
@@ -133,9 +143,9 @@ public class NaiveSleigh {
 		nextY = 0;
 	}
 
-	private void pushNextZ(int zSize) {
-		if (currentZ + zSize > nextZ) {
-			nextZ = currentZ + zSize;
+	private void pushNextZ(Present present) {
+		if (present.maxZ() > nextZ) {
+			nextZ = present.maxZ() + 1;
 		}
 	}
 

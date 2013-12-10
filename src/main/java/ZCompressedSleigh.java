@@ -7,12 +7,11 @@ public class ZCompressedSleigh {
 
 	public void addPresents(List<Present> presents) {
 		for (Present present : presents) {
-			Point lowestBaseZ = new Point(Integer.MAX_VALUE, Integer.MAX_VALUE,
-					Integer.MAX_VALUE);
+			Point lowestBaseZ = new Point(Integer.MAX_VALUE, Integer.MAX_VALUE, Integer.MAX_VALUE);
 			int xPos = 0;
 			int yPos = 0;
-			for (int x = 0; x < 1000 - present.xSize; x++) {
-				for (int y = 0; y < 1000 - present.ySize;) {
+			for (int x = 0; x <= 1000 - present.xSize; x++) {
+				for (int y = 0; y <= 1000 - present.ySize;) {
 					Point baseZ = baseZ(x, y, present);
 					if (baseZ.z < lowestBaseZ.z) {
 						lowestBaseZ = baseZ;
@@ -33,36 +32,28 @@ public class ZCompressedSleigh {
 			int z = lowestBaseZ.z;
 
 			present.boundaries.add(new Point(xPos + 1, yPos + 1, z + 1));
-			present.boundaries.add(new Point(xPos + 1, yPos + present.ySize,
-					z + 1));
-			present.boundaries.add(new Point(xPos + present.xSize, yPos + 1,
-					z + 1));
-			present.boundaries.add(new Point(xPos + present.xSize, yPos
-					+ present.ySize, z + 1));
+			present.boundaries.add(new Point(xPos + 1, yPos + present.ySize, z + 1));
+			present.boundaries.add(new Point(xPos + present.xSize, yPos + 1, z + 1));
+			present.boundaries.add(new Point(xPos + present.xSize, yPos + present.ySize, z + 1));
 
-			present.boundaries.add(new Point(xPos + 1, yPos + 1, z
-					+ present.zSize));
-			present.boundaries.add(new Point(xPos + 1, yPos + present.ySize, z
-					+ present.zSize));
-			present.boundaries.add(new Point(xPos + present.xSize, yPos + 1, z
-					+ present.zSize));
-			present.boundaries.add(new Point(xPos + present.xSize, yPos
-					+ present.ySize, z + present.zSize));
+			present.boundaries.add(new Point(xPos + 1, yPos + 1, z + present.zSize));
+			present.boundaries.add(new Point(xPos + 1, yPos + present.ySize, z + present.zSize));
+			present.boundaries.add(new Point(xPos + present.xSize, yPos + 1, z + present.zSize));
+			present.boundaries.add(new Point(xPos + present.xSize, yPos + present.ySize, z + present.zSize));
 
 			z = present.maxZ();
 			if (z > maxZ) {
 				maxZ = z;
 			}
 
-			if (present.order % 1000 == 0)
-				System.out.println(present);
 		}
 
 		for (Present present : presents) {
 			for (int i = 0; i < 8; i++) {
-				present.boundaries.get(i).z = maxZ
-						- present.boundaries.get(i).z + 1;
+				present.boundaries.get(i).z = maxZ - present.boundaries.get(i).z + 1;
 			}
+			// if (present.order % 1000 == 0)
+			System.out.println(present);
 		}
 
 	}
