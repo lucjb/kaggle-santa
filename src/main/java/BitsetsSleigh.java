@@ -30,7 +30,7 @@ public class BitsetsSleigh {
 			int ffx = ffp / 1000;
 			int ffy = ffp % 1000;
 
-			for (int x = ffx; x < 1000 - xSize; x++) {
+			for (int x = ffx; x < 1000 - xSize;) {
 				for (int y = ffy; y < 1000 - ySize; y++) {
 					int skip = this.thereIsRoomFor(x, y, z, xSize, ySize, zSize);
 					if (skip == y) {
@@ -41,6 +41,7 @@ public class BitsetsSleigh {
 						y = skip - 1;
 					}
 				}
+				x += 10;
 			}
 			z++;
 		}
