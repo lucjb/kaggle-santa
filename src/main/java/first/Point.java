@@ -1,4 +1,6 @@
-import java.util.Arrays;
+package first;
+import pipi.PresentDimension;
+
 
 public class Point {
 
@@ -18,10 +20,11 @@ public class Point {
 		return "(" + this.x + " " + this.y + " " + this.z + ")";
 	}
 
-	public Box boxDifference(Point min) {
-		int[] array = new int[]{this.x-min.x + 1, this.y - min.y + 1, this.z - min.z + 1};
-		Arrays.sort(array);
-		return new Box(array[0], array[1], array[2]);
+	public PresentDimension dimensionDifference(Point min) {
+		int i = this.x-min.x + 1;
+		int j = this.y - min.y + 1;
+		int k = this.z - min.z + 1;
+		return PresentDimension.create(i, j, k);
 	}
 
 }
