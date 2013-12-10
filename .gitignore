@@ -1,6 +1,3 @@
-<<<<<<< HEAD
-*.csv
-=======
 /target
 /.classpath
->>>>>>> 84b0997152b5496475529499148aee4614b54eff
+/submission.csv
