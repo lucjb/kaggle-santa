@@ -1,3 +1,5 @@
+package first;
+
 import java.util.BitSet;
 import java.util.List;
 
@@ -11,8 +13,13 @@ public class XYCompactSleigh {
 	private int thereIsRoomFor(int x, int y, int xSize, int ySize) {
 		for (int p = x; p < x + xSize; p++) {
 			for (int q = y; q < y + ySize; q++) {
-				if (topSurface.get(p * 1000 + q)) {
-					return q + 1;
+				int bitIndex = p * 1000 + q;
+				if (topSurface.get(bitIndex)) {
+					// return topSurface.nextClearBit(bitIndex);
+					while (q < 1000 + ySize && topSurface.get(p * 1000 + q)) {
+						q++;
+					}
+					return q;
 				}
 			}
 		}
@@ -31,8 +38,7 @@ public class XYCompactSleigh {
 
 		for (Present present : presents) {
 			for (int i = 0; i < 8; i++) {
-				present.boundaries.get(i).z = maxZ
-						- present.boundaries.get(i).z + 1;
+				present.boundaries.get(i).z = maxZ - present.boundaries.get(i).z + 1;
 			}
 		}
 	}
@@ -43,16 +49,16 @@ public class XYCompactSleigh {
 		int z = currentZ;
 
 		Point fit = put(present);
-		// if (fit == null) {
-		// present.rotate();
-		// fit = put(present);
-		// }
-
+		if (fit == null) {
+			present.rotate();
+			fit = put(present);
+		}
 		if (fit == null) {
 			currentZ = nextZ;
 			nextZ = 0;
 			z = currentZ;
-			topSurface = new BitSet(1000 * 1000);
+			topSurface.clear();
+			occupy(x, y, present.xSize, present.ySize);
 		} else {
 			x = fit.x;
 			y = fit.y;
@@ -60,23 +66,19 @@ public class XYCompactSleigh {
 		present.boundaries.add(new Point(x, y, z));
 		present.boundaries.add(new Point(x, y + present.ySize - 1, z));
 		present.boundaries.add(new Point(x + present.xSize - 1, y, z));
-		present.boundaries.add(new Point(x + present.xSize - 1, y
-				+ present.ySize - 1, z));
+		present.boundaries.add(new Point(x + present.xSize - 1, y + present.ySize - 1, z));
 
 		present.boundaries.add(new Point(x, y, z + present.zSize - 1));
-		present.boundaries.add(new Point(x, y + present.ySize - 1, z
-				+ present.zSize - 1));
-		present.boundaries.add(new Point(x + present.xSize - 1, y, z
-				+ present.zSize - 1));
-		present.boundaries.add(new Point(x + present.xSize - 1, y
-				+ present.ySize - 1, z + present.zSize - 1));
+		present.boundaries.add(new Point(x, y + present.ySize - 1, z + present.zSize - 1));
+		present.boundaries.add(new Point(x + present.xSize - 1, y, z + present.zSize - 1));
+		present.boundaries.add(new Point(x + present.xSize - 1, y + present.ySize - 1, z + present.zSize - 1));
 
 		int zp = present.maxZ();
 		if (zp > maxZ) {
 			maxZ = zp;
 		}
-		if (zp > nextZ) {
-			nextZ = zp;
+		if (zp >= nextZ) {
+			nextZ = zp + 1;
 		}
 		return true;
 	}
@@ -84,7 +86,7 @@ public class XYCompactSleigh {
 	private Point put(Present present) {
 		int xSize = present.xSize;
 		int ySize = present.ySize;
-		for (int xi = 0; xi <= 1000 - xSize; xi++) {
+		for (int xi = 0; xi <= 1000 - xSize;) {
 			for (int yi = 0; yi <= 1000 - ySize; yi++) {
 				int skip = this.thereIsRoomFor(xi, yi, xSize, ySize);
 				if (skip == yi) {
@@ -94,6 +96,7 @@ public class XYCompactSleigh {
 					yi = skip - 1;
 				}
 			}
+			xi += 1;
 		}
 		return null;
 	}
