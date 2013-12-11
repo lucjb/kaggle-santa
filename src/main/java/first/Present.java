@@ -20,6 +20,7 @@ public class Present {
 		this.ySize = ySize;
 		this.zSize = zSize;
 	}
+	
 
 	public int maxZ() {
 		int maxZ = -1;

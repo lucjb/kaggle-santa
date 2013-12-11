@@ -12,7 +12,8 @@ import com.google.common.collect.Lists;
 public class SuperPresentsParser {
 
 	public static void main(String[] args) {
-		List<SuperPresent> parse = new SuperPresentsParser().parse("presents.csv");
+		List<SuperPresent> parse = new SuperPresentsParser()
+				.parse("presents.csv");
 		for (SuperPresent present : parse) {
 			System.out.println(present);
 		}
@@ -20,7 +21,8 @@ public class SuperPresentsParser {
 
 	public List<SuperPresent> parse(String inputFileName) {
 
-		try (CSVReader reader = new CSVReader(new FileReader(new File(inputFileName)), ',', '|', 1)) {
+		try (CSVReader reader = new CSVReader(new FileReader(new File(
+				inputFileName)), ',', '|', 1)) {
 			List<String[]> readAll = reader.readAll();
 			List<SuperPresent> presents = Lists.newArrayList();
 			for (String[] line : readAll) {
@@ -32,7 +34,8 @@ public class SuperPresentsParser {
 				int x = Integer.parseInt(xString);
 				int y = Integer.parseInt(yString);
 				int z = Integer.parseInt(zString);
-				SuperPresent present = new SuperPresent(order, PresentDimension.create(x, y, z));
+				SuperPresent present = new SuperPresent(order,
+						PresentDimension.create(x, y, z));
 				presents.add(present);
 			}
 			return presents;
