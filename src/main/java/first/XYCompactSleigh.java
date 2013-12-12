@@ -31,61 +31,53 @@ public class XYCompactSleigh {
 	}
 
 	public void addPresents(List<Present> presents) {
-		List<Present> layer = Lists.newArrayList();
-		boolean secondPass = false;
 		for (Present present : presents) {
-			if (add(present, false)) {
-				System.out.println(true);
-				if (firstPass(secondPass)) {
-					layer.add(present);
-				}
-			} else {
-				System.out.println(false);
-				if (firstPass(secondPass)) {
-					undo();
-					List<Present> sortedCopy = sort(layer);
-					if (reinsert(sortedCopy)) {
-						System.err.println(add(present, true));
-						layer.clear();
-						layer.add(present);
-					} else {
-						if (!reinsert(layer)) {
-							System.err.println("wrong!");
-						}
-						layer.clear();
-						add(present, true);
-						layer.add(present);
-						// secondPass = true;
-						// if (!add(present, true)) {
-						// layer.add(present);
-						// secondPass = false;
-						// }
-					}
-				} else {
-					add(present, true);
-					secondPass = false;
-				}
-			}
-
+			present.leastSupRotation();
 		}
+		addPresentsOrdering(presents);
+		// for (Present present : presents) {
+		// add(present, true);
+		// }
 
+		int u = 0;
 		for (Present present : presents) {
 			for (int i = 0; i < 8; i++) {
-				present.boundaries.get(i).z = maxZ
-						- present.boundaries.get(i).z + 1;
+				present.boundaries.get(i).z = maxZ - present.boundaries.get(i).z + 1;
 			}
 		}
 	}
 
-	private boolean firstPass(boolean secondPass) {
-		return !secondPass;
+	private void addPresentsOrdering(List<Present> presents) {
+		List<Present> layer = Lists.newArrayList();
+
+		int i = 0;
+		for (Present present : presents) {
+			boolean added = add(present, false);
+			if (!added) {
+				undoLayer(layer);
+				List<Present> sortedLayer = sort(layer);
+				boolean reinserted = reinsert(sortedLayer);
+				if (!reinserted) {
+					undoLayer(layer);
+					reinsert(layer);
+				}
+				added = add(present, true);
+			}
+			boolean sameLayer = added;
+			if (!sameLayer) {
+				layer.clear();
+			}
+			layer.add(present);
+			if (i % 1000 == 0) {
+				System.out.println(present);
+			}
+			i++;
+		}
 	}
 
 	private boolean reinsert(List<Present> sortedCopy) {
 		for (Present p : sortedCopy) {
-			p.boundaries.clear();
 			if (!add(p, false)) {
-				undo();
 				return false;
 			}
 		}
@@ -97,20 +89,33 @@ public class XYCompactSleigh {
 
 			@Override
 			public int compare(Present o1, Present o2) {
+				return -Ints.compare(o1.xSize * o1.ySize, o2.xSize * o2.ySize);
+			}
+		}).sortedCopy(layer);
+		return sortedCopy;
+	}
+
+	private List<Present> naturalOrder(List<Present> layer) {
+		List<Present> sortedCopy = Ordering.from(new Comparator<Present>() {
+
+			@Override
+			public int compare(Present o1, Present o2) {
 				return Ints.compare(o1.order, o2.order);
 			}
 		}).sortedCopy(layer);
 		return sortedCopy;
 	}
 
-	private void undo() {
+	private void undoLayer(List<Present> layer) {
+		for (Present present : layer) {
+			present.boundaries.clear();
+		}
 		topSurface.clear();
 		nextZ = 0;
 		maxZ = 0;
 	}
 
 	private boolean add(Present present, boolean force) {
-		present.leastSupRotation();
 		Point insertPoint = placeFor(present);
 		if (insertPoint == null) {
 			present.rotate();
@@ -137,24 +142,15 @@ public class XYCompactSleigh {
 	private void insert(Present present, Point insertPoint) {
 		this.occupy(insertPoint.x, insertPoint.y, present.xSize, present.ySize);
 
-		present.boundaries.add(new Point(insertPoint.x, insertPoint.y,
-				insertPoint.z));
-		present.boundaries.add(new Point(insertPoint.x, insertPoint.y
-				+ present.ySize - 1, insertPoint.z));
-		present.boundaries.add(new Point(insertPoint.x + present.xSize - 1,
-				insertPoint.y, insertPoint.z));
-		present.boundaries.add(new Point(insertPoint.x + present.xSize - 1,
-				insertPoint.y + present.ySize - 1, insertPoint.z));
+		present.boundaries.add(new Point(insertPoint.x, insertPoint.y, insertPoint.z));
+		present.boundaries.add(new Point(insertPoint.x, insertPoint.y + present.ySize - 1, insertPoint.z));
+		present.boundaries.add(new Point(insertPoint.x + present.xSize - 1, insertPoint.y, insertPoint.z));
+		present.boundaries.add(new Point(insertPoint.x + present.xSize - 1, insertPoint.y + present.ySize - 1, insertPoint.z));
 
-		present.boundaries.add(new Point(insertPoint.x, insertPoint.y,
-				insertPoint.z + present.zSize - 1));
-		present.boundaries.add(new Point(insertPoint.x, insertPoint.y
-				+ present.ySize - 1, insertPoint.z + present.zSize - 1));
-		present.boundaries.add(new Point(insertPoint.x + present.xSize - 1,
-				insertPoint.y, insertPoint.z + present.zSize - 1));
-		present.boundaries.add(new Point(insertPoint.x + present.xSize - 1,
-				insertPoint.y + present.ySize - 1, insertPoint.z
-						+ present.zSize - 1));
+		present.boundaries.add(new Point(insertPoint.x, insertPoint.y, insertPoint.z + present.zSize - 1));
+		present.boundaries.add(new Point(insertPoint.x, insertPoint.y + present.ySize - 1, insertPoint.z + present.zSize - 1));
+		present.boundaries.add(new Point(insertPoint.x + present.xSize - 1, insertPoint.y, insertPoint.z + present.zSize - 1));
+		present.boundaries.add(new Point(insertPoint.x + present.xSize - 1, insertPoint.y + present.ySize - 1, insertPoint.z + present.zSize - 1));
 
 		int zp = present.maxZ();
 		if (zp > maxZ) {
@@ -163,7 +159,6 @@ public class XYCompactSleigh {
 		if (zp >= nextZ) {
 			nextZ = zp + 1;
 		}
-		// System.out.println(present);
 	}
 
 	private Point placeFor(Present present) {
@@ -177,8 +172,8 @@ public class XYCompactSleigh {
 				} else {
 					yi = skip - 1;
 				}
+				xi += 1;
 			}
-			xi += 1;
 		}
 		return null;
 	}
