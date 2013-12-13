@@ -19,8 +19,11 @@ public class Presents {
 		// NaiveSleigh sleigh = new NaiveSleigh();
 		// ZCompressedSleigh sleigh = new ZCompressedSleigh();
 		sleigh.addPresents(presents);
-		CSVWriter writer = new CSVWriter(new FileWriter("reordering.csv"), ',', CSVWriter.NO_QUOTE_CHARACTER);
-		String[] headers = new String[] { "PresentId", "x1", "y1", "z1", "x2", "y2", "z2", "x3", "y3", "z3", "x4", "y4", "z4", "x5", "y5", "z5", "x6", "y6", "z6", "x7", "y7", "z7", "x8", "y8", "z8" };
+		CSVWriter writer = new CSVWriter(new FileWriter("xycompact1y.csv"), ',',
+				CSVWriter.NO_QUOTE_CHARACTER);
+		String[] headers = new String[] { "PresentId", "x1", "y1", "z1", "x2",
+				"y2", "z2", "x3", "y3", "z3", "x4", "y4", "z4", "x5", "y5",
+				"z5", "x6", "y6", "z6", "x7", "y7", "z7", "x8", "y8", "z8" };
 		writer.writeNext(headers);
 		for (Present present : presents) {
 			String[] line = new String[25];
@@ -67,7 +70,8 @@ public class Presents {
 		int worstZ = 0;
 		for (Present present : presents) {
 			int z = present.maxZ();
-			worstZ += Ordering.natural().max(present.xSize, present.ySize, present.zSize);
+			worstZ += Ordering.natural().max(present.xSize, present.ySize,
+					present.zSize);
 			if (z > maxZ) {
 				maxZ = z;
 			}
