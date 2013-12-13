@@ -1,6 +1,5 @@
 package first;
 
-import java.util.BitSet;
 import java.util.Comparator;
 import java.util.List;
 
@@ -8,40 +7,23 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Ordering;
 import com.google.common.primitives.Ints;
 
-public class XYCompactSleigh {
+public class XYZCompactSleigh {
 
-	int currentZ = 1;
+	HeightBitMap space = new HeightBitMap();
 	int nextZ = 0;
 	int maxZ = 0;
-	BitSet topSurface = new BitSet(1000 * 1000);
-
-	private int thereIsRoomFor(int x, int y, int xSize, int ySize) {
-		for (int p = x; p < x + xSize; p++) {
-			for (int q = y; q < y + ySize; q++) {
-				int bitIndex = p * 1000 + q;
-				if (topSurface.get(bitIndex)) {
-					while (q < 1000 + ySize && topSurface.get(p * 1000 + q)) {
-						q++;
-					}
-					return q;
-				}
-			}
-		}
-		return y;
-	}
 
 	public void addPresents(List<Present> presents) {
 		for (Present present : presents) {
 			present.leastSupRotation();
 		}
-		// addPresentsOrdering(presents);
 		for (Present present : presents) {
 			add(present, true);
 			System.out.println(present);
-
+			if (present.order % 1000 == 0) {
+			}
 		}
-		int u = 0;
-		u = 0;
+
 		for (Present present : presents) {
 			for (int i = 0; i < 8; i++) {
 				present.boundaries.get(i).z = maxZ
@@ -62,7 +44,7 @@ public class XYCompactSleigh {
 				if (!reinserted) {
 					undoLayer(layer);
 					if (!reinsert(layer)) {
-						System.err.println("Wrong! z=" + currentZ);
+						System.err.println("Wrong! z=");
 					}
 				} else {
 					layer = sortedLayer;
@@ -105,7 +87,6 @@ public class XYCompactSleigh {
 		for (Present present : layer) {
 			present.boundaries.clear();
 		}
-		topSurface.clear();
 		nextZ = 0;
 		maxZ = 0;
 	}
@@ -118,20 +99,19 @@ public class XYCompactSleigh {
 		} else {
 			if (force) {
 				startLayer();
-				insert(present, new Point(1, 1, currentZ));
+				add(present, force);
 			}
 			return false;
 		}
 	}
 
 	private void startLayer() {
-		currentZ = nextZ;
-		nextZ = 0;
-		topSurface.clear();
+		space.nextZ(maxZ);
 	}
 
 	private void insert(Present present, Point insertPoint) {
-		this.occupy(insertPoint.x, insertPoint.y, present.xSize, present.ySize);
+		this.space.put(insertPoint.x - 1, insertPoint.y - 1, present.xSize,
+				present.ySize, present.zSize);
 
 		present.boundaries.add(new Point(insertPoint.x, insertPoint.y,
 				insertPoint.z));
@@ -168,7 +148,7 @@ public class XYCompactSleigh {
 			for (int yi = 0; yi <= 1000 - ySize; yi++) {
 				int skip = this.thereIsRoomFor(xi, yi, xSize, ySize);
 				if (skip == yi) {
-					return new Point(xi + 1, yi + 1, this.currentZ);
+					return new Point(xi + 1, yi + 1, this.space.currentZ + 1);
 				} else {
 					yi = skip - 1;
 				}
@@ -178,12 +158,7 @@ public class XYCompactSleigh {
 		return null;
 	}
 
-	private void occupy(int x, int y, int xSize, int ySize) {
-		for (int p = x; p < x + xSize; p++) {
-			for (int q = y; q < y + ySize; q++) {
-				topSurface.set((p - 1) * 1000 + (q - 1));
-			}
-		}
+	private int thereIsRoomFor(int x, int y, int xSize, int ySize) {
+		return this.space.fit(x, y, xSize, ySize);
 	}
-
 }
