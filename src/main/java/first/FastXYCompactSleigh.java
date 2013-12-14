@@ -49,7 +49,6 @@ public class FastXYCompactSleigh {
 	Surface2D floor = new Surface2D();
 	int currentZ = 1;
 	int nextZ = 0;
-	int maxZ = 0;
 	SortedSet<Point2D> insertionPoints = new TreeSet<Point2D>();
 	
 	public FastXYCompactSleigh() {
@@ -69,10 +68,9 @@ public class FastXYCompactSleigh {
 //				return;
 		}
 
-		//TODO: revisar
 		for (Present present : presents) {
 			for (int i = 0; i < 8; i++) {
-				present.boundaries.get(i).z = maxZ - present.boundaries.get(i).z + 1;
+				present.boundaries.get(i).z = nextZ - present.boundaries.get(i).z;
 			}
 		}
 	}
@@ -178,12 +176,9 @@ public class FastXYCompactSleigh {
 		Point oneBasedInsertionPoint = new Point(insertionPoint.x + 1, insertionPoint.y + 1, currentZ);
 		setBoundaries(present, oneBasedInsertionPoint);
 
-		int zp = present.maxZ();
-		if (zp > maxZ) {
-			maxZ = zp;
-		}
-		if (zp >= nextZ) {
-			nextZ = zp + 1;
+		int presentMaxZ = oneBasedInsertionPoint.z + present.zSize - 1;
+		if (presentMaxZ >= nextZ) {
+			nextZ = presentMaxZ + 1;
 		}
 		
 //		System.out.println(present.order + " [" + present.xSize + ","+ present.ySize +","+ present.zSize +"] "+ oneBasedInsertionPoint);
@@ -200,7 +195,6 @@ public class FastXYCompactSleigh {
 		present.boundaries.add(new Point(insertPoint.x + present.xSize - 1, insertPoint.y, insertPoint.z + present.zSize - 1));
 		present.boundaries.add(new Point(insertPoint.x + present.xSize - 1, insertPoint.y + present.ySize - 1, insertPoint.z + present.zSize - 1));
 	}
-
 	
 
 	private void occupy(int x, int y, int xSize, int ySize) {
