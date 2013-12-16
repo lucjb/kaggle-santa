@@ -55,6 +55,24 @@ public class Present {
 		ySize = med;
 		zSize = max;
 	}
+	
+	public void rotateMedMinMax() {
+		xSize = med;
+		ySize = min;
+		zSize = max;
+	}
+	
+	public void rotateMedMaxMin() {
+		xSize = med;
+		ySize = max;
+		zSize = min;
+	}
+	
+	public void rotateMinMaxMed() {
+		xSize = min;
+		ySize = max;
+		zSize = med;
+	}
 
 	public void flatestRotation() {
 		if (zSize < xSize && zSize < ySize)

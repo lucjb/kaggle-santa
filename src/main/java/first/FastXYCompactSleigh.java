@@ -90,7 +90,7 @@ public class FastXYCompactSleigh {
 		for (Present present : presents) {
 			if (!add(present)) {
 				undoLayerWithPresents(layerOrder);
-				List<Present> sortedLayer = sortByArea(layerOrder);
+				List<Present> sortedLayer = sortByXY(layerOrder);
 				if (insertAll(sortedLayer)) {
 					layerOrder = sortedLayer;
 				} else {
@@ -134,7 +134,25 @@ public class FastXYCompactSleigh {
 		Collections.sort(sortedCopy, new Comparator<Present>() {
 			@Override
 			public int compare(Present o1, Present o2) {
-				return -Ints.compare(o1.xSize * o1.ySize, o2.xSize * o2.ySize);
+				int areaComp = -Ints.compare(o1.xSize * o1.ySize, o2.xSize * o2.ySize);
+				if (areaComp != 0)
+					return areaComp;
+				return -Ints.compare(o1.xSize, o2.xSize);
+			}
+		});
+		return sortedCopy;
+	}
+	
+	private List<Present> sortByXY(List<Present> layer) {
+		List<Present> sortedCopy = new ArrayList<>(layer);
+		Collections.sort(sortedCopy, new Comparator<Present>() {
+			@Override
+			public int compare(Present o1, Present o2) {
+				int xComp = -Ints.compare(o1.xSize, o2.xSize);
+				if (xComp != 0)
+					return xComp;
+				
+				return -Ints.compare(o1.ySize, o2.ySize);
 			}
 		});
 		return sortedCopy;
@@ -142,6 +160,15 @@ public class FastXYCompactSleigh {
 	
 	private boolean add(Present present) {
 		present.rotateMinMedMax();
+//		if (fitsBelowNextZ(present.max)) {
+//			present.rotateMinMedMax();
+//		}
+//		else if (fitsBelowNextZ(present.med) && !fitsBelowNextZ(present.max)) {
+//			present.rotateMinMaxMed();
+//		}
+//		else {
+//			present.rotateMedMaxMin();
+//		}
 		Point2D insertPoint = findBLInsertionPoint(present);
 		if (insertPoint == null) {
 			present.rotate();
@@ -152,6 +179,10 @@ public class FastXYCompactSleigh {
 			return true;
 		}	
 		return false;
+	}
+	
+	private boolean fitsBelowNextZ(int size) {
+		return currentZ + size - 1 < nextZ;
 	}
 	
 	private Point2D findBLInsertionPoint(Present present) {
