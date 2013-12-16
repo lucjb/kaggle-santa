@@ -4,6 +4,7 @@ package first;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
 import au.com.bytecode.opencsv.CSVReader;
@@ -24,7 +25,7 @@ public class PresentsParser {
     public List<Present> parse(String inputFileName) throws IOException {
         CSVReader reader = new CSVReader(new FileReader(new File(inputFileName)), ',', '|', 1);
         List<String[]> readAll = reader.readAll();
-        List<Present> presents = Lists.newLinkedList();
+        List<Present> presents = new ArrayList<Present>(1000000);
         for (String[] line : readAll) {
             String orderString = line[0];
             String xString = line[1];
