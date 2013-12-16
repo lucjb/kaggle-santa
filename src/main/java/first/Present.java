@@ -1,9 +1,12 @@
 package first;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import org.apache.commons.lang3.builder.ToStringBuilder;
+
+import com.google.common.collect.Lists;
 
 public class Present {
 
@@ -12,6 +15,9 @@ public class Present {
 	int ySize;
 	int zSize;
 	List<Point> boundaries = new ArrayList<Point>(8);
+	int min;
+	int med;
+	int max;
 
 	public Present(int order, int xSize, int ySize, int zSize) {
 		super();
@@ -19,6 +25,11 @@ public class Present {
 		this.xSize = xSize;
 		this.ySize = ySize;
 		this.zSize = zSize;
+		ArrayList<Integer> sizes = Lists.newArrayList(xSize, ySize, zSize);
+		Collections.sort(sizes);
+		min = sizes.get(0);
+		med = sizes.get(1);
+		max = sizes.get(2);
 	}
 
 	public int maxZ() {
@@ -36,6 +47,12 @@ public class Present {
 
 	public int volume() {
 		return xSize * ySize * zSize;
+	}
+	
+	public void rotateMinMedMax() {
+		xSize = min;
+		ySize = med;
+		zSize = max;
 	}
 
 	public void flatestRotation() {

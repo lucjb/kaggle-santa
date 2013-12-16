@@ -1,9 +1,16 @@
 package first;
 
+import java.util.ArrayList;
 import java.util.BitSet;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.SortedSet;
 import java.util.TreeSet;
+
+import com.google.common.collect.Lists;
+import com.google.common.collect.Ordering;
+import com.google.common.primitives.Ints;
 
 public class FastXYCompactSleigh {
 	
@@ -49,7 +56,7 @@ public class FastXYCompactSleigh {
 	Surface2D floor = new Surface2D();
 	int currentZ = 1;
 	int nextZ = 0;
-	int maxZ = 0;
+	int layerCount = 1;
 	SortedSet<Point2D> insertionPoints = new TreeSet<Point2D>();
 	
 	public FastXYCompactSleigh() {
@@ -57,27 +64,84 @@ public class FastXYCompactSleigh {
 	}
 
 	public void addPresents(List<Present> presents) {
-		for (Present present : presents) {
-			present.leastSupRotation();
-		}
-		int j = 0;
-		for (Present present : presents) {
-			if (++j % 10000 == 0)
-				System.out.println(present.order);
-			add(present);
-//			if (!add(present))
-//				return;
-		}
+//		for (Present present : presents) {
+//			if (present.order % 10000 == 0)
+//				System.out.println(present.order);
+//			if (!add(present)) {
+//				startNewLayer();
+//				insert(present, new Point2D(0, 0));
+//			}
+//		}
+		
+		addReordering(presents);
 
-		//TODO: revisar
+		System.out.println("Total layers: " + layerCount);
+		
 		for (Present present : presents) {
 			for (int i = 0; i < 8; i++) {
-				present.boundaries.get(i).z = maxZ - present.boundaries.get(i).z + 1;
+				present.boundaries.get(i).z = nextZ - present.boundaries.get(i).z;
 			}
 		}
 	}
-
+	
+	private void addReordering(List<Present> presents) {
+		List<Present> layerOrder = Lists.newArrayList();
+		
+		for (Present present : presents) {
+			if (!add(present)) {
+				undoLayerWithPresents(layerOrder);
+				List<Present> sortedLayer = sortByArea(layerOrder);
+				if (insertAll(sortedLayer)) {
+					layerOrder = sortedLayer;
+				} else {
+					undoLayerWithPresents(sortedLayer);
+					if (!insertAll(layerOrder)) {
+						throw new RuntimeException("foo!");
+					}
+				}
+				if (!add(present)) {
+					layerOrder.clear();
+					startNewLayer();
+					add(present);
+				}
+			}
+			layerOrder.add(present);
+			
+			if (present.order % 10000 == 0) {
+				System.out.println(present.order);
+			}
+		}
+	}
+	
+	private boolean insertAll(List<Present> sortedCopy) {
+		for (Present p : sortedCopy) {
+			if (!add(p)) {
+				return false;
+			}
+		}
+		return true;
+	}
+	
+	private void undoLayerWithPresents(List<Present> layer) {
+		for (Present present : layer) {
+			present.boundaries.clear();
+		}
+		initializeLayer();
+	}
+	
+	private List<Present> sortByArea(List<Present> layer) {
+		List<Present> sortedCopy = new ArrayList<>(layer);
+		Collections.sort(sortedCopy, new Comparator<Present>() {
+			@Override
+			public int compare(Present o1, Present o2) {
+				return -Ints.compare(o1.xSize * o1.ySize, o2.xSize * o2.ySize);
+			}
+		});
+		return sortedCopy;
+	}
+	
 	private boolean add(Present present) {
+		present.rotateMinMedMax();
 		Point2D insertPoint = findBLInsertionPoint(present);
 		if (insertPoint == null) {
 			present.rotate();
@@ -86,11 +150,8 @@ public class FastXYCompactSleigh {
 		if (insertPoint != null) {
 			insert(present, insertPoint);
 			return true;
-		} else {
-			startLayer();
-			insert(present, new Point2D(0, 0));
-			return false;
-		}
+		}	
+		return false;
 	}
 	
 	private Point2D findBLInsertionPoint(Present present) {
@@ -155,8 +216,13 @@ public class FastXYCompactSleigh {
 		return true;
 	}
 
-	private void startLayer() {
+	private void startNewLayer() {
 		currentZ = nextZ;
+		layerCount++;
+		initializeLayer();
+	}
+
+	private void initializeLayer() {
 		nextZ = 0;
 		floor.clear();
 		insertionPoints.clear();
@@ -178,12 +244,9 @@ public class FastXYCompactSleigh {
 		Point oneBasedInsertionPoint = new Point(insertionPoint.x + 1, insertionPoint.y + 1, currentZ);
 		setBoundaries(present, oneBasedInsertionPoint);
 
-		int zp = present.maxZ();
-		if (zp > maxZ) {
-			maxZ = zp;
-		}
-		if (zp >= nextZ) {
-			nextZ = zp + 1;
+		int presentMaxZ = oneBasedInsertionPoint.z + present.zSize - 1;
+		if (presentMaxZ >= nextZ) {
+			nextZ = presentMaxZ + 1;
 		}
 		
 //		System.out.println(present.order + " [" + present.xSize + ","+ present.ySize +","+ present.zSize +"] "+ oneBasedInsertionPoint);
@@ -200,7 +263,6 @@ public class FastXYCompactSleigh {
 		present.boundaries.add(new Point(insertPoint.x + present.xSize - 1, insertPoint.y, insertPoint.z + present.zSize - 1));
 		present.boundaries.add(new Point(insertPoint.x + present.xSize - 1, insertPoint.y + present.ySize - 1, insertPoint.z + present.zSize - 1));
 	}
-
 	
 
 	private void occupy(int x, int y, int xSize, int ySize) {
