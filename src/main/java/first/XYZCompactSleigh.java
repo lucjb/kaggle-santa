@@ -10,8 +10,8 @@ import com.google.common.primitives.Ints;
 public class XYZCompactSleigh {
 
 	HeightBitMap space = new HeightBitMap();
-	int nextZ = 0;
 	int maxZ = 0;
+	int lowestRoof = 0;
 
 	public void addPresents(List<Present> presents) {
 		for (Present present : presents) {
@@ -19,15 +19,14 @@ public class XYZCompactSleigh {
 		}
 		for (Present present : presents) {
 			add(present, true);
-			System.out.println(present);
 			if (present.order % 1000 == 0) {
+				System.out.println(present);
 			}
 		}
 
 		for (Present present : presents) {
 			for (int i = 0; i < 8; i++) {
-				present.boundaries.get(i).z = maxZ
-						- present.boundaries.get(i).z + 1;
+				present.boundaries.get(i).z = maxZ - present.boundaries.get(i).z + 1;
 			}
 		}
 	}
@@ -87,12 +86,23 @@ public class XYZCompactSleigh {
 		for (Present present : layer) {
 			present.boundaries.clear();
 		}
-		nextZ = 0;
 		maxZ = 0;
 	}
 
 	private boolean add(Present present, boolean force) {
 		Point insertPoint = placeFor(present);
+		if (insertPoint == null) {
+			present.rotate();
+			insertPoint = placeFor(present);
+			if (insertPoint == null) {
+				present.maxSupRotation();
+				insertPoint = placeFor(present);
+				if (insertPoint == null) {
+					present.rotate();
+					insertPoint = placeFor(present);
+				}
+			}
+		}
 		if (insertPoint != null) {
 			insert(present, insertPoint);
 			return true;
@@ -106,38 +116,28 @@ public class XYZCompactSleigh {
 	}
 
 	private void startLayer() {
-		space.nextZ(maxZ);
+		space.nextZ(maxZ - 1);
 	}
 
 	private void insert(Present present, Point insertPoint) {
-		this.space.put(insertPoint.x - 1, insertPoint.y - 1, present.xSize,
-				present.ySize, present.zSize);
+		this.space.put(insertPoint.x - 1, insertPoint.y - 1, present.xSize, present.ySize, present.zSize);
 
-		present.boundaries.add(new Point(insertPoint.x, insertPoint.y,
-				insertPoint.z));
-		present.boundaries.add(new Point(insertPoint.x, insertPoint.y
-				+ present.ySize - 1, insertPoint.z));
-		present.boundaries.add(new Point(insertPoint.x + present.xSize - 1,
-				insertPoint.y, insertPoint.z));
-		present.boundaries.add(new Point(insertPoint.x + present.xSize - 1,
-				insertPoint.y + present.ySize - 1, insertPoint.z));
+		present.boundaries.add(new Point(insertPoint.x, insertPoint.y, insertPoint.z));
+		present.boundaries.add(new Point(insertPoint.x, insertPoint.y + present.ySize - 1, insertPoint.z));
+		present.boundaries.add(new Point(insertPoint.x + present.xSize - 1, insertPoint.y, insertPoint.z));
+		present.boundaries.add(new Point(insertPoint.x + present.xSize - 1, insertPoint.y + present.ySize - 1, insertPoint.z));
 
-		present.boundaries.add(new Point(insertPoint.x, insertPoint.y,
-				insertPoint.z + present.zSize - 1));
-		present.boundaries.add(new Point(insertPoint.x, insertPoint.y
-				+ present.ySize - 1, insertPoint.z + present.zSize - 1));
-		present.boundaries.add(new Point(insertPoint.x + present.xSize - 1,
-				insertPoint.y, insertPoint.z + present.zSize - 1));
-		present.boundaries.add(new Point(insertPoint.x + present.xSize - 1,
-				insertPoint.y + present.ySize - 1, insertPoint.z
-						+ present.zSize - 1));
+		present.boundaries.add(new Point(insertPoint.x, insertPoint.y, insertPoint.z + present.zSize - 1));
+		present.boundaries.add(new Point(insertPoint.x, insertPoint.y + present.ySize - 1, insertPoint.z + present.zSize - 1));
+		present.boundaries.add(new Point(insertPoint.x + present.xSize - 1, insertPoint.y, insertPoint.z + present.zSize - 1));
+		present.boundaries.add(new Point(insertPoint.x + present.xSize - 1, insertPoint.y + present.ySize - 1, insertPoint.z + present.zSize - 1));
 
 		int zp = present.maxZ();
 		if (zp > maxZ) {
 			maxZ = zp;
 		}
-		if (zp >= nextZ) {
-			nextZ = zp + 1;
+		if (zp < lowestRoof) {
+			lowestRoof = zp;
 		}
 	}
 
@@ -145,7 +145,7 @@ public class XYZCompactSleigh {
 		int xSize = present.xSize;
 		int ySize = present.ySize;
 		for (int xi = 0; xi <= 1000 - xSize;) {
-			for (int yi = 0; yi <= 1000 - ySize; yi++) {
+			for (int yi = 0; xi <= 1000 - xSize && yi <= 1000 - ySize; yi++) {
 				int skip = this.thereIsRoomFor(xi, yi, xSize, ySize);
 				if (skip == yi) {
 					return new Point(xi + 1, yi + 1, this.space.currentZ + 1);

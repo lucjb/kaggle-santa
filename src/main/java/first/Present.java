@@ -20,7 +20,6 @@ public class Present {
 		this.ySize = ySize;
 		this.zSize = zSize;
 	}
-	
 
 	public int maxZ() {
 		int maxZ = -1;
@@ -56,6 +55,13 @@ public class Present {
 
 	public void leastSupRotation() {
 		thinestRotation();
+		if (ySize < zSize)
+			return;
+		swapZY();
+	}
+
+	public void maxSupRotation() {
+		flatestRotation();
 		if (ySize < zSize)
 			return;
 		swapZY();

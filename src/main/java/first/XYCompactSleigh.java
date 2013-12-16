@@ -34,18 +34,17 @@ public class XYCompactSleigh {
 		for (Present present : presents) {
 			present.leastSupRotation();
 		}
-		// addPresentsOrdering(presents);
-		for (Present present : presents) {
-			add(present, true);
-			System.out.println(present);
-
-		}
+		 addPresentsOrdering(presents);
+		// for (Present present : presents) {
+		// add(present, true);
+		// if (present.order % 1000 == 0)
+		// System.out.println(present);
+		// }
 		int u = 0;
 		u = 0;
 		for (Present present : presents) {
 			for (int i = 0; i < 8; i++) {
-				present.boundaries.get(i).z = maxZ
-						- present.boundaries.get(i).z + 1;
+				present.boundaries.get(i).z = maxZ - present.boundaries.get(i).z + 1;
 			}
 		}
 	}
@@ -112,6 +111,10 @@ public class XYCompactSleigh {
 
 	private boolean add(Present present, boolean force) {
 		Point insertPoint = placeFor(present);
+		// if (insertPoint == null) {
+		// present.rotate();
+		// insertPoint = placeFor(present);
+		// }
 		if (insertPoint != null) {
 			insert(present, insertPoint);
 			return true;
@@ -133,24 +136,15 @@ public class XYCompactSleigh {
 	private void insert(Present present, Point insertPoint) {
 		this.occupy(insertPoint.x, insertPoint.y, present.xSize, present.ySize);
 
-		present.boundaries.add(new Point(insertPoint.x, insertPoint.y,
-				insertPoint.z));
-		present.boundaries.add(new Point(insertPoint.x, insertPoint.y
-				+ present.ySize - 1, insertPoint.z));
-		present.boundaries.add(new Point(insertPoint.x + present.xSize - 1,
-				insertPoint.y, insertPoint.z));
-		present.boundaries.add(new Point(insertPoint.x + present.xSize - 1,
-				insertPoint.y + present.ySize - 1, insertPoint.z));
+		present.boundaries.add(new Point(insertPoint.x, insertPoint.y, insertPoint.z));
+		present.boundaries.add(new Point(insertPoint.x, insertPoint.y + present.ySize - 1, insertPoint.z));
+		present.boundaries.add(new Point(insertPoint.x + present.xSize - 1, insertPoint.y, insertPoint.z));
+		present.boundaries.add(new Point(insertPoint.x + present.xSize - 1, insertPoint.y + present.ySize - 1, insertPoint.z));
 
-		present.boundaries.add(new Point(insertPoint.x, insertPoint.y,
-				insertPoint.z + present.zSize - 1));
-		present.boundaries.add(new Point(insertPoint.x, insertPoint.y
-				+ present.ySize - 1, insertPoint.z + present.zSize - 1));
-		present.boundaries.add(new Point(insertPoint.x + present.xSize - 1,
-				insertPoint.y, insertPoint.z + present.zSize - 1));
-		present.boundaries.add(new Point(insertPoint.x + present.xSize - 1,
-				insertPoint.y + present.ySize - 1, insertPoint.z
-						+ present.zSize - 1));
+		present.boundaries.add(new Point(insertPoint.x, insertPoint.y, insertPoint.z + present.zSize - 1));
+		present.boundaries.add(new Point(insertPoint.x, insertPoint.y + present.ySize - 1, insertPoint.z + present.zSize - 1));
+		present.boundaries.add(new Point(insertPoint.x + present.xSize - 1, insertPoint.y, insertPoint.z + present.zSize - 1));
+		present.boundaries.add(new Point(insertPoint.x + present.xSize - 1, insertPoint.y + present.ySize - 1, insertPoint.z + present.zSize - 1));
 
 		int zp = present.maxZ();
 		if (zp > maxZ) {
