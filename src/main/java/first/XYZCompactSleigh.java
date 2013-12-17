@@ -9,6 +9,7 @@ import com.google.common.primitives.Ints;
 
 public class XYZCompactSleigh {
 
+	int[][] top = new int[1000][1000];
 	HeightBitMap space = new HeightBitMap();
 	HeightBitMap backup = new HeightBitMap();
 	int maxZ = 0;
@@ -16,25 +17,32 @@ public class XYZCompactSleigh {
 	int lowestRoof = 0;
 	int layerCount = 0;
 
+	int currentX = 0;
+	int currentY = 0;
+	int nextX = -1;
+
 	public void addPresents(List<Present> presents) {
 		addPresentsOrdering(presents);
 
 		for (Present present : presents) {
 			for (int i = 0; i < 8; i++) {
-				present.boundaries.get(i).z = maxZ - present.boundaries.get(i).z + 1;
+				present.boundaries.get(i).z = maxZ
+						- present.boundaries.get(i).z + 1;
 			}
-			System.out.println(present);
 		}
 	}
 
+	int i = 0;
+	private int[][] topBackup = top.clone();
+
 	private void addPresentsOrdering(List<Present> presents) {
 		List<Present> layer = Lists.newArrayList();
-
 		for (Present present : presents) {
-			boolean added = add(present, false);
+			boolean added = add(present, true);
 			if (!added) {
 				undoLayer(layer);
-				List<Present> sortedLayer = sort(layer);
+				List<Present> sortedLayer;
+				sortedLayer = sortSupX(layer);
 				boolean reinserted = reinsert(sortedLayer);
 				if (reinserted) {
 					layer = sortedLayer;
@@ -43,21 +51,58 @@ public class XYZCompactSleigh {
 					if (!reinsert(layer)) {
 						System.err.println("Wrong! z");
 					}
+
+					for (Present p : layer) {
+						if (floats(p)) {
+							if (p.maxZ() == maxZ) {
+								maxZ--;
+							}
+							for (Point b : p.boundaries) {
+								b.z--;
+							}
+						}
+					}
+
 				}
-				if (!add(present, false)) {
+				if (!add(present, true)) {
 					layer.clear();
 					startLayer();
-					System.out.println(present.order + " z=" + space.currentZ);
-					add(present, false);
+					add(present, true);
 				}
 			}
+			if (i % 10000 == 0) {
+				System.out.println(i + "z= " + space.currentZ);
+			}
+			i++;
 			layer.add(present);
 		}
+
+		undoLayer(layer);
+		for (Present present : layer) {
+			if (!add(present, false)) {
+				startLayer();
+				add(present, false);
+			}
+		}
+
+	}
+
+	private boolean floats(Present present) {
+		Point insertPoint = present.location();
+		for (int xi = insertPoint.x - 1; xi < insertPoint.x - 1 + present.xSize; xi++) {
+			for (int yi = insertPoint.y - 1; yi < insertPoint.y - 1
+					+ present.ySize; yi++) {
+				if (top[xi][yi] + 1 == insertPoint.z) {
+					return false;
+				}
+			}
+		}
+		return true;
 	}
 
 	private boolean reinsert(List<Present> sortedCopy) {
 		for (Present p : sortedCopy) {
-			if (!add(p, false)) {
+			if (!add(p, true)) {
 				return false;
 			}
 		}
@@ -75,6 +120,85 @@ public class XYZCompactSleigh {
 		return sortedCopy;
 	}
 
+	private List<Present> sortX(List<Present> layer) {
+		List<Present> sortedCopy = Ordering.from(new Comparator<Present>() {
+
+			@Override
+			public int compare(Present o1, Present o2) {
+				int compare = -Ints.compare(o1.xSize, o2.xSize);
+				if (compare == 0) {
+					return -Ints.compare(o1.ySize, o2.ySize);
+				}
+				return compare;
+			}
+		}).sortedCopy(layer);
+		return sortedCopy;
+	}
+
+	private List<Present> sortY(List<Present> layer) {
+		List<Present> sortedCopy = Ordering.from(new Comparator<Present>() {
+
+			@Override
+			public int compare(Present o1, Present o2) {
+				int compare = -Ints.compare(o1.ySize, o2.ySize);
+				if (compare == 0) {
+					return -Ints.compare(o1.xSize, o2.xSize);
+				}
+				return compare;
+			}
+		}).sortedCopy(layer);
+		return sortedCopy;
+	}
+
+	private List<Present> sortZSupX(List<Present> layer) {
+		List<Present> sortedCopy = Ordering.from(new Comparator<Present>() {
+
+			@Override
+			public int compare(Present o1, Present o2) {
+				int compare = -Ints.compare(o1.zSize, o2.zSize);
+				if (compare == 0) {
+					compare = -Ints.compare(o1.xSize * o1.ySize, o2.xSize
+							* o2.ySize);
+					if (compare == 0)
+						compare = -Ints.compare(o1.xSize, o2.xSize);
+				}
+
+				return compare;
+			}
+		}).sortedCopy(layer);
+		return sortedCopy;
+	}
+
+	private List<Present> sortSupX(List<Present> layer) {
+		List<Present> sortedCopy = Ordering.from(new Comparator<Present>() {
+
+			@Override
+			public int compare(Present o1, Present o2) {
+				int compare = -Ints.compare(o1.xSize * o1.ySize, o2.xSize
+						* o2.ySize);
+				if (compare == 0)
+					return -Ints.compare(o1.xSize, o2.xSize);
+				return compare;
+			}
+		}).sortedCopy(layer);
+		return sortedCopy;
+	}
+
+	private List<Present> sortSupY(List<Present> layer) {
+		List<Present> sortedCopy = Ordering.from(new Comparator<Present>() {
+
+			@Override
+			public int compare(Present o1, Present o2) {
+				int compare = -Ints.compare(o1.xSize * o1.ySize, o2.xSize
+						* o2.ySize);
+				if (compare == 0)
+					return -Ints.compare(o1.ySize, o2.ySize);
+				return compare;
+			}
+		}).sortedCopy(layer);
+		return sortedCopy;
+	}
+
 	private void undoLayer(List<Present> layer) {
 		for (Present present : layer) {
 			present.boundaries.clear();
@@ -82,47 +206,59 @@ public class XYZCompactSleigh {
 		maxZ = prevMax;
 		space = backup;
 		backup = (HeightBitMap) space.clone();
+		currentX = 0;
+		currentY = 0;
+		nextX = -1;
+		top = topBackup;
 
 	}
 
-	private boolean add(Present present, boolean force) {
-		present.rotateMinMedMax();
+	private boolean add(Present present, boolean minMedMax) {
+		if (minMedMax) {
+			present.rotateMinMedMax();
+		} else {
+			present.rotateMaxMedMin();
+		}
 		Point insertPoint = placeFor(present);
-		if (insertPoint == null) {
-			present.rotate();
-			insertPoint = placeFor(present);
-			if (insertPoint == null) {
-				present.rotateMaxMedMin();
-				insertPoint = placeFor(present);
-				if (insertPoint == null) {
-					present.rotate();
-					insertPoint = placeFor(present);
-				}
-			}
-		}
-		if (space.currentZ + present.zSize > maxZ) {
-			//			present.rotateMaxMedMin();
-		}
+		// if (insertPoint == null) {
+		// present.rotate();
+		// insertPoint = placeFor(present);
+		// if (insertPoint == null) {
+		// present.rotateMaxMedMin();
+		// insertPoint = placeFor(present);
+		// if (insertPoint == null) {
+		// present.rotate();
+		// insertPoint = placeFor(present);
+		// }
+		// }
+		// }
 		if (insertPoint != null) {
 			insert(present, insertPoint);
 			layerCount++;
 			return true;
 		} else {
-			if (force) {
-				startLayer();
-				add(present, force);
-			}
 			return false;
 		}
 	}
 
 	private void startLayer() {
 		// System.out.println(space.currentZ + " " + layerCount);
+		// if (i > 700000) {
+		// nextMax(15);
+		// } else {
+		// nextMax(0);
+		// }
+
 		nextMax(0);
-		// space.nextZ(space.currentZ + 2);
+		// space.nextZ(space.currentZ + 10);
+
 		layerCount = 0;
 		backup = (HeightBitMap) space.clone();
 		prevMax = maxZ;
+		currentX = 0;
+		currentY = 0;
+		nextX = -1;
+		topBackup = top.clone();
 
 	}
 
@@ -143,17 +279,27 @@ public class XYZCompactSleigh {
 	}
 
 	private void insert(Present present, Point insertPoint) {
-		this.space.put(insertPoint.x - 1, insertPoint.y - 1, present.xSize, present.ySize, present.zSize);
+		this.space.put(insertPoint.x - 1, insertPoint.y - 1, present.xSize,
+				present.ySize, present.zSize);
 
-		present.boundaries.add(new Point(insertPoint.x, insertPoint.y, insertPoint.z));
-		present.boundaries.add(new Point(insertPoint.x, insertPoint.y + present.ySize - 1, insertPoint.z));
-		present.boundaries.add(new Point(insertPoint.x + present.xSize - 1, insertPoint.y, insertPoint.z));
-		present.boundaries.add(new Point(insertPoint.x + present.xSize - 1, insertPoint.y + present.ySize - 1, insertPoint.z));
+		present.boundaries.add(new Point(insertPoint.x, insertPoint.y,
+				insertPoint.z));
+		present.boundaries.add(new Point(insertPoint.x, insertPoint.y
+				+ present.ySize - 1, insertPoint.z));
+		present.boundaries.add(new Point(insertPoint.x + present.xSize - 1,
+				insertPoint.y, insertPoint.z));
+		present.boundaries.add(new Point(insertPoint.x + present.xSize - 1,
+				insertPoint.y + present.ySize - 1, insertPoint.z));
 
-		present.boundaries.add(new Point(insertPoint.x, insertPoint.y, insertPoint.z + present.zSize - 1));
-		present.boundaries.add(new Point(insertPoint.x, insertPoint.y + present.ySize - 1, insertPoint.z + present.zSize - 1));
-		present.boundaries.add(new Point(insertPoint.x + present.xSize - 1, insertPoint.y, insertPoint.z + present.zSize - 1));
-		present.boundaries.add(new Point(insertPoint.x + present.xSize - 1, insertPoint.y + present.ySize - 1, insertPoint.z + present.zSize - 1));
+		present.boundaries.add(new Point(insertPoint.x, insertPoint.y,
+				insertPoint.z + present.zSize - 1));
+		present.boundaries.add(new Point(insertPoint.x, insertPoint.y
+				+ present.ySize - 1, insertPoint.z + present.zSize - 1));
+		present.boundaries.add(new Point(insertPoint.x + present.xSize - 1,
+				insertPoint.y, insertPoint.z + present.zSize - 1));
+		present.boundaries.add(new Point(insertPoint.x + present.xSize - 1,
+				insertPoint.y + present.ySize - 1, insertPoint.z
+						+ present.zSize - 1));
 
 		int zp = present.maxZ();
 		if (zp > maxZ) {
@@ -162,9 +308,45 @@ public class XYZCompactSleigh {
 		if (zp < lowestRoof) {
 			lowestRoof = zp;
 		}
+
+		if (insertPoint.x - 1 == currentX && insertPoint.y - 1 == currentY) {
+			currentY += present.ySize;
+			if (currentX + present.xSize > nextX) {
+				nextX = currentX + present.xSize;
+			}
+		} else {
+			currentY = present.ySize;
+			currentX = nextX;
+			nextX = currentX + present.xSize;
+		}
+
+		for (int p = insertPoint.x - 1; p < insertPoint.x - 1 + present.xSize; p++) {
+			for (int q = insertPoint.y - 1; q < insertPoint.y - 1
+					+ present.ySize; q++) {
+				top[p][q] += present.zSize;
+			}
+		}
+
 	}
 
 	private Point placeFor(Present present) {
+		return firstFittingPoint(present);
+	}
+
+	private Point naiveLocation(Present present) {
+		if (currentX + present.xSize <= 1000) {
+			if (currentY + present.ySize <= 1000) {
+				return new Point(currentX + 1, currentY + 1, space.currentZ + 1);
+			} else {
+				return new Point(nextX + 1, 1, space.currentZ + 1);
+			}
+		} else {
+			return null;
+			// return firstFittingPoint(present);
+		}
+	}
+
+	private Point firstFittingPoint(Present present) {
 		int xSize = present.xSize;
 		int ySize = present.ySize;
 		for (int xi = 0; xi <= 1000 - xSize;) {

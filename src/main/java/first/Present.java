@@ -54,19 +54,19 @@ public class Present {
 		ySize = med;
 		zSize = max;
 	}
-	
+
 	public void rotateMedMinMax() {
 		xSize = med;
 		ySize = min;
 		zSize = max;
 	}
-	
+
 	public void rotateMedMaxMin() {
 		xSize = med;
 		ySize = max;
 		zSize = min;
 	}
-	
+
 	public void rotateMinMaxMed() {
 		xSize = min;
 		ySize = max;
@@ -159,6 +159,37 @@ public class Present {
 		int aux = xSize;
 		xSize = ySize;
 		ySize = aux;
+	}
+
+	public int minZ() {
+		int minZ = Integer.MAX_VALUE;
+		for (Point point : this.boundaries) {
+			if (point.z < minZ)
+				minZ = point.z;
+		}
+		return minZ;
+	}
+
+	public int minX() {
+		int minX = Integer.MAX_VALUE;
+		for (Point point : this.boundaries) {
+			if (point.x < minX)
+				minX = point.x;
+		}
+		return minX;
+	}
+
+	public int minY() {
+		int minY = Integer.MAX_VALUE;
+		for (Point point : this.boundaries) {
+			if (point.y < minY)
+				minY = point.y;
+		}
+		return minY;
+	}
+
+	public Point location() {
+		return new Point(minX(), minY(), minZ());
 	}
 
 }
