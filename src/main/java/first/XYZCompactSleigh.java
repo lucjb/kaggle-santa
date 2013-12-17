@@ -86,23 +86,22 @@ public class XYZCompactSleigh {
 	}
 
 	private boolean add(Present present, boolean force) {
-		// present.rotateMinMedMax();
-		// if (insertPoint == null) {
-		// present.rotate();
-		// insertPoint = placeFor(present);
-		// if (insertPoint == null) {
-		// present.rotateMaxMedMin();
-		// insertPoint = placeFor(present);
-		// if (insertPoint == null) {
-		// present.rotate();
-		// insertPoint = placeFor(present);
-		// }
-		// }
-		// }
-		present.leastSupRotation();
+		present.rotateMinMedMax();
 		Point insertPoint = placeFor(present);
+		if (insertPoint == null) {
+			present.rotate();
+			insertPoint = placeFor(present);
+			if (insertPoint == null) {
+				present.rotateMaxMedMin();
+				insertPoint = placeFor(present);
+				if (insertPoint == null) {
+					present.rotate();
+					insertPoint = placeFor(present);
+				}
+			}
+		}
 		if (space.currentZ + present.zSize > maxZ) {
-			present.rotateMaxMedMin();
+			//			present.rotateMaxMedMin();
 		}
 		if (insertPoint != null) {
 			insert(present, insertPoint);
