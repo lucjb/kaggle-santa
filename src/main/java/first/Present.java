@@ -48,11 +48,17 @@ public class Present {
 	public int volume() {
 		return xSize * ySize * zSize;
 	}
-	
+
 	public void rotateMinMedMax() {
 		xSize = min;
 		ySize = med;
 		zSize = max;
+	}
+
+	public void rotateMaxMedMin() {
+		xSize = max;
+		ySize = med;
+		zSize = min;
 	}
 
 	public void flatestRotation() {

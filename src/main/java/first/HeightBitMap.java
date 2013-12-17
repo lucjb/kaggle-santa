@@ -5,9 +5,9 @@ import java.util.List;
 
 import com.google.common.collect.Lists;
 
-public class HeightBitMap {
+public class HeightBitMap implements Cloneable {
 
-	private List<BitSet> layers = Lists.newArrayList();
+	List<BitSet> layers = Lists.newArrayList();
 
 	int currentZ = 0;
 
@@ -15,6 +15,23 @@ public class HeightBitMap {
 		BitSet bitSet = new BitSet();
 		bitSet.set(0, 1000 * 1000);
 		this.layers.add(bitSet);
+	}
+
+	@Override
+	public Object clone() {
+		HeightBitMap clone;
+		try {
+			clone = (HeightBitMap) super.clone();
+			clone.currentZ = this.currentZ;
+			clone.layers = Lists.newArrayList();
+			for (BitSet eachLayer : this.layers) {
+				clone.layers.add((BitSet) eachLayer.clone());
+			}
+			return clone;
+		} catch (CloneNotSupportedException e) {
+			e.printStackTrace();
+			return null;
+		}
 	}
 
 	public BitSet getLayer(int z) {
@@ -43,7 +60,7 @@ public class HeightBitMap {
 				int bitIndex = p * 1000 + q;
 				if (!currentLayer.get(bitIndex)) {
 					int nextSetBit = currentLayer.nextSetBit(bitIndex + 1);
-					if (nextSetBit / 1000 != p) {
+					if (nextSetBit < 0 || nextSetBit / 1000 != p) {
 						return 1000;
 					} else {
 						return nextSetBit % 1000;

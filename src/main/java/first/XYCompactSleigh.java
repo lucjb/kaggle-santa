@@ -31,17 +31,7 @@ public class XYCompactSleigh {
 	}
 
 	public void addPresents(List<Present> presents) {
-		for (Present present : presents) {
-			present.leastSupRotation();
-		}
-		 addPresentsOrdering(presents);
-		// for (Present present : presents) {
-		// add(present, true);
-		// if (present.order % 1000 == 0)
-		// System.out.println(present);
-		// }
-		int u = 0;
-		u = 0;
+		addPresentsOrdering(presents);
 		for (Present present : presents) {
 			for (int i = 0; i < 8; i++) {
 				present.boundaries.get(i).z = maxZ - present.boundaries.get(i).z + 1;
@@ -58,22 +48,22 @@ public class XYCompactSleigh {
 				undoLayer(layer);
 				List<Present> sortedLayer = sort(layer);
 				boolean reinserted = reinsert(sortedLayer);
-				if (!reinserted) {
+				if (reinserted) {
+					layer = sortedLayer;
+				} else {
 					undoLayer(layer);
 					if (!reinsert(layer)) {
 						System.err.println("Wrong! z=" + currentZ);
 					}
-				} else {
-					layer = sortedLayer;
 				}
-				added = add(present, true);
+				if (!add(present, false)) {
+					layer.clear();
+					startLayer();
+					add(present, false);
+				}
+				layer.add(present);
 			}
 
-			boolean sameLayer = added;
-			if (!sameLayer) {
-				layer.clear();
-			}
-			layer.add(present);
 			if (present.order % 1000 == 0) {
 				System.out.println(present);
 			}
@@ -94,7 +84,7 @@ public class XYCompactSleigh {
 
 			@Override
 			public int compare(Present o1, Present o2) {
-				return Ints.compare(o1.xSize * o1.ySize, o2.xSize * o2.ySize);
+				return -Ints.compare(o1.xSize * o1.ySize, o2.xSize * o2.ySize);
 			}
 		}).sortedCopy(layer);
 		return sortedCopy;
