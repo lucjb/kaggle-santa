@@ -39,33 +39,34 @@ public class XYZCompactSleigh {
 	private int[][] topBackup = cloneTop(top);
 
 	private void addPresentsOrdering(List<Present> presents) {
-		boolean increasing = true;
 		List<Present> layer = Lists.newArrayList();
 		for (Present present : presents) {
-			boolean added = add(present, true);
-			if (!added) {
+			if (!add(present, true)) {
 				undoLayer(layer);
+				layer.add(present);
 				List<Present> sortedLayer = sortSupX(layer);
-				if (reinsert(sortedLayer)) {
+				List<Present> leftOut = reinsert(sortedLayer);
+				if (leftOut.isEmpty()) {
 					layer = sortedLayer;
 				} else {
 					undoLayer(sortedLayer);
-					if (!reinsert(layer)) {
-						System.err.println("Wrong! z");
+					layer.remove(present);
+					if (!reinsert(layer).isEmpty()) {
+						System.err.println("Wrong!");
 					}
-				}
-				if (!add(present, true)) {
-					layer.clear();
-
 					startLayer();
+					layer.clear();
 					add(present, true);
+					layer.add(present);
 				}
+			} else {
+				layer.add(present);
 			}
+
 			if (i % 10000 == 0) {
 				System.out.println(i + "z= " + space.currentZ);
 			}
 			i++;
-			layer.add(present);
 		}
 
 	}
@@ -126,13 +127,14 @@ public class XYZCompactSleigh {
 		return true;
 	}
 
-	private boolean reinsert(List<Present> sortedCopy) {
-		for (Present p : sortedCopy) {
+	private List<Present> reinsert(List<Present> presents) {
+		List<Present> out = Lists.newArrayList();
+		for (Present p : presents) {
 			if (!add(p, true)) {
-				return false;
+				out.add(p);
 			}
 		}
-		return true;
+		return out;
 	}
 
 	private List<Present> sort(List<Present> layer) {
@@ -398,7 +400,7 @@ public class XYZCompactSleigh {
 	private Point firstFittingPoint(Present present) {
 		int xSize = present.xSize;
 		int ySize = present.ySize;
-		for (int xi = 500; xi <= 1000 - xSize;) {
+		for (int xi = 0; xi <= 1000 - xSize;) {
 			for (int yi = 0; yi <= 1000 - ySize;) {
 				int skip = this.thereIsRoomFor(xi, yi, xSize, ySize);
 				if (skip == yi) {
