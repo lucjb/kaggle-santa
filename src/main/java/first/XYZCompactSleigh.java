@@ -9,6 +9,7 @@ import com.google.common.primitives.Ints;
 
 public class XYZCompactSleigh {
 
+	private static final int floatz = 3;
 	int[][] top = new int[1000][1000];
 	HeightBitMap space = new HeightBitMap();
 	HeightBitMap backup = new HeightBitMap();
@@ -26,14 +27,13 @@ public class XYZCompactSleigh {
 
 		for (Present present : presents) {
 			for (int i = 0; i < 8; i++) {
-				present.boundaries.get(i).z = maxZ
-						- present.boundaries.get(i).z + 1;
+				present.boundaries.get(i).z = maxZ - present.boundaries.get(i).z + 1;
 			}
 		}
 	}
 
 	int i = 0;
-	private int[][] topBackup = top.clone();
+	private int[][] topBackup = cloneTop(top);
 
 	private void addPresentsOrdering(List<Present> presents) {
 		List<Present> layer = Lists.newArrayList();
@@ -41,28 +41,20 @@ public class XYZCompactSleigh {
 			boolean added = add(present, true);
 			if (!added) {
 				undoLayer(layer);
-				List<Present> sortedLayer;
-				sortedLayer = sortSupX(layer);
-				boolean reinserted = reinsert(sortedLayer);
-				if (reinserted) {
+				List<Present> sortedLayer = sortSupX(layer);
+				if (reinsert(sortedLayer)) {
 					layer = sortedLayer;
 				} else {
 					undoLayer(sortedLayer);
-					if (!reinsert(layer)) {
-						System.err.println("Wrong! z");
-					}
-
-					for (Present p : layer) {
-						if (floats(p)) {
-							if (p.maxZ() == maxZ) {
-								maxZ--;
-							}
-							for (Point b : p.boundaries) {
-								b.z--;
-							}
+					sortedLayer = sortX(layer);
+					if (reinsert(sortedLayer)) {
+						layer = sortedLayer;
+					} else {
+						undoLayer(sortedLayer);
+						if (!reinsert(layer)) {
+							System.err.println("Wrong! z");
 						}
 					}
-
 				}
 				if (!add(present, true)) {
 					layer.clear();
@@ -77,22 +69,54 @@ public class XYZCompactSleigh {
 			layer.add(present);
 		}
 
-		undoLayer(layer);
-		for (Present present : layer) {
-			if (!add(present, false)) {
-				startLayer();
-				add(present, false);
+	}
+
+	private int[][] cloneTop(int[][] top) {
+		int[][] m = new int[top.length][];
+		for (int i = 0; i < top.length; i++) {
+			int[] aMatrix = top[i];
+			int aLength = aMatrix.length;
+			m[i] = new int[aLength];
+			System.arraycopy(aMatrix, 0, m[i], 0, aLength);
+		}
+		return m;
+	}
+
+	private void pushDown(List<Present> layer) {
+		for (Present p : layer) {
+			if (floats(p)) {
+				for (Point b : p.boundaries) {
+					b.z -= floatz;
+				}
+				Point insertPoint = p.location();
+				for (int xi = insertPoint.x - 1; xi < insertPoint.x - 1 + p.xSize; xi++) {
+					for (int yi = insertPoint.y - 1; yi < insertPoint.y - 1 + p.ySize; yi++) {
+						top[xi][yi] -= floatz;
+					}
+				}
 			}
 		}
+		computeMazZFromTop();
+	}
 
+	private void computeMazZFromTop() {
+		System.out.println(maxZ + " " + prevMax);
+		maxZ = -1;
+		for (int xi = 0; xi < 1000; xi++) {
+			for (int yi = 0; yi < 1000; yi++) {
+				if (top[xi][yi] > maxZ) {
+					maxZ = top[xi][yi];
+				}
+			}
+		}
+		System.out.println("recomputed: " + maxZ);
 	}
 
 	private boolean floats(Present present) {
 		Point insertPoint = present.location();
 		for (int xi = insertPoint.x - 1; xi < insertPoint.x - 1 + present.xSize; xi++) {
-			for (int yi = insertPoint.y - 1; yi < insertPoint.y - 1
-					+ present.ySize; yi++) {
-				if (top[xi][yi] + 1 == insertPoint.z) {
+			for (int yi = insertPoint.y - 1; yi < insertPoint.y - 1 + present.ySize; yi++) {
+				if (insertPoint.z - topBackup[xi][yi] <= floatz) {
 					return false;
 				}
 			}
@@ -157,8 +181,7 @@ public class XYZCompactSleigh {
 			public int compare(Present o1, Present o2) {
 				int compare = -Ints.compare(o1.zSize, o2.zSize);
 				if (compare == 0) {
-					compare = -Ints.compare(o1.xSize * o1.ySize, o2.xSize
-							* o2.ySize);
+					compare = -Ints.compare(o1.xSize * o1.ySize, o2.xSize * o2.ySize);
 					if (compare == 0)
 						compare = -Ints.compare(o1.xSize, o2.xSize);
 				}
@@ -174,8 +197,7 @@ public class XYZCompactSleigh {
 
 			@Override
 			public int compare(Present o1, Present o2) {
-				int compare = -Ints.compare(o1.xSize * o1.ySize, o2.xSize
-						* o2.ySize);
+				int compare = -Ints.compare(o1.xSize * o1.ySize, o2.xSize * o2.ySize);
 				if (compare == 0)
 					return -Ints.compare(o1.xSize, o2.xSize);
 				return compare;
@@ -189,8 +211,7 @@ public class XYZCompactSleigh {
 
 			@Override
 			public int compare(Present o1, Present o2) {
-				int compare = -Ints.compare(o1.xSize * o1.ySize, o2.xSize
-						* o2.ySize);
+				int compare = -Ints.compare(o1.xSize * o1.ySize, o2.xSize * o2.ySize);
 				if (compare == 0)
 					return -Ints.compare(o1.ySize, o2.ySize);
 				return compare;
@@ -209,16 +230,12 @@ public class XYZCompactSleigh {
 		currentX = 0;
 		currentY = 0;
 		nextX = -1;
-		top = topBackup;
+		top = cloneTop(topBackup);
 
 	}
 
 	private boolean add(Present present, boolean minMedMax) {
-		if (minMedMax) {
-			present.rotateMinMedMax();
-		} else {
-			present.rotateMaxMedMin();
-		}
+		present.rotateMinMedMax();
 		Point insertPoint = placeFor(present);
 		// if (insertPoint == null) {
 		// present.rotate();
@@ -258,16 +275,8 @@ public class XYZCompactSleigh {
 		currentX = 0;
 		currentY = 0;
 		nextX = -1;
-		topBackup = top.clone();
+		topBackup = cloneTop(top);
 
-	}
-
-	private void nextMax() {
-		if (maxZ > space.currentZ) {
-			space.nextZ(maxZ);
-		} else {
-			space.nextZ(space.currentZ + 1);
-		}
 	}
 
 	private void nextMax(int delta) {
@@ -279,34 +288,21 @@ public class XYZCompactSleigh {
 	}
 
 	private void insert(Present present, Point insertPoint) {
-		this.space.put(insertPoint.x - 1, insertPoint.y - 1, present.xSize,
-				present.ySize, present.zSize);
+		this.space.put(insertPoint.x - 1, insertPoint.y - 1, present.xSize, present.ySize, present.zSize);
 
-		present.boundaries.add(new Point(insertPoint.x, insertPoint.y,
-				insertPoint.z));
-		present.boundaries.add(new Point(insertPoint.x, insertPoint.y
-				+ present.ySize - 1, insertPoint.z));
-		present.boundaries.add(new Point(insertPoint.x + present.xSize - 1,
-				insertPoint.y, insertPoint.z));
-		present.boundaries.add(new Point(insertPoint.x + present.xSize - 1,
-				insertPoint.y + present.ySize - 1, insertPoint.z));
+		present.boundaries.add(new Point(insertPoint.x, insertPoint.y, insertPoint.z));
+		present.boundaries.add(new Point(insertPoint.x, insertPoint.y + present.ySize - 1, insertPoint.z));
+		present.boundaries.add(new Point(insertPoint.x + present.xSize - 1, insertPoint.y, insertPoint.z));
+		present.boundaries.add(new Point(insertPoint.x + present.xSize - 1, insertPoint.y + present.ySize - 1, insertPoint.z));
 
-		present.boundaries.add(new Point(insertPoint.x, insertPoint.y,
-				insertPoint.z + present.zSize - 1));
-		present.boundaries.add(new Point(insertPoint.x, insertPoint.y
-				+ present.ySize - 1, insertPoint.z + present.zSize - 1));
-		present.boundaries.add(new Point(insertPoint.x + present.xSize - 1,
-				insertPoint.y, insertPoint.z + present.zSize - 1));
-		present.boundaries.add(new Point(insertPoint.x + present.xSize - 1,
-				insertPoint.y + present.ySize - 1, insertPoint.z
-						+ present.zSize - 1));
+		present.boundaries.add(new Point(insertPoint.x, insertPoint.y, insertPoint.z + present.zSize - 1));
+		present.boundaries.add(new Point(insertPoint.x, insertPoint.y + present.ySize - 1, insertPoint.z + present.zSize - 1));
+		present.boundaries.add(new Point(insertPoint.x + present.xSize - 1, insertPoint.y, insertPoint.z + present.zSize - 1));
+		present.boundaries.add(new Point(insertPoint.x + present.xSize - 1, insertPoint.y + present.ySize - 1, insertPoint.z + present.zSize - 1));
 
 		int zp = present.maxZ();
 		if (zp > maxZ) {
 			maxZ = zp;
-		}
-		if (zp < lowestRoof) {
-			lowestRoof = zp;
 		}
 
 		if (insertPoint.x - 1 == currentX && insertPoint.y - 1 == currentY) {
@@ -321,9 +317,8 @@ public class XYZCompactSleigh {
 		}
 
 		for (int p = insertPoint.x - 1; p < insertPoint.x - 1 + present.xSize; p++) {
-			for (int q = insertPoint.y - 1; q < insertPoint.y - 1
-					+ present.ySize; q++) {
-				top[p][q] += present.zSize;
+			for (int q = insertPoint.y - 1; q < insertPoint.y - 1 + present.ySize; q++) {
+				top[p][q] = present.maxZ();
 			}
 		}
 
