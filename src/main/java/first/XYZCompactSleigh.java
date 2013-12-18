@@ -1,11 +1,13 @@
 package first;
 
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Ordering;
 import com.google.common.primitives.Ints;
+import com.sun.xml.internal.ws.policy.privateutil.PolicyUtils.Collections;
 
 public class XYZCompactSleigh {
 
@@ -41,12 +43,12 @@ public class XYZCompactSleigh {
 			boolean added = add(present, true);
 			if (!added) {
 				undoLayer(layer);
-				List<Present> sortedLayer = sortSupX(layer);
+				List<Present> sortedLayer = shiffle(layer);
 				if (reinsert(sortedLayer)) {
 					layer = sortedLayer;
 				} else {
 					undoLayer(sortedLayer);
-					sortedLayer = sortX(layer);
+					sortedLayer = sortSupX(layer);
 					if (reinsert(sortedLayer)) {
 						layer = sortedLayer;
 					} else {
@@ -204,6 +206,12 @@ public class XYZCompactSleigh {
 			}
 		}).sortedCopy(layer);
 		return sortedCopy;
+	}
+
+	private List<Present> shiffle(List<Present> layer) {
+		ArrayList<Present> copy = new ArrayList<Present>(layer);
+		java.util.Collections.shuffle(copy);
+		return copy;
 	}
 
 	private List<Present> sortSupY(List<Present> layer) {
