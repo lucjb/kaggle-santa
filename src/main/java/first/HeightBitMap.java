@@ -1,7 +1,12 @@
 package first;
 
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.BitSet;
 import java.util.List;
+
+import au.com.bytecode.opencsv.CSVWriter;
 
 import com.google.common.collect.Lists;
 
@@ -96,5 +101,30 @@ public class HeightBitMap implements Cloneable {
 		for (int xi = x; xi < x + xSize; xi++) {
 			layer.set(xi * 1000 + y, xi * 1000 + y + ySize);
 		}
+	}
+
+	public void export() {
+		System.out.println("exporting...");
+		try {
+			CSVWriter w = new CSVWriter(new FileWriter(new File(new File(
+					"layersLucas"), "layerCSV" + currentZ + ".csv")), ',',
+					CSVWriter.NO_QUOTE_CHARACTER);
+			BitSet currentLayer = currentLayer();
+			for (int xi = 0; xi < 1000; xi++) {
+				for (int yi = 0; yi < 1000; yi++) {
+					if (currentLayer.get(xi * 1000 + yi)) {
+						String[] line = new String[2];
+						line[0] = String.valueOf(xi);
+						line[1] = String.valueOf(yi);
+						w.writeNext(line);
+					}
+				}
+			}
+			w.close();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		System.out.println("done.");
 	}
 }
