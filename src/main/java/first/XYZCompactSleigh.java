@@ -3,6 +3,7 @@ package first;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Random;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Ordering;
@@ -208,9 +209,11 @@ public class XYZCompactSleigh {
 		return sortedCopy;
 	}
 
+	Random rnd = new Random(0);
+
 	private List<Present> shiffle(List<Present> layer) {
 		ArrayList<Present> copy = new ArrayList<Present>(layer);
-		java.util.Collections.shuffle(copy);
+		java.util.Collections.shuffle(copy, rnd);
 		return copy;
 	}
 
