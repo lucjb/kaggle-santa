@@ -43,7 +43,7 @@ public class XYZCompactSleigh {
 			if (!add(present, true)) {
 				undoLayer(layer);
 				layer.add(present);
-				List<Present> sortedLayer = sortSupY(layer);
+				List<Present> sortedLayer = sortSupX(layer);
 				List<Present> leftOut = reinsert(sortedLayer);
 				if (leftOut.isEmpty()) {
 					layer = sortedLayer;
@@ -270,6 +270,10 @@ public class XYZCompactSleigh {
 	private boolean add(Present present, boolean minMedMax) {
 		present.rotateMinMedMax();
 		Point insertPoint = placeFor(present);
+		if (insertPoint == null) {
+			present.rotateMedMinMax();
+			insertPoint = placeFor(present);
+		}
 		if (insertPoint != null) {
 			insert(present, insertPoint);
 			layerCount++;

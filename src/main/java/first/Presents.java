@@ -13,8 +13,8 @@ import com.google.common.primitives.Ints;
 public class Presents {
 
 	public static void main(String[] args) throws IOException {
-		List<Present> presents = new PresentsParser().parse("test.csv");
-		// List<Present> presents = new PresentsParser().parse("presents.csv");
+		// List<Present> presents = new PresentsParser().parse("test.csv");
+		List<Present> presents = new PresentsParser().parse("presents.csv");
 		// NaiveSleigh sleigh = new NaiveSleigh();
 		XYZCompactSleigh sleigh = new XYZCompactSleigh();
 		// XYCompactSleigh sleigh = new XYCompactSleigh();
