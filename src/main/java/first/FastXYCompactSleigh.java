@@ -1,8 +1,5 @@
 package first;
 
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.Collections;
@@ -10,8 +7,6 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.SortedSet;
 import java.util.TreeSet;
-
-import au.com.bytecode.opencsv.CSVWriter;
 
 import com.google.common.collect.Lists;
 import com.google.common.primitives.Ints;
@@ -67,31 +62,6 @@ public class FastXYCompactSleigh {
 		insertionPoints.add(new Point2D(0, 0));
 	}
 
-	public void export() {
-		System.out.println("exporting...");
-		try {
-			CSVWriter w = new CSVWriter(new FileWriter(new File(new File(
-					"layersBruno"), "layerCSV" + currentZ + ".csv")), ',',
-					CSVWriter.NO_QUOTE_CHARACTER);
-			BitSet currentLayer = floor.surface;
-			for (int xi = 0; xi < 1000; xi++) {
-				for (int yi = 0; yi < 1000; yi++) {
-					if (!currentLayer.get(xi * 1000 + yi)) {
-						String[] line = new String[2];
-						line[0] = String.valueOf(xi);
-						line[1] = String.valueOf(yi);
-						w.writeNext(line);
-					}
-				}
-			}
-			w.close();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		System.out.println("done.");
-	}
-
 	public void addPresents(List<Present> presents) {
 		// for (Present present : presents) {
 		// if (present.order % 10000 == 0)
@@ -118,24 +88,27 @@ public class FastXYCompactSleigh {
 		List<Present> layerOrder = Lists.newArrayList();
 
 		for (Present present : presents) {
+			layerOrder.add(present);
 			if (!add(present)) {
 				undoLayerWithPresents(layerOrder);
-				List<Present> sortedLayer = sortByXY(layerOrder);
+				List<Present> sortedLayer = sortByArea(layerOrder);
 				if (insertAll(sortedLayer)) {
 					layerOrder = sortedLayer;
 				} else {
 					undoLayerWithPresents(sortedLayer);
+					layerOrder.remove(present);
 					if (!insertAll(layerOrder)) {
 						throw new RuntimeException("foo!");
 					}
-				}
-				if (!add(present)) {
+					// System.out.println("No entro: " + present.order);
+					// if (layerCount == 2)
+					// return;
 					layerOrder.clear();
 					startNewLayer();
 					add(present);
+					layerOrder.add(present);
 				}
 			}
-			layerOrder.add(present);
 
 			if (present.order % 10000 == 0) {
 				System.out.println(present.order);
@@ -190,7 +163,8 @@ public class FastXYCompactSleigh {
 	}
 
 	private boolean add(Present present) {
-		present.rotateMinMedMax();
+		// present.rotateMinMedMax();
+		present.rotateMedMinMax();
 		// if (fitsBelowNextZ(present.max)) {
 		// present.rotateMinMedMax();
 		// }
@@ -232,6 +206,7 @@ public class FastXYCompactSleigh {
 
 			Point2D newPoint = new Point2D(newX, newY);
 			if (fits(newPoint, present.xSize, present.ySize)) {
+				insertionPoints.remove(point);
 				return newPoint;
 			}
 		}
@@ -281,7 +256,6 @@ public class FastXYCompactSleigh {
 	}
 
 	private void startNewLayer() {
-		this.export();
 		currentZ = nextZ;
 		layerCount++;
 		initializeLayer();
@@ -298,23 +272,28 @@ public class FastXYCompactSleigh {
 		this.occupy(insertionPoint.x, insertionPoint.y, present.xSize,
 				present.ySize);
 
-		// Might not be present if we moved down or left
-		insertionPoints.remove(insertionPoint);
-		if (insertionPoint.x + present.xSize < 1000
-				&& !floor.occupied(insertionPoint.x + present.xSize,
-						insertionPoint.y)) {
-			insertionPoints.add(new Point2D(insertionPoint.x + present.xSize,
-					insertionPoint.y));
+		// Might not be present if we moved down or left, so we have to find the one to remove
+//		if (!insertionPoints.remove(insertionPoint)) {
+//			Iterator<Point2D> i = insertionPoints.iterator();
+//			while(i.hasNext()) {
+//				Point2D next = i.next();
+//				if (insertionPoint.x <= next.x && next.x <= insertionPoint.x + present.xSize - 1) {
+//					if (insertionPoint.y <= next.y && next.y <= insertionPoint.y + present.ySize - 1) {
+//						i.remove();
+//						break;
+//					}
+//				}
+//			}
+//		}
+			
+		if (insertionPoint.x + present.xSize < 1000 && !floor.occupied(insertionPoint.x + present.xSize, insertionPoint.y)) {
+			insertionPoints.add(new Point2D(insertionPoint.x + present.xSize, insertionPoint.y));
 		}
-		if (insertionPoint.y + present.ySize < 1000
-				&& !floor.occupied(insertionPoint.x, insertionPoint.y
-						+ present.ySize)) {
-			insertionPoints.add(new Point2D(insertionPoint.x, insertionPoint.y
-					+ present.ySize));
+		if (insertionPoint.y + present.ySize < 1000 && !floor.occupied(insertionPoint.x, insertionPoint.y + present.ySize)) {
+			insertionPoints.add(new Point2D(insertionPoint.x, insertionPoint.y + present.ySize));
 		}
 
-		Point oneBasedInsertionPoint = new Point(insertionPoint.x + 1,
-				insertionPoint.y + 1, currentZ);
+		Point oneBasedInsertionPoint = new Point(insertionPoint.x + 1, insertionPoint.y + 1, currentZ);
 		setBoundaries(present, oneBasedInsertionPoint);
 
 		int presentMaxZ = oneBasedInsertionPoint.z + present.zSize - 1;
