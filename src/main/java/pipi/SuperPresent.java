@@ -27,11 +27,11 @@ public class SuperPresent {
 		return this.dimension;
 	}
 
-	public static int[] ouputPresent(int order, Point point, Box box) {
+	public static int[] ouputPresent(int order, Point point, Box box, int lastZ) {
 		int[] result = new int[8 * 3 + 1];
 		result[0] = order;
-		int[] start = new int[] { point.x + 1, point.y + 1, point.z + 1 };
-		int[] end = new int[] { start[0] + box.dx - 1, start[1] + box.dy - 1, start[2] + box.dz - 1 };
+		int[] start = new int[] { point.x + 1, point.y + 1, lastZ - point.z };
+		int[] end = new int[] { start[0] + box.dx - 1, start[1] + box.dy - 1, start[2] - box.dz + 1 };
 		int j = 1;
 		for (int i = 0; i < 8; i++) {
 			for (int d = 0; d < 3; d++) {
