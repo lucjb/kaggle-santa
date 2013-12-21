@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -112,7 +113,8 @@ public class FastXYCompactSleigh {
 	private void addReordering(List<Present> presents) {
 		List<Present> layerOrder = Lists.newArrayList();
 
-		for (Present present : presents) {
+		for (int i = 0; i < presents.size(); i++) {
+			Present present = presents.get(i);
 			layerOrder.add(present);
 			if (!add(present, floor)) {
 				undoLayerWithPresents(layerOrder);
@@ -125,22 +127,12 @@ public class FastXYCompactSleigh {
 					if (!insertAll(layerOrder, floor)) {
 						throw new RuntimeException("foo!");
 					}
-//					Point insertionPoint = completeInTheMiddle(layerOrder, present);
-//					if (insertionPoint != null) {
-//						setBoundaries(present, new Point(insertionPoint.x + 1, insertionPoint.y + 1, insertionPoint.z + 1));
-//						layerOrder.clear();
-//						startNewLayer();
-//					}
-//					else {								
-//						layerOrder.clear();
-//						startNewLayer();
-//						add(present, floor);
-//						layerOrder.add(present);
-//					}
+					int jump = completeInTheMiddle(layerOrder, presents, i);
+					i += jump - 1;
 					layerOrder.clear();
 					startNewLayer();
-					add(present, floor);
-					layerOrder.add(present);
+//					add(present, floor);
+//					layerOrder.add(present);
 				}
 			}
 
@@ -150,7 +142,7 @@ public class FastXYCompactSleigh {
 		}
 	}
 
-	private Point completeInTheMiddle(List<Present> layerOrder, Present nextPresent)  {
+	private int completeInTheMiddle(List<Present> layerOrder, List<Present> presents, int i)  {
 		Map<Integer, Set<Present>> heights = Maps.newLinkedHashMap();
 		for (Present present : layerOrder) {
 			int height = present.zSize;
@@ -172,7 +164,7 @@ public class FastXYCompactSleigh {
 			} catch(Exception e) {
 				throw new RuntimeException(e);
 			}
-			free.zLevel = floor.zLevel + height;
+			free.zLevel = height;
 			
 			
 			for (Present present : heights.get(height)) {
@@ -185,12 +177,66 @@ public class FastXYCompactSleigh {
 			lowerLevel = free;
 		}
 		
-		Point insertionPoint3D = fitsIn3D(heightsLowToHigh, freeAtHeight, nextPresent);
-		if (insertionPoint3D != null) {
-			System.out.println("iupiiiii! " + insertionPoint3D + " " + nextPresent);
+		int inserted = 0;
+		while(true) {
+			Present present = presents.get(i + inserted);
+			Point insertionPoint3D = fitsIn3D(heightsLowToHigh, freeAtHeight, present);
+			if (insertionPoint3D != null) {
+				System.out.println("iupiiiii! " + insertionPoint3D + " " + present);
+				inserted++;
+				setBoundaries(present, new Point(insertionPoint3D.x + 1, insertionPoint3D.y + 1, insertionPoint3D.z + 1));
+				
+				int relativeZ = insertionPoint3D.z - floor.zLevel;
+				int heightIndex = Collections.binarySearch(heightsLowToHigh, relativeZ);
+				if (heightIndex < 0)
+					throw new RuntimeException("foo");
+				while(heightsLowToHigh.get(heightIndex) < relativeZ + present.zSize) {
+					int height = heightsLowToHigh.get(heightIndex);
+					Surface2D surface = freeAtHeight.get(height);
+					occupy(surface, insertionPoint3D.x, insertionPoint3D.y, present.xSize, present.ySize);
+					Iterator<Point2D> it = surface.insertionPoints.iterator();
+					while(it.hasNext()) {
+						Point2D next = it.next();
+						if (insertionPoint3D.x <= next.x && next.x <= insertionPoint3D.x + present.xSize - 1) {
+							if (insertionPoint3D.y <= next.y && next.y <= insertionPoint3D.y + present.ySize - 1) {
+								it.remove();
+								break;
+							}
+						}
+					}
+					heightIndex++;
+				}
+				
+				if (!freeAtHeight.containsKey(relativeZ + present.zSize)) {
+					heightIndex--; //First one lower than the current present
+					int height = heightsLowToHigh.get(heightIndex);
+					Surface2D newLevel;
+					try {
+						newLevel = (Surface2D)freeAtHeight.get(height).clone();
+					} catch(Exception e) {
+						throw new RuntimeException(e);
+					}
+					newLevel.zLevel = relativeZ + present.zSize;
+					clear(newLevel, new Point2D(insertionPoint3D.x, insertionPoint3D.y), present.xSize, present.ySize);
+				}
+				
+				//Remove lower levels, we don't want to disorder presents
+				Iterator<Integer> hi = heightsLowToHigh.iterator();
+				while(hi.hasNext()) {
+					Integer next = hi.next();
+					if (next < relativeZ) {
+						hi.remove();
+						freeAtHeight.remove(next);
+					}
+					else
+						break;
+				}				
+			}
+			else
+				break;
 		}
 		
-		return insertionPoint3D;
+		return inserted;
 	}
 	
 	private void clear(Surface2D surface, Point2D point, int xSize, int ySize) {
@@ -222,10 +268,10 @@ public class FastXYCompactSleigh {
 	}
 	
 	private Point fitsIn3DAtLevel(Present present, Surface2D surface) {
-		if (surface.zLevel + present.zSize <= floor.zLevel + maxPresentHeight) {
+		if (surface.zLevel + present.zSize <= maxPresentHeight) {
 			Point2D fuck = fitsIn2D(present, surface);
 			if (fuck != null)
-				return new Point(fuck.x, fuck.y, surface.zLevel);
+				return new Point(fuck.x, fuck.y, floor.zLevel + surface.zLevel);
 		}
 		return null;
 	}
