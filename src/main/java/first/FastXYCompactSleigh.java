@@ -124,15 +124,23 @@ public class FastXYCompactSleigh {
 				} else {
 					undoLayerWithPresents(sortedLayer);
 					layerOrder.remove(present);
-					if (!insertAll(layerOrder, floor)) {
+					if (!insertAllCrap(layerOrder, floor)) {
 						throw new RuntimeException("foo!");
 					}
+//					if (layerCount == 1) {
+//						try {
+//							viewXY(layerOrder);
+//							BrunoMain.generateCSV(layerOrder);
+//						} catch (IOException e) {
+//							e.printStackTrace();
+//						}
+//						System.exit(0);
+//					}
+					//System.out.println("layer: " + layerCount + " presents: " + layerOrder.size() + " total: " + (present.order-1));
 					int jump = completeInTheMiddle(layerOrder, presents, i);
 					i += jump - 1;
 					layerOrder.clear();
 					startNewLayer();
-//					add(present, floor);
-//					layerOrder.add(present);
 				}
 			}
 
@@ -141,7 +149,7 @@ public class FastXYCompactSleigh {
 			}
 		}
 	}
-
+	
 	private int completeInTheMiddle(List<Present> layerOrder, List<Present> presents, int i)  {
 		Map<Integer, Set<Present>> heights = Maps.newLinkedHashMap();
 		for (Present present : layerOrder) {
@@ -182,7 +190,7 @@ public class FastXYCompactSleigh {
 			Present present = presents.get(i + inserted);
 			Point insertionPoint3D = fitsIn3D(heightsLowToHigh, freeAtHeight, present);
 			if (insertionPoint3D != null) {
-				System.out.println("iupiiiii! " + insertionPoint3D + " " + present);
+				//System.out.println("iupiiiii! " + insertionPoint3D + " " + present);
 				inserted++;
 				setBoundaries(present, new Point(insertionPoint3D.x + 1, insertionPoint3D.y + 1, insertionPoint3D.z + 1));
 				
@@ -293,7 +301,7 @@ public class FastXYCompactSleigh {
 		}
 		return true;
 	}
-
+	
 	private void undoLayerWithPresents(List<Present> layer) {
 		for (Present present : layer) {
 			present.boundaries.clear();
@@ -332,7 +340,6 @@ public class FastXYCompactSleigh {
 	}
 
 	private boolean add(Present present, Surface2D surface) {
-		// present.rotateMinMedMax();
 		present.rotateMedMinMax();
 		Point2D insertPoint = findBLInsertionPoint(present, surface);
 		if (insertPoint == null) {
@@ -347,6 +354,8 @@ public class FastXYCompactSleigh {
 	}
 
 	private Point2D findBLInsertionPoint(Present present, Surface2D surface) {
+//		SortedSet<Point2D> candidates = new TreeSet<Point2D>();
+//		Map<Point2D,Point2D> newToOriginal = Maps.newLinkedHashMap();
 		for (Point2D point : surface.insertionPoints) {
 			// try to move down and try to move left (at most only one of those
 			// is going to move)
@@ -358,19 +367,27 @@ public class FastXYCompactSleigh {
 			while (previousVerticalLineIsFeasible(surface, newX, newY, present.ySize)) {
 				newX--;
 			}
-
 			Point2D newPoint = new Point2D(newX, newY);
+//						candidates.add(newPoint);
+//						newToOriginal.put(newPoint, point);
 			if (fits(surface, newPoint, present.xSize, present.ySize)) {
 				surface.insertionPoints.remove(point);
 				return newPoint;
 			}
 		}
+		
+//		for (Point2D candidate : candidates) {
+//			if (fits(surface, candidate, present.xSize, present.ySize)) {
+//				surface.insertionPoints.remove(newToOriginal.get(candidate));
+//				return candidate;
+//			}
+//		}
 		return null;
 	}
 
 	private boolean previousVerticalLineIsFeasible(Surface2D surface, int x, int y, int height) {
 		int prevX = x - 1;
-		if (prevX < 0 || y + height >= 1000)
+		if (prevX < 0 || y + height - 1 >= 1000)
 			return false;
 
 		for (int q = y + height - 1; q >= y; q--) {
@@ -384,7 +401,7 @@ public class FastXYCompactSleigh {
 
 	private boolean nextHorizontalLineIsFeasible(Surface2D surface, int x, int y, int width) {
 		int nextY = y - 1;
-		if (nextY < 0 || x + width >= 1000)
+		if (nextY < 0 || x + width - 1 >= 1000)
 			return false;
 
 		for (int p = x + width - 1; p >= x; p--) {
@@ -397,7 +414,7 @@ public class FastXYCompactSleigh {
 	}
 
 	private boolean fits(Surface2D surface, Point2D point, int xSize, int ySize) {
-		if (point.x + xSize >= 1000 || point.y + ySize >= 1000)
+		if (point.x + xSize - 1 >= 1000 || point.y + ySize - 1 >= 1000)
 			return false;
 
 		for (int p = point.x + xSize - 1; p >= point.x; p--) {
@@ -420,7 +437,7 @@ public class FastXYCompactSleigh {
 		maxPresentHeight = 0;
 		floor.clear();
 	}
-
+	
 	private void insert(Present present, Point2D insertionPoint, Surface2D surface) {
 		this.occupy(surface, insertionPoint.x, insertionPoint.y, present.xSize,
 				present.ySize);
@@ -438,12 +455,14 @@ public class FastXYCompactSleigh {
 //				}
 //			}
 //		}
-			
-		if (insertionPoint.x + present.xSize < 1000 && !surface.occupied(insertionPoint.x + present.xSize, insertionPoint.y)) {
-			surface.insertionPoints.add(new Point2D(insertionPoint.x + present.xSize, insertionPoint.y));
+		
+		int xNewBottomRight = insertionPoint.x + present.xSize;
+		if (xNewBottomRight < 1000 && !surface.occupied(xNewBottomRight, insertionPoint.y)) {
+			surface.insertionPoints.add(new Point2D(xNewBottomRight, insertionPoint.y));
 		}
-		if (insertionPoint.y + present.ySize < 1000 && !surface.occupied(insertionPoint.x, insertionPoint.y + present.ySize)) {
-			surface.insertionPoints.add(new Point2D(insertionPoint.x, insertionPoint.y + present.ySize));
+		int yNewTopLeft = insertionPoint.y + present.ySize;
+		if (yNewTopLeft < 1000 && !surface.occupied(insertionPoint.x, yNewTopLeft)) {
+			surface.insertionPoints.add(new Point2D(insertionPoint.x, yNewTopLeft));
 		}
 
 		Point oneBasedInsertionPoint = new Point(insertionPoint.x + 1, insertionPoint.y + 1, surface.zLevel + 1);
@@ -486,14 +505,61 @@ public class FastXYCompactSleigh {
 		}
 	}
 	
+	/* **************** DEBUG STUF ****************** */
+	
+	private void viewXY(List<Present> presents) {
+		int min = Integer.MAX_VALUE;
+		int max = Integer.MIN_VALUE;
+		for (Present p : presents) {
+			System.out.println(p.order + " (" + p.xSize + "," + p.ySize + "): " + p.boundaries.get(0).x + " " + p.boundaries.get(0).y);
+			if (p.order < min)
+				min = p.order;
+			if (p.order > max)
+				max = p.order;
+		}
+		System.out.println("min " + min + " max " + max);
+	}
+	
+	private boolean insertAllCrap(List<Present> sortedCopy, Surface2D surface) {
+		for (Present p : sortedCopy) {
+//			if (p.order == 55484) {
+//				exportInsertionPoints(surface);
+//				export(surface);
+//			}
+			if (!add(p, surface)) {
+				return false;
+			}
+		}
+		return true;
+	}
+	
+	public void exportInsertionPoints(Surface2D surface) {
+		System.out.println("exporting insertion points...");
+		try {
+			CSVWriter w = new CSVWriter(new FileWriter(new File("brunoLayerIP.csv")), ',',
+					CSVWriter.NO_QUOTE_CHARACTER);
+			for (Point2D p : surface.insertionPoints) {
+				String[] line = new String[2];
+				line[0] = String.valueOf(p.x);
+				line[1] = String.valueOf(p.y);
+				w.writeNext(line);
+			}
+			w.close();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		System.out.println("done.");
+	}
+	
 	public void export(Surface2D surface) {
 		System.out.println("exporting...");
 		try {
-			CSVWriter w = new CSVWriter(new FileWriter(new File("layerCSV.csv")), ',',
+			CSVWriter w = new CSVWriter(new FileWriter(new File("brunoLayer.csv")), ',',
 					CSVWriter.NO_QUOTE_CHARACTER);
 			for (int xi = 0; xi < 1000; xi++) {
 				for (int yi = 0; yi < 1000; yi++) {
-					if (!surface.occupied(xi, yi)) {
+					if (surface.occupied(xi, yi)) {
 						String[] line = new String[2];
 						line[0] = String.valueOf(xi);
 						line[1] = String.valueOf(yi);
