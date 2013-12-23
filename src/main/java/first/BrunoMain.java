@@ -16,14 +16,14 @@ public class BrunoMain {
 		// List<Present> presents = new PresentsParser().parse("test.csv");
 		List<Present> presents = new PresentsParser().parse("presents.csv");
 		FastXYCompactSleigh sleigh = new FastXYCompactSleigh();
-//		CopyOfXYCompactSleigh sleigh = new CopyOfXYCompactSleigh();
+//		XYZCompactSleigh sleigh = new XYZCompactSleigh();
 		
 		long start = System.currentTimeMillis();
 		sleigh.addPresents(presents);
 		long end = System.currentTimeMillis();
 		System.out.println("Time: " + (end - start));
 
-		//generateCSV(presents);
+		generateCSV(presents);
 		printEvaluation(presents);
 	}
 
@@ -68,7 +68,7 @@ public class BrunoMain {
 		System.out.println("Score: " + (2 * maxZ + orderAbsoluteErrorSum));
 	}
 
-	private static void generateCSV(List<Present> presents) throws IOException {
+	public static void generateCSV(List<Present> presents) throws IOException {
 		CSVWriter writer = new CSVWriter(new FileWriter("fastxycompact.csv"), ',',
 				CSVWriter.NO_QUOTE_CHARACTER);
 		String[] headers = new String[] { "PresentId", "x1", "y1", "z1", "x2",
@@ -77,8 +77,8 @@ public class BrunoMain {
 		writer.writeNext(headers);
 		for (Present present : presents) {
 			
-//			if (present.boundaries.isEmpty())
-//				break;
+			if (present.boundaries.isEmpty())
+				break;
 			
 			String[] line = new String[25];
 
