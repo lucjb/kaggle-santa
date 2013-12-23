@@ -11,7 +11,7 @@ import com.google.common.primitives.Ints;
 
 public class XYZCompactSleigh {
 
-	private static final int floatz = 3;
+	private static final int floatz = 10;
 	int[][] top = new int[1000][1000];
 	HeightBitMap space = new HeightBitMap();
 	HeightBitMap backup = new HeightBitMap();
@@ -44,19 +44,21 @@ public class XYZCompactSleigh {
 				undoLayer(layer);
 				layer.add(present);
 				List<Present> sortedLayer = sortSupX(layer);
-				List<Present> leftOut = reinsert(sortedLayer);
-				if (leftOut.isEmpty()) {
+				if (reinsert(sortedLayer)) {
 					layer = sortedLayer;
 				} else {
 					undoLayer(sortedLayer);
 					layer.remove(present);
-					if (!reinsert(layer).isEmpty()) {
+					if (!reinsert(layer)) {
 						System.err.println("Wrong!");
 					}
-					startLayer();
-					layer.clear();
-					add(present, true);
-					layer.add(present);
+					pushDown(layer);
+					if (!add(present, true)) {
+						startLayer();
+						layer.clear();
+						add(present, true);
+						layer.add(present);
+					}
 				}
 			} else {
 				layer.add(present);
@@ -68,6 +70,24 @@ public class XYZCompactSleigh {
 			i++;
 		}
 
+	}
+
+	private boolean encajate(Present present) {
+		present.rotateMedMinMax();
+		if (!add(present, true)) {
+			present.rotateMaxMinMed();
+			if (!add(present, true)) {
+				present.rotateMinMaxMed();
+				if (!add(present, true)) {
+					present.rotateMaxMedMin();
+					if (!add(present, true)) {
+						present.rotateMedMaxMin();
+						return add(present, true);
+					}
+				}
+			}
+		}
+		return true;
 	}
 
 	private int[][] cloneTop(int[][] top) {
@@ -82,24 +102,31 @@ public class XYZCompactSleigh {
 	}
 
 	private void pushDown(List<Present> layer) {
-		for (Present p : layer) {
-			if (floats(p)) {
-				for (Point b : p.boundaries) {
-					b.z -= floatz;
-				}
-				Point insertPoint = p.location();
-				for (int xi = insertPoint.x - 1; xi < insertPoint.x - 1 + p.xSize; xi++) {
-					for (int yi = insertPoint.y - 1; yi < insertPoint.y - 1 + p.ySize; yi++) {
-						top[xi][yi] -= floatz;
-					}
+		List<Present> sortNatural = sortNatural(layer);
+		List<Present> pushed = Lists.newArrayList();
+		int lastPushDown = Integer.MAX_VALUE;
+		for (Present p : sortNatural) {
+			Point insertPoint = p.location();
+			int maxZBelow = maxZBelow(p);
+			int floatingSpace = Math.min(insertPoint.z - maxZBelow - 1, lastPushDown);
+			lastPushDown = floatingSpace;
+			for (Point b : p.boundaries) {
+				b.z -= floatingSpace;
+			}
+			pushed.add(p);
+			space.pushDown(insertPoint.x, insertPoint.y, p.xSize, p.ySize, p.zSize, floatingSpace);
+			for (int xi = insertPoint.x - 1; xi < insertPoint.x - 1 + p.xSize; xi++) {
+				for (int yi = insertPoint.y - 1; yi < insertPoint.y - 1 + p.ySize; yi++) {
+					top[xi][yi] -= floatingSpace;
 				}
 			}
 		}
+		layer.removeAll(pushed);
 		computeMaxZFromTop();
 	}
 
 	private void computeMaxZFromTop() {
-		System.out.println(maxZ + " " + prevMax);
+		int pm = maxZ;
 		maxZ = -1;
 		for (int xi = 0; xi < 1000; xi++) {
 			for (int yi = 0; yi < 1000; yi++) {
@@ -108,7 +135,10 @@ public class XYZCompactSleigh {
 				}
 			}
 		}
-		System.out.println("recomputed: " + maxZ);
+		int pushedDown = pm - maxZ;
+		if (pushedDown > 0) {
+			System.out.println("pushedDown: " + pushedDown);
+		}
 	}
 
 	private boolean floats(Present present) {
@@ -123,14 +153,27 @@ public class XYZCompactSleigh {
 		return true;
 	}
 
-	private List<Present> reinsert(List<Present> presents) {
-		List<Present> out = Lists.newArrayList();
-		for (Present p : presents) {
-			if (!add(p, true)) {
-				out.add(p);
+	private int maxZBelow(Present present) {
+		Point insertPoint = present.location();
+		int maxZBelow = 0;
+		for (int xi = insertPoint.x - 1; xi < insertPoint.x - 1 + present.xSize; xi++) {
+			for (int yi = insertPoint.y - 1; yi < insertPoint.y - 1 + present.ySize; yi++) {
+				int zi = topBackup[xi][yi];
+				if (zi > maxZBelow) {
+					maxZBelow = zi;
+				}
 			}
 		}
-		return out;
+		return maxZBelow;
+	}
+
+	private boolean reinsert(List<Present> presents) {
+		for (Present p : presents) {
+			if (!encajate(p)) {
+				return false;
+			}
+		}
+		return true;
 	}
 
 	private List<Present> sort(List<Present> layer) {
@@ -144,12 +187,23 @@ public class XYZCompactSleigh {
 		return sortedCopy;
 	}
 
+	private List<Present> sortNatural(List<Present> layer) {
+		List<Present> sortedCopy = Ordering.from(new Comparator<Present>() {
+
+			@Override
+			public int compare(Present o1, Present o2) {
+				return Ints.compare(o1.order, o2.order);
+			}
+		}).sortedCopy(layer);
+		return sortedCopy;
+	}
+
 	private List<Present> sortDiagonal(List<Present> layer) {
 		List<Present> sortedCopy = Ordering.from(new Comparator<Present>() {
 
 			@Override
 			public int compare(Present o1, Present o2) {
-				return Ints.compare(o1.xSize * o1.xSize + o1.ySize * o1.ySize, o1.xSize * o1.xSize + o1.ySize * o1.ySize);
+				return -Ints.compare(o1.xSize * o1.xSize + o1.ySize * o1.ySize, o2.xSize * o2.xSize + o2.ySize * o2.ySize);
 			}
 		}).sortedCopy(layer);
 		return sortedCopy;
@@ -217,6 +271,20 @@ public class XYZCompactSleigh {
 		return sortedCopy;
 	}
 
+	private List<Present> sortMinMed(List<Present> layer) {
+		List<Present> sortedCopy = Ordering.from(new Comparator<Present>() {
+
+			@Override
+			public int compare(Present o1, Present o2) {
+				int compare = -Ints.compare(o1.min, o2.min);
+				if (compare == 0)
+					return -Ints.compare(o1.med, o2.med);
+				return compare;
+			}
+		}).sortedCopy(layer);
+		return sortedCopy;
+	}
+
 	private List<Present> sortSupX(List<Present> layer) {
 		List<Present> sortedCopy = Ordering.from(new Comparator<Present>() {
 
@@ -225,6 +293,20 @@ public class XYZCompactSleigh {
 				int compare = -Ints.compare(o1.xSize * o1.ySize, o2.xSize * o2.ySize);
 				if (compare == 0)
 					return -Ints.compare(o1.xSize, o2.xSize);
+				return compare;
+			}
+		}).sortedCopy(layer);
+		return sortedCopy;
+	}
+
+	private List<Present> sortSupSquarness(List<Present> layer) {
+		List<Present> sortedCopy = Ordering.from(new Comparator<Present>() {
+
+			@Override
+			public int compare(Present o1, Present o2) {
+				int compare = -Ints.compare(o1.xSize * o1.ySize, o2.xSize * o2.ySize);
+				if (compare == 0)
+					return -Ints.compare(o1.xSize / o1.ySize, o2.xSize / o2.ySize);
 				return compare;
 			}
 		}).sortedCopy(layer);
@@ -268,10 +350,10 @@ public class XYZCompactSleigh {
 	}
 
 	private boolean add(Present present, boolean minMedMax) {
-		present.rotateMinMedMax();
+		present.rotateMedMaxMin();
 		Point insertPoint = placeFor(present);
 		if (insertPoint == null) {
-			present.rotateMedMinMax();
+			present.rotateMaxMinMed();
 			insertPoint = placeFor(present);
 		}
 		if (insertPoint != null) {
@@ -291,10 +373,11 @@ public class XYZCompactSleigh {
 		// nextMax(0);
 		// }
 
-		space.export();
+		// space.export();
 		nextMax(0);
 		// space.nextZ(space.currentZ + 10);
 
+		reverse = !reverse;
 		layerCount = 0;
 		backup = (HeightBitMap) space.clone();
 		prevMax = maxZ;
@@ -367,19 +450,37 @@ public class XYZCompactSleigh {
 		}
 	}
 
+	boolean reverse = false;
+
 	private Point firstFittingPoint(Present present) {
 		int xSize = present.xSize;
 		int ySize = present.ySize;
-		for (int xi = 0; xi <= 1000 - xSize;) {
-			for (int yi = 0; yi <= 1000 - ySize;) {
-				int skip = this.thereIsRoomFor(xi, yi, xSize, ySize);
-				if (skip == yi) {
-					return new Point(xi + 1, yi + 1, this.space.currentZ + 1);
-				} else {
-					yi = skip;
+
+		if (!reverse) {
+			for (int xi = 0; xi <= 1000 - xSize;) {
+				for (int yi = 0; yi <= 1000 - ySize;) {
+					int skip = this.thereIsRoomFor(xi, yi, xSize, ySize);
+					if (skip == yi) {
+						return new Point(xi + 1, yi + 1, this.space.currentZ + 1);
+					} else {
+						yi = skip;
+					}
 				}
+				xi += 1;
 			}
-			xi += 1;
+		} else {
+			for (int xi = 1000 - xSize; xi >= 0;) {
+				for (int yi = 0; yi <= 1000 - ySize;) {
+					int skip = this.thereIsRoomFor(xi, yi, xSize, ySize);
+					if (skip == yi) {
+						return new Point(xi + 1, yi + 1, this.space.currentZ + 1);
+					} else {
+						yi = skip;
+					}
+				}
+				xi -= 1;
+			}
+
 		}
 
 		return null;

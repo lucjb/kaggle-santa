@@ -73,6 +73,12 @@ public class Present {
 		zSize = med;
 	}
 
+	public void rotateMaxMinMed() {
+		xSize = max;
+		ySize = min;
+		zSize = med;
+	}
+
 	public void rotateMaxMedMin() {
 		xSize = max;
 		ySize = med;
