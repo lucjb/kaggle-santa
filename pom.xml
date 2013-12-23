@@ -15,6 +15,7 @@
 				</configuration>
 			</plugin>
 		</plugins>
+
 	</build>
 	<dependencies>
 		<dependency>
@@ -33,4 +34,11 @@
 			<version>3.1</version>
 		</dependency>
 	</dependencies>
+	<repositories>
+		<repository>
+			<id>my-local-repo</id>
+			<url>file://${basedir}/maven</url>
+		</repository>
+	</repositories>
+
 </project>
