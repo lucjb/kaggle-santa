@@ -6,19 +6,19 @@ import java.util.PriorityQueue;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Queues;
 
-import pipi.bitmatrix.SleighSlice;
+import pipi.bitmatrix.BitesetSleighSlice;
 import first.Point;
 
 public class SliceSuperSleigh {
-	private Map<Integer, SleighSlice> slices = Maps.newHashMap();
+	private Map<Integer, BitesetSleighSlice> slices = Maps.newHashMap();
 	private PriorityQueue<Integer> levels = Queues.newPriorityQueue();
 
 	private int currentZ;
 
 	public SleighSlice getSlice(int level) {
-		SleighSlice sleighSlice = this.slices.get(level);
+		BitesetSleighSlice sleighSlice = this.slices.get(level);
 		if (sleighSlice == null) {
-			sleighSlice = SleighSlice.filled();
+			sleighSlice = BitesetSleighSlice.filled();
 			this.slices.put(level, sleighSlice);
 			this.levels.offer(level);
 		}
@@ -26,7 +26,7 @@ public class SliceSuperSleigh {
 	}
 
 	public SliceSuperSleigh() {
-		this.slices.put(0, SleighSlice.filled());
+		this.slices.put(0, BitesetSleighSlice.filled());
 		this.currentZ = 0;
 	}
 
@@ -36,12 +36,12 @@ public class SliceSuperSleigh {
 			for (int x = 0; x <= 1000 - box.dx; x++) {
 				for (int y = 0; y <= 1000 - box.dy; y++) {
 //					int superContain = sleighSlice.superContain(x, y, box.dx, box.dy);
-					boolean canContain = sleighSlice.canContain(x, y, box.dx, box.dy);
+					boolean canContain = sleighSlice.isFree(x, y, box.dx, box.dy);
 					if (canContain) {
-						sleighSlice.clear(x, y, box.dx, box.dy);
+						sleighSlice.free(x, y, box.dx, box.dy);
 						int newZ = this.currentZ + box.dz;
 						SleighSlice zSleighSlice = this.getSlice(newZ);
-						zSleighSlice.set(x, y, box.dx, box.dy);
+						zSleighSlice.fill(x, y, box.dx, box.dy);
 						return new Point(x, y, this.currentZ);
 					}
 //					else{

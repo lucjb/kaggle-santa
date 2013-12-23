@@ -1,17 +1,22 @@
 package pipi.bitmatrix;
 
 import static java.lang.Math.min;
+import pipi.SleighSlice;
 
-public class SleighSlice {
+public class BitesetSleighSlice implements SleighSlice {
 	private PiolaBitset bitset = new PiolaBitset(1000 * 1000);
 
-	public static SleighSlice filled() {
-		SleighSlice sleighSlice = new SleighSlice();
+	public static BitesetSleighSlice filled() {
+		BitesetSleighSlice sleighSlice = new BitesetSleighSlice();
 		sleighSlice.bitset.set(1, sleighSlice.bitset.size());
 		return sleighSlice;
 	}
 
-	public boolean canContain(int x, int y, int dx, int dy) {
+	/* (non-Javadoc)
+	 * @see pipi.bitmatrix.SleighSlice#canContain(int, int, int, int)
+	 */
+	@Override
+	public boolean isFree(int x, int y, int dx, int dy) {
 		if (x + dx > 1000) {
 			return false;
 		}
@@ -46,7 +51,11 @@ public class SleighSlice {
 		return dy;
 	}
 
-	public void clear(int x, int y, int dx, int dy) {
+	/* (non-Javadoc)
+	 * @see pipi.bitmatrix.SleighSlice#clear(int, int, int, int)
+	 */
+	@Override
+	public void free(int x, int y, int dx, int dy) {
 		for (int xx = x; xx < min(x + dx, 1000); xx++) {
 			for (int yy = y; yy < min(y + dy, 1000); yy++) {
 				this.bitset.clear(getBitIndex(xx, yy));
@@ -54,7 +63,11 @@ public class SleighSlice {
 		}
 	}
 
-	public void set(int x, int y, int dx, int dy) {
+	/* (non-Javadoc)
+	 * @see pipi.bitmatrix.SleighSlice#set(int, int, int, int)
+	 */
+	@Override
+	public void fill(int x, int y, int dx, int dy) {
 		for (int xx = x; xx < min(x + dx, 1000); xx++) {
 			for (int yy = y; yy < min(y + dy, 1000); yy++) {
 				this.bitset.set(getBitIndex(xx, yy));
