@@ -65,4 +65,8 @@ public class SleighSlice {
 	private static int getBitIndex(int x, int y) {
 		return x * 1000 + y;
 	}
+
+	public void merge(SleighSlice sleighSlice) {
+		this.bitset.or(sleighSlice.bitset);
+	}
 }

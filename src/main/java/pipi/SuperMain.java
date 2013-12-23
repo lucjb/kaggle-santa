@@ -90,8 +90,7 @@ public class SuperMain {
 			count++;
 			// marvinImagePanel.repaint();
 			if (rateLimiter.tryAcquire()) {
-				System.out.printf("Progress: %f%%\n",
-						100.0 * ((double) count / presents.size()));
+				System.out.printf("Z: %d\n", superSleigh.getCurrentZ());
 				System.out.printf("Progress: %d\n", count);
 			}
 		}

@@ -18,7 +18,7 @@ public class SliceSuperSleigh {
 	public SleighSlice getSlice(int level) {
 		SleighSlice sleighSlice = this.slices.get(level);
 		if (sleighSlice == null) {
-			sleighSlice = SleighSlice.filled();
+			sleighSlice = new SleighSlice();
 			this.slices.put(level, sleighSlice);
 			this.levels.offer(level);
 		}
@@ -35,7 +35,6 @@ public class SliceSuperSleigh {
 			SleighSlice sleighSlice = this.slices.get(this.currentZ);
 			for (int x = 0; x <= 1000 - box.dx; x++) {
 				for (int y = 0; y <= 1000 - box.dy; y++) {
-//					int superContain = sleighSlice.superContain(x, y, box.dx, box.dy);
 					boolean canContain = sleighSlice.canContain(x, y, box.dx, box.dy);
 					if (canContain) {
 						sleighSlice.clear(x, y, box.dx, box.dy);
@@ -44,13 +43,10 @@ public class SliceSuperSleigh {
 						zSleighSlice.set(x, y, box.dx, box.dy);
 						return new Point(x, y, this.currentZ);
 					}
-//					else{
-//						y+= superContain;
-//					}
 				}
 			}
 			this.currentZ = this.levels.remove();
-			// return null;
+			this.slices.get(this.currentZ).merge(sleighSlice);
 		}
 	}
 
@@ -60,6 +56,10 @@ public class SliceSuperSleigh {
 			lastZ = levels.poll();
 		} while (!levels.isEmpty());
 		return lastZ;
+	}
+	
+	public int getCurrentZ() {
+		return currentZ;
 	}
 
 }
