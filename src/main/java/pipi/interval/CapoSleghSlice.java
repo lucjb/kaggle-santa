@@ -93,7 +93,7 @@ public class CapoSleghSlice implements SleighSlice {
 			line = new Line(closestVerticalLeft(verticalRange.getFrom(), horizontalRange.getTo()));
 			sleighColumn.addLine(line);
 		}
-		line.addSegment(verticalRange);
+		line.addRange(verticalRange);
 	}
 
 	private void addToExistingRight(SleighColumn sleighColumn,
@@ -103,7 +103,7 @@ public class CapoSleghSlice implements SleighSlice {
 			line = new Line(closestVerticalRight(verticalRange.getFrom(), horizontalRange.getTo()));
 			sleighColumn.addLine(line);
 		}
-		line.addSegment(verticalRange);
+		line.addRange(verticalRange);
 	}
 
 	
@@ -113,7 +113,7 @@ public class CapoSleghSlice implements SleighSlice {
 		sleighColumn = new SleighColumn();
 		Line closestLine = new Line(closestVerticalLeft(verticalRange.getFrom(), horizontalRange.getTo()));
 		sleighColumn.addLine(closestLine);
-		closestLine.addSegment(verticalRange);
+		closestLine.addRange(verticalRange);
 		return sleighColumn;
 	}
 
@@ -123,7 +123,7 @@ public class CapoSleghSlice implements SleighSlice {
 		sleighColumn = new SleighColumn();
 		Line closestLine = new Line(closestVerticalRight(verticalRange.getFrom(), horizontalRange.getTo()));
 		sleighColumn.addLine(closestLine);
-		closestLine.addSegment(verticalRange);
+		closestLine.addRange(verticalRange);
 		return sleighColumn;
 	}
 
@@ -137,7 +137,7 @@ public class CapoSleghSlice implements SleighSlice {
 		sleighColumn = new SleighColumn();
 		for (IntRange lineRange : emptyRanges) {
 			Line sleighLine = new Line(lineRange);
-			sleighLine.addSegment(verticalRange);
+			sleighLine.addRange(verticalRange);
 			sleighColumn.addLine(sleighLine);
 		}
 		return sleighColumn;
@@ -159,7 +159,7 @@ public class CapoSleghSlice implements SleighSlice {
 		IntRange range;
 		if (mainEntry.getKey() >= secondary.getKey()) {
 			Line line = mainEntry.getValue().getLine(y);
-			range = line.getRange();
+			range = line.getSpan();
 		} else {
 			Line line = secondary.getValue().getLine(y);
 			range = line.getEmptyRange(y);
@@ -195,11 +195,11 @@ public class CapoSleghSlice implements SleighSlice {
 		CapoSleghSlice capoSleghSlice = new CapoSleghSlice(width, height);
 		IntRange initialRange = new IntRange(0, height);
 		Line leftLine = new Line(initialRange);
-		leftLine.addSegment(initialRange);
+		leftLine.addRange(initialRange);
 		capoSleghSlice.lefts.firstEntry().getValue().addLine(leftLine);
 
 		Line rightLine = new Line(initialRange);
-		rightLine.addSegment(initialRange);
+		rightLine.addRange(initialRange);
 		capoSleghSlice.rights.lastEntry().getValue().addLine(leftLine);
 
 		return capoSleghSlice;

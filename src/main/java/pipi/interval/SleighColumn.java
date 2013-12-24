@@ -9,13 +9,13 @@ public class SleighColumn {
 	private TreeMap<Integer, Line> lines = Maps.newTreeMap();
 
 	public void addLine(Line sleighLine) {
-		this.lines.put(sleighLine.getRange().getFrom(), sleighLine);
+		this.lines.put(sleighLine.getSpan().getFrom(), sleighLine);
 	}
 
 	public Line getLine(int y) {
 		Entry<Integer, Line> floorEntry = this.lines.floorEntry(y);
 		Line line = floorEntry.getValue();
-		if (line.getRange().getTo() > y) {
+		if (line.getSpan().getTo() > y) {
 			return line;
 		}
 		return null;
@@ -29,9 +29,9 @@ public class SleighColumn {
 		int max;
 		Entry<Integer, Line> ceilingEntry = this.lines.ceilingEntry(verticalRange.getTo());
 		if(ceilingEntry == null){
-			max = this.lines.lastEntry().getValue().getRange().getTo();
+			max = this.lines.lastEntry().getValue().getSpan().getTo();
 		}else{
-			max = ceilingEntry.getValue().getRange().getFrom();
+			max = ceilingEntry.getValue().getSpan().getFrom();
 		}
 		
 		this.lines.subMap(floorEntry.getKey(), max);
