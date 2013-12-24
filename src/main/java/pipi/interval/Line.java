@@ -1,72 +1,64 @@
 package pipi.interval;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
-import java.util.Map.Entry;
 import java.util.Set;
-import java.util.SortedMap;
-import java.util.TreeMap;
 
+import com.google.common.collect.BoundType;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
+import com.google.common.collect.Range;
+import com.google.common.collect.RangeSet;
+import com.google.common.collect.TreeRangeSet;
 
 public class Line {
 
-	private TreeMap<Integer, IntRange> ranges = Maps.newTreeMap();
+	private RangeSet<Integer> rangeSet;
 	private IntRange span;
 
 	public Line(IntRange span) {
 		this.span = span;
+		this.rangeSet = TreeRangeSet.create();
 	}
 
 	public void addRange(IntRange intRange) {
-		intRange = this.span.bound(intRange);
-		int from;
-		Entry<Integer, IntRange> floorEntry = this.ranges.floorEntry(intRange
-				.getFrom());
-		if (floorEntry != null) {
-			IntRange value = floorEntry.getValue();
-			if (intRange.getFrom() <= value.getTo()) {
-				from = value.getFrom();
-			} else {
-				from = intRange.getFrom();
-			}
-		} else {
-			from = intRange.getFrom();
-		}
-		int to;
-		Entry<Integer, IntRange> lastEntry = this.ranges.floorEntry(intRange
-				.getTo());
-		if (lastEntry != null) {
-			to = Math.max(lastEntry.getValue().getTo(), intRange.getTo());
-		} else {
-			to = intRange.getTo();
-		}
-
-		this.ranges.subMap(from, to).clear();
-		;
-		this.ranges.put(from, new IntRange(from, to));
+		this.rangeSet.add(rangeFromInt(this.span.bound(intRange)));
 	}
 
-	public Collection<IntRange> getRanges() {
-		return this.ranges.values();
+	private Range<Integer> rangeFromInt(IntRange intRange) {
+		return Range.closedOpen(intRange.getFrom(), intRange.getTo());
+	}
+
+	public List<IntRange> getRanges() {
+		return intsFromRanges(this.rangeSet.asRanges());
+	}
+
+	private List<IntRange> intsFromRanges(Set<Range<Integer>> asRanges) {
+		List<IntRange> intRanges = Lists.newArrayList();
+		for (Range<Integer> range : asRanges) {
+			intRanges.add(intFromRange(range));
+		}
+		return intRanges;
+	}
+
+	private IntRange intFromRange(Range<Integer> range) {
+		int lowerEndpoint = range.lowerEndpoint();
+		if (range.lowerBoundType() == BoundType.OPEN) {
+			lowerEndpoint++;
+		}
+		Integer upperEndpoint = range.upperEndpoint();
+		if (range.upperBoundType() == BoundType.CLOSED) {
+			upperEndpoint++;
+		}
+		return new IntRange(lowerEndpoint, upperEndpoint);
 	}
 
 	public IntRange getEmptyRange(int y) {
-		int from = this.span.getFrom();
-		int to = this.span.getTo();
+		RangeSet<Integer> complement = boundComplement();
+		Range<Integer> rangeContaining = complement.rangeContaining(y);
+		return intFromRange(rangeContaining);
+	}
 
-		Entry<Integer, IntRange> floorEntry = this.ranges.floorEntry(y);
-		Entry<Integer, IntRange> ceilingEntry = this.ranges.ceilingEntry(y);
-		if (floorEntry != null) {
-			from = floorEntry.getValue().getTo();
-		}
-		if (ceilingEntry != null) {
-			to = ceilingEntry.getValue().getFrom();
-		}
-		return new IntRange(from, to);
+	private RangeSet<Integer> boundComplement() {
+		return this.rangeSet.complement().subRangeSet(Range.closedOpen(this.span.getFrom(), this.span.getTo()));
 	}
 
 	public IntRange getSpan() {
@@ -74,60 +66,33 @@ public class Line {
 	}
 
 	public List<IntRange> getEmptyRanges(IntRange verticalRange) {
-		if (this.ranges.isEmpty()) {
-			return Collections.singletonList(this.span);
+		RangeSet<Integer> boundComplement = this.boundComplement();
+		Range<Integer> lowerRangeContaining = boundComplement.rangeContaining(verticalRange.getFrom());
+		Range<Integer> rangeContaining = boundComplement.rangeContaining(verticalRange.getTo() - 1);
+		if (lowerRangeContaining == null) {
+			lowerRangeContaining = Range.closedOpen(verticalRange.getFrom(), verticalRange.getFrom() + 1);
 		}
-		List<IntRange> ranges = Lists.newArrayList();
-		Entry<Integer, IntRange> lowFloorEntry = this.ranges
-				.floorEntry(verticalRange.getFrom());
-		Entry<Integer, IntRange> lowCeilingEntry = this.ranges
-				.ceilingEntry(verticalRange.getFrom());
-		Entry<Integer, IntRange> highFloorEntry = this.ranges
-				.floorEntry(verticalRange.getTo());
-		Entry<Integer, IntRange> highCeilingEntry = this.ranges
-				.ceilingEntry(verticalRange.getTo());
-		int low;
-		if (lowFloorEntry == null) {
-			ranges.add(new IntRange(this.span.getFrom(), lowCeilingEntry
-					.getValue().getFrom()));
-			low = lowCeilingEntry.getKey(); // this.range.from?
-		} else {
-			low = lowFloorEntry.getKey();
+		if (rangeContaining == null) {
+			rangeContaining = Range.closedOpen(verticalRange.getTo() - 1, verticalRange.getTo());
 		}
-		int high;
-		IntRange last = null;
-		if(highFloorEntry != null){
-			if(verticalRange.getTo() <= highFloorEntry.getValue().getTo()){
-				high = highFloorEntry.getValue().getTo();
-			}else{
-				if(highCeilingEntry != null){
-					high = highCeilingEntry.getValue().getTo();
-				}else{
-					last = new IntRange(highFloorEntry.getValue().getTo(),
-							this.span.getTo());
-					high = highFloorEntry.getValue().getTo(); // this.range.to?
-				}
-			}
-		}else{
-			high = low;
-		}
+		Range<Integer> span2 = lowerRangeContaining.span(rangeContaining);
+		RangeSet<Integer> subRangeSet = boundComplement.subRangeSet(span2);
+		return intsFromRanges(subRangeSet.asRanges());
+	}
 
-		SortedMap<Integer, IntRange> subMap = this.ranges.subMap(low, high);
-		Set<Entry<Integer, IntRange>> entrySet = subMap.entrySet();
+	@Override
+	public String toString() {
+		return this.span + this.rangeSet.toString();
+	}
 
-		Iterator<Entry<Integer, IntRange>> iterator = entrySet.iterator();
-		if (iterator.hasNext()) {
-			Entry<Integer, IntRange> previous = iterator.next();
-			while (iterator.hasNext()) {
-				Entry<Integer, IntRange> entry = iterator.next();
-				ranges.add(new IntRange(previous.getValue().getTo(), entry
-						.getValue().getFrom()));
-				previous = entry;
-			}
-		}
-		if (last != null && !last.isEmpty()) {
-			ranges.add(last);
-		}
-		return ranges;
+	public Line copy() {
+		Line line = new Line(this.span);
+		line.rangeSet.addAll(this.rangeSet);
+		return line;
+	}
+
+	public boolean intersects(Line rightLine) {
+		RangeSet<Integer> subRangeSet = rightLine.rangeSet.subRangeSet(rangeFromInt(this.span));
+		return !subRangeSet.isEmpty();
 	}
 }

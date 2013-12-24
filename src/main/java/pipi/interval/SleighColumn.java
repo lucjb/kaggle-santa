@@ -1,5 +1,6 @@
 package pipi.interval;
 
+import java.util.Collection;
 import java.util.Map.Entry;
 import java.util.TreeMap;
 
@@ -38,4 +39,13 @@ public class SleighColumn {
 		/// FIXME!!! iterate
 	}
 
+	public Collection<Line> getLines() {
+		return this.lines.values();
+	}
+	
+	@Override
+	public String toString() {
+		// TODO Auto-generated method stub
+		return this.lines.toString();
+	}
 }
