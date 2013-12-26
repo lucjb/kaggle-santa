@@ -35,10 +35,14 @@ public class FastXYCompactSleigh {
 
 		@Override
 		public int compareTo(Point2D o) {
-			int yComp = Integer.compare(y, o.y);
-			if (yComp != 0)
-				return yComp;
-			return Integer.compare(x, o.x);
+			int sumComp = Integer.compare(x + y, o.x + o.y);
+			if (sumComp != 0)
+				return sumComp;
+			return Integer.compare(y, o.y);
+//			int yComp = Integer.compare(y, o.y);
+//			if (yComp != 0)
+//				return yComp;
+//			return Integer.compare(x, o.x);
 		}
 
 		@Override
@@ -318,7 +322,7 @@ public class FastXYCompactSleigh {
 						* o2.ySize);
 				if (areaComp != 0)
 					return areaComp;
-				return -Ints.compare(o1.ySize, o2.ySize);
+				return -Ints.compare(o1.xSize, o2.xSize);
 			}
 		});
 		return sortedCopy;
@@ -340,7 +344,8 @@ public class FastXYCompactSleigh {
 	}
 
 	private boolean add(Present present, Surface2D surface) {
-		present.rotateMedMinMax();
+		//present.rotateMedMinMax();
+		present.rotateMinMedMax();
 		Point2D insertPoint = findBLInsertionPoint(present, surface);
 		if (insertPoint == null) {
 			present.rotate();
