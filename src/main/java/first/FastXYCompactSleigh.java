@@ -38,7 +38,7 @@ public class FastXYCompactSleigh {
 			int sumComp = Integer.compare(x + y, o.x + o.y);
 			if (sumComp != 0)
 				return sumComp;
-			return Integer.compare(y, o.y);
+			return Integer.compare(x, o.x);
 //			int yComp = Integer.compare(y, o.y);
 //			if (yComp != 0)
 //				return yComp;
@@ -152,6 +152,7 @@ public class FastXYCompactSleigh {
 				System.out.println(present.order);
 			}
 		}
+		
 	}
 	
 	private int completeInTheMiddle(List<Present> layerOrder, List<Present> presents, int i)  {
@@ -342,10 +343,9 @@ public class FastXYCompactSleigh {
 		});
 		return sortedCopy;
 	}
-
+	
 	private boolean add(Present present, Surface2D surface) {
-		//present.rotateMedMinMax();
-		present.rotateMinMedMax();
+		present.rotateMedMinMax();
 		Point2D insertPoint = findBLInsertionPoint(present, surface);
 		if (insertPoint == null) {
 			present.rotate();
