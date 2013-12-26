@@ -22,8 +22,16 @@ public class SleighColumn {
 	}
 
 	public void destroy(Interval verticalRange) {
+		//FIXME optimize
 		this.lines.removeRange(verticalRange);
 		this.faces.removeRange(verticalRange);
+		List<Interval> ranges = this.lines.getRanges();
+		for (Interval interval : ranges) {
+			List<Interval> ranges2 = this.faces.getRanges(interval);
+			if(ranges2.isEmpty()){
+				this.lines.removeRange(interval);
+			}
+		}
 	}
 
 	public Collection<Interval> getLinesRanges() {

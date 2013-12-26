@@ -59,7 +59,9 @@ public class Interval {
 	public boolean isEmpty() {
 		return this.to <= this.from;
 	}
-	
+	public int length(){
+		return this.to - this.from;
+	}
 	
 
 }

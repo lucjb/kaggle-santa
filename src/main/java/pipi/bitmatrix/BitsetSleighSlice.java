@@ -9,7 +9,13 @@ public class BitsetSleighSlice implements SleighSlice {
 
 	public static BitsetSleighSlice filled() {
 		BitsetSleighSlice sleighSlice = new BitsetSleighSlice();
-		sleighSlice.bitset.set(1, sleighSlice.bitset.size());
+		sleighSlice.bitset.set(0, sleighSlice.bitset.size());
+		return sleighSlice;
+	}
+
+	public static BitsetSleighSlice freed() {
+		BitsetSleighSlice sleighSlice = new BitsetSleighSlice();
+		sleighSlice.bitset.set(0, sleighSlice.bitset.size(), false);
 		return sleighSlice;
 	}
 
@@ -26,7 +32,7 @@ public class BitsetSleighSlice implements SleighSlice {
 		}
 		for (int xx = x; xx < x + dx; xx++) {
 			for (int yy = y; yy < y + dy; yy++) {
-				if (!this.bitset.get(getBitIndex(xx, yy))) {
+				if (this.bitset.get(getBitIndex(xx, yy))) {
 					return false;
 				}
 			}

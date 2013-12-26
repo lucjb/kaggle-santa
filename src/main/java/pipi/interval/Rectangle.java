@@ -20,4 +20,8 @@ public class Rectangle {
 	public String toString() {
 		return this.horizontalRange + "x" + this.verticalRange;
 	}
+	
+	public int area(){
+		return this.horizontalRange.length() * this.verticalRange.length();
+	}
 }

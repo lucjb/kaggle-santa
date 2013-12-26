@@ -9,7 +9,7 @@ import com.google.common.collect.Queues;
 import pipi.bitmatrix.BitsetSleighSlice;
 import first.Point;
 
-public class SliceSuperSleigh {
+public class OldSliceSleigh {
 	private Map<Integer, BitsetSleighSlice> slices = Maps.newHashMap();
 	private PriorityQueue<Integer> levels = Queues.newPriorityQueue();
 
@@ -25,7 +25,7 @@ public class SliceSuperSleigh {
 		return sleighSlice;
 	}
 
-	public SliceSuperSleigh() {
+	public OldSliceSleigh() {
 		this.slices.put(0, BitsetSleighSlice.filled());
 		this.currentZ = 0;
 	}
