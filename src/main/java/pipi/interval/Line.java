@@ -23,6 +23,10 @@ public class Line {
 		this.rangeSet.add(rangeFromInt(this.span.bound(intRange)));
 	}
 
+	public void removeRange(IntRange intRange) {
+		this.rangeSet.remove(rangeFromInt(this.span.bound(intRange)));
+	}
+
 	private Range<Integer> rangeFromInt(IntRange intRange) {
 		return Range.closedOpen(intRange.getFrom(), intRange.getTo());
 	}
@@ -82,7 +86,7 @@ public class Line {
 
 	@Override
 	public String toString() {
-		return this.span + this.rangeSet.toString();
+		return this.rangeSet.toString();
 	}
 
 	public Line copy() {
@@ -94,5 +98,13 @@ public class Line {
 	public boolean intersects(Line rightLine) {
 		RangeSet<Integer> subRangeSet = rightLine.rangeSet.subRangeSet(rangeFromInt(this.span));
 		return !subRangeSet.isEmpty();
+	}
+	public IntRange getRange(int y){
+		Range<Integer> rangeContaining = this.rangeSet.rangeContaining(y);
+		return intFromRange(rangeContaining);
+	}
+
+	public boolean isEmpty() {
+		return this.rangeSet.isEmpty();
 	}
 }

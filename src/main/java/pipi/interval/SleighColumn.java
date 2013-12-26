@@ -7,45 +7,37 @@ import java.util.TreeMap;
 import com.google.common.collect.Maps;
 
 public class SleighColumn {
-	private TreeMap<Integer, Line> lines = Maps.newTreeMap();
+	
+	private Line ranges;
+	private Line lines;
 
-	public void addLine(Line sleighLine) {
-		this.lines.put(sleighLine.getSpan().getFrom(), sleighLine);
+	public SleighColumn(IntRange verticalRange) {
+		this.ranges = new Line(verticalRange);
+		this.lines = new Line(verticalRange);
+	}
+	
+	public void addLine(IntRange verticalIntRange) {
+		this.lines.addRange(verticalIntRange);
 	}
 
-	public Line getLine(int y) {
-		Entry<Integer, Line> floorEntry = this.lines.floorEntry(y);
-		Line line = floorEntry.getValue();
-		if (line.getSpan().getTo() > y) {
-			return line;
-		}
-		return null;
+	public IntRange getLine(int y) {
+		return this.lines.getRange(y);
 	}
 
 	public void destroy(IntRange verticalRange) {
-		Entry<Integer, Line> floorEntry = this.lines.floorEntry(verticalRange.getFrom());
-		if(floorEntry == null){
-			floorEntry = this.lines.firstEntry();
-		}
-		int max;
-		Entry<Integer, Line> ceilingEntry = this.lines.ceilingEntry(verticalRange.getTo());
-		if(ceilingEntry == null){
-			max = this.lines.lastEntry().getValue().getSpan().getTo();
-		}else{
-			max = ceilingEntry.getValue().getSpan().getFrom();
-		}
-		
-		this.lines.subMap(floorEntry.getKey(), max);
-		/// FIXME!!! iterate
+		this.lines.removeRange(verticalRange);
 	}
 
-	public Collection<Line> getLines() {
-		return this.lines.values();
+	public Collection<IntRange> getLines() {
+		return this.lines.getRanges();
 	}
 	
 	@Override
 	public String toString() {
-		// TODO Auto-generated method stub
-		return this.lines.toString();
+		return this.lines.toString() + "->" + this.ranges.toString();
+	}
+
+	public boolean isEmpty() {
+		return this.lines.isEmpty();
 	}
 }
