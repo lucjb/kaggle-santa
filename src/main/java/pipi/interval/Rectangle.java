@@ -1,18 +1,18 @@
 package pipi.interval;
 
 public class Rectangle {
-	private final IntRange horizontalRange;
-	private final IntRange verticalRange;
+	private final Interval horizontalRange;
+	private final Interval verticalRange;
 
-	public Rectangle(IntRange horizontalRange, IntRange verticalRange) {
+	public Rectangle(Interval horizontalRange, Interval verticalRange) {
 		this.horizontalRange = horizontalRange;
 		this.verticalRange = verticalRange;
 	}
-	public IntRange getHorizontalRange() {
+	public Interval getHorizontalRange() {
 		return this.horizontalRange;
 	}
 	
-	public IntRange getVerticalRange() {
+	public Interval getVerticalRange() {
 		return this.verticalRange;
 	}
 	

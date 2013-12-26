@@ -3,20 +3,20 @@ package pipi.interval;
 public class StartLine {
 	private int left;
 	private int start;
-	private Line line;
+	private IntervalSet intervalSet;
 
-	public StartLine(int left, int start, Line line) {
+	public StartLine(int left, int start, IntervalSet intervalSet) {
 		this.left = left;
 		this.start = start;
-		this.line = line;
+		this.intervalSet = intervalSet;
 	}
 
 	public int getLeft() {
 		return this.left;
 	}
 
-	public Line getLine() {
-		return this.line;
+	public IntervalSet getLine() {
+		return this.intervalSet;
 	}
 
 	public int getStart() {
