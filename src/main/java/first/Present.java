@@ -1,14 +1,20 @@
 package first;
 
 import java.util.ArrayList;
+import java.util.BitSet;
 import java.util.Collections;
 import java.util.List;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
 import com.google.common.collect.Lists;
 
-public class Present {
+import first.FastXYCompactSleigh.Point2D;
+import first.FastXYCompactSleigh.Surface2D;
+
+public class Present implements Cloneable {
 
 	int order;
 	int xSize;
@@ -30,6 +36,13 @@ public class Present {
 		min = sizes.get(0);
 		med = sizes.get(1);
 		max = sizes.get(2);
+	}
+	
+	@Override
+	protected Object clone() throws CloneNotSupportedException {
+		Present clone = new Present(order, xSize, ySize, zSize);
+		boundaries = Lists.newArrayList(this.boundaries);
+		return clone;
 	}
 
 	public int maxZ() {

@@ -39,10 +39,6 @@ public class FastXYCompactSleigh {
 			if (sumComp != 0)
 				return sumComp;
 			return Integer.compare(x, o.x);
-//			int yComp = Integer.compare(y, o.y);
-//			if (yComp != 0)
-//				return yComp;
-//			return Integer.compare(x, o.x);
 		}
 
 		@Override
@@ -53,10 +49,14 @@ public class FastXYCompactSleigh {
 
 	static class Surface2D implements Cloneable {
 		int zLevel = 0;
+		int maxPresentHeight = 0;
 		private BitSet surface = new BitSet(1000 * 1000);
-		SortedSet<Point2D> insertionPoints = new TreeSet<Point2D>();
+		SortedSet<Point2D> insertionPoints;
+		Comparator<Point2D> ipComparator;
 
-		public Surface2D() {
+		public Surface2D(Comparator<Point2D> insertionPointComparator) {
+			ipComparator = insertionPointComparator;
+			insertionPoints = new TreeSet<Point2D>(insertionPointComparator);
 			insertionPoints.add(new Point2D(0, 0));
 		}
 		
@@ -74,88 +74,156 @@ public class FastXYCompactSleigh {
 		
 		public void clear() {
 			surface.clear();
+			maxPresentHeight = 0;
 			insertionPoints.clear();
 			insertionPoints.add(new Point2D(0, 0));
 		}
 		
 		@Override
 		protected Object clone() throws CloneNotSupportedException {
-			Surface2D clone = new Surface2D();
+			Surface2D clone = new Surface2D(ipComparator);
 			clone.surface = (BitSet)surface.clone();
 			clone.insertionPoints = (SortedSet<Point2D>) ((TreeSet<Point2D>)insertionPoints).clone();
 			clone.zLevel = zLevel;
+			clone.maxPresentHeight = maxPresentHeight;
 			return clone;
 		}
 	}
 
-	Surface2D floor = new Surface2D();
-	int maxPresentHeight = 0;
 	int layerCount = 1;
 
 	public void addPresents(List<Present> presents) {
-		// for (Present present : presents) {
-		// if (present.order % 10000 == 0)
-		// System.out.println(present.order);
-		// if (!add(present)) {
-		// startNewLayer();
-		// insert(present, new Point2D(0, 0));
-		// }
-		// }
-
-		addReordering(presents);
+		int zeroBasedMaxOccupiedZ = addReordering(presents);
 
 		System.out.println("Total layers: " + layerCount);
 
 		for (Present present : presents) {
 			for (int i = 0; i < 8; i++) {
-				present.boundaries.get(i).z = floor.zLevel + maxPresentHeight + 1
-						- present.boundaries.get(i).z;
+				present.boundaries.get(i).z = zeroBasedMaxOccupiedZ + 1 - present.boundaries.get(i).z;
 			}
 		}
 	}
-
-	private void addReordering(List<Present> presents) {
-		List<Present> layerOrder = Lists.newArrayList();
-
-		for (int i = 0; i < presents.size(); i++) {
-			Present present = presents.get(i);
-			layerOrder.add(present);
-			if (!add(present, floor)) {
-				undoLayerWithPresents(layerOrder);
-				List<Present> sortedLayer = sortByArea(layerOrder);
-				if (insertAll(sortedLayer, floor)) {
-					layerOrder = sortedLayer;
-				} else {
-					undoLayerWithPresents(sortedLayer);
-					layerOrder.remove(present);
-					if (!insertAllCrap(layerOrder, floor)) {
-						throw new RuntimeException("foo!");
-					}
-//					if (layerCount == 1) {
-//						try {
-//							viewXY(layerOrder);
-//							BrunoMain.generateCSV(layerOrder);
-//						} catch (IOException e) {
-//							e.printStackTrace();
-//						}
-//						System.exit(0);
-//					}
-					//System.out.println("layer: " + layerCount + " presents: " + layerOrder.size() + " total: " + (present.order-1));
-					int jump = completeInTheMiddle(layerOrder, presents, i);
-					i += jump - 1;
-					layerOrder.clear();
-					startNewLayer();
-				}
+	
+	private List<Present> clonePresents(List<Present> presents) {
+		List<Present> presentsClones = new ArrayList<Present>(1000000);
+		for (Present present : presents) {
+			try {
+				presentsClones.add((Present)present.clone());
+			} catch (CloneNotSupportedException e) {
+				throw new RuntimeException(e);
 			}
+		}
+		return presentsClones;
+	}
 
-			if (present.order % 10000 == 0) {
-				System.out.println(present.order);
+	private int addReordering(List<Present> presents) {
+		int i = 0;
+		Surface2D floor = new Surface2D(new Comparator<FastXYCompactSleigh.Point2D>() {
+			@Override
+			public int compare(Point2D o1, Point2D o2) {
+				int sumComp = Integer.compare(o1.x + o1.y, o2.x + o2.y);
+				if (sumComp != 0)
+					return sumComp;
+				return Integer.compare(o1.x, o2.x);
+			}
+		});
+		
+		Surface2D floor2 = new Surface2D(new Comparator<FastXYCompactSleigh.Point2D>() {
+			@Override
+			public int compare(Point2D o1, Point2D o2) {
+				int yComp = Integer.compare(o1.y, o2.y);
+				if (yComp != 0)
+					return yComp;
+				return Integer.compare(o1.x, o2.x);
+			}
+		});
+		
+		List<Present> presents2 = clonePresents(presents);
+		
+		int added1 = 0;
+		int added2 = 0;
+		while(i < presents.size()) {
+			added1 = fillLayerReordering(presents, i, floor);
+			added2 = fillLayerReordering(presents2, i, floor2);
+			
+			int added;
+			if (added1 >= added2) {
+				floor2.maxPresentHeight = floor.maxPresentHeight;
+				added = added1;
+			}
+			else {
+				floor.maxPresentHeight = floor2.maxPresentHeight;
+				for (int j = i; j < i + added2; j++) {
+					presents.get(j).boundaries = presents2.get(j).boundaries;
+				}
+				added = added2;
+			}
+			
+			int next = i + added;
+			if (layerCount % 10 == 0) {
+				System.out.println("Layer: " + layerCount + ", presents: " + added + ", total: " + next);
+				int area = 0;
+				for (int j = i; j < next; j++) {
+					Present p = presents.get(j);
+					area += (p.xSize * p.ySize);
+				}
+				System.out.println("Free area: " + (1000000  - area) + ", didn't fit: " + (presents.get(next).xSize * presents.get(next).ySize));
+			}
+			
+			i += added;
+			layerCount++;
+			if (i < presents.size()) {
+				startNewLayer(floor);
+				startNewLayer(floor2);
 			}
 		}
 		
+		if (added1 >= added2) {
+			return floor.zLevel + floor.maxPresentHeight;
+		}
+		else
+			return floor2.zLevel + floor2.maxPresentHeight;
 	}
 	
-	private int completeInTheMiddle(List<Present> layerOrder, List<Present> presents, int i)  {
+	private int fillLayerReordering(List<Present> presents, int start, Surface2D surface) {
+		List<Present> layerOrder = Lists.newArrayList();
+		int i = 0;
+		int added = 0;
+		for (i = start; i < presents.size(); i++) {
+			Present present = presents.get(i);
+			layerOrder.add(present);
+			if (!add(present, surface)) {
+				undoLayerWithPresents(layerOrder, surface);
+				List<Present> sortedLayer = sortByArea(layerOrder);
+				if (insertAll(sortedLayer, surface)) {
+					layerOrder = sortedLayer;
+				} else {
+					undoLayerWithPresents(sortedLayer, surface);
+					layerOrder.remove(present);
+					if (!insertAllCrap(layerOrder, surface)) {
+						throw new RuntimeException("foo!");
+					}
+	//				if (layerCount == 1) {
+	//					try {
+	//						viewXY(layerOrder);
+	//						BrunoMain.generateCSV(layerOrder);
+	//					} catch (IOException e) {
+	//						e.printStackTrace();
+	//					}
+	//					System.exit(0);
+	//				}
+					int jump = completeInTheMiddle(layerOrder, presents, i, surface);
+					added+=jump;
+					break;
+				}
+			}
+			added++;
+		}
+		
+		return added;
+	}
+	
+	private int completeInTheMiddle(List<Present> layerOrder, List<Present> presents, int i, Surface2D floor)  {
 		Map<Integer, Set<Present>> heights = Maps.newLinkedHashMap();
 		for (Present present : layerOrder) {
 			int height = present.zSize;
@@ -193,7 +261,7 @@ public class FastXYCompactSleigh {
 		int inserted = 0;
 		while(true) {
 			Present present = presents.get(i + inserted);
-			Point insertionPoint3D = fitsIn3D(heightsLowToHigh, freeAtHeight, present);
+			Point insertionPoint3D = fitsIn3D(heightsLowToHigh, freeAtHeight, present, floor);
 			if (insertionPoint3D != null) {
 				//System.out.println("iupiiiii! " + insertionPoint3D + " " + present);
 				inserted++;
@@ -260,19 +328,19 @@ public class FastXYCompactSleigh {
 		}
 	}
 
-	private Point fitsIn3D(List<Integer> heightsLowToHigh, Map<Integer, Surface2D> freeAtHeight, Present nextPresent) {
+	private Point fitsIn3D(List<Integer> heightsLowToHigh, Map<Integer, Surface2D> freeAtHeight, Present nextPresent, Surface2D floor) {
 		for (Integer height : heightsLowToHigh) {
 			Surface2D surfaceAtHeight = freeAtHeight.get(height);
 			nextPresent.rotateMaxMedMin();
-			Point fitsIn3DAtLevel = fitsIn3DAtLevel(nextPresent, surfaceAtHeight);
+			Point fitsIn3DAtLevel = fitsIn3DAtLevel(nextPresent, floor.zLevel, surfaceAtHeight);
 			if (fitsIn3DAtLevel != null)
 				return fitsIn3DAtLevel;
 			nextPresent.rotateMinMaxMed();
-			fitsIn3DAtLevel = fitsIn3DAtLevel(nextPresent, surfaceAtHeight);
+			fitsIn3DAtLevel = fitsIn3DAtLevel(nextPresent, floor.zLevel, surfaceAtHeight);
 			if (fitsIn3DAtLevel != null)
 				return fitsIn3DAtLevel;
 			nextPresent.rotateMinMedMax();
-			fitsIn3DAtLevel = fitsIn3DAtLevel(nextPresent, surfaceAtHeight);
+			fitsIn3DAtLevel = fitsIn3DAtLevel(nextPresent, floor.zLevel, surfaceAtHeight);
 			if (fitsIn3DAtLevel != null)
 				return fitsIn3DAtLevel;
 		}
@@ -280,11 +348,11 @@ public class FastXYCompactSleigh {
 		return null;
 	}
 	
-	private Point fitsIn3DAtLevel(Present present, Surface2D surface) {
-		if (surface.zLevel + present.zSize <= maxPresentHeight) {
+	private Point fitsIn3DAtLevel(Present present, int floorZLevel, Surface2D surface) {
+		if (surface.zLevel + present.zSize <= surface.maxPresentHeight) {
 			Point2D fuck = fitsIn2D(present, surface);
 			if (fuck != null)
-				return new Point(fuck.x, fuck.y, floor.zLevel + surface.zLevel);
+				return new Point(fuck.x, fuck.y, floorZLevel + surface.zLevel);
 		}
 		return null;
 	}
@@ -299,19 +367,23 @@ public class FastXYCompactSleigh {
 	}
 
 	private boolean insertAll(List<Present> sortedCopy, Surface2D surface) {
+		return insertAll(sortedCopy, surface, true);
+	}
+	
+	private boolean insertAll(List<Present> sortedCopy, Surface2D surface, boolean with3dOrientation) {
 		for (Present p : sortedCopy) {
-			if (!add(p, surface)) {
+			if (!add(p, surface, with3dOrientation)) {
 				return false;
 			}
 		}
 		return true;
 	}
 	
-	private void undoLayerWithPresents(List<Present> layer) {
+	private void undoLayerWithPresents(List<Present> layer, Surface2D surface) {
 		for (Present present : layer) {
 			present.boundaries.clear();
 		}
-		initializeLayer();
+		surface.clear();
 	}
 
 	private List<Present> sortByArea(List<Present> layer) {
@@ -343,9 +415,15 @@ public class FastXYCompactSleigh {
 		});
 		return sortedCopy;
 	}
-	
+
 	private boolean add(Present present, Surface2D surface) {
-		present.rotateMedMinMax();
+		return add(present, surface, true);		
+	}
+	
+	private boolean add(Present present, Surface2D surface, boolean with3DOrientation) {
+		if (with3DOrientation) {
+			present.rotateMedMinMax();
+		}
 		Point2D insertPoint = findBLInsertionPoint(present, surface);
 		if (insertPoint == null) {
 			present.rotate();
@@ -432,17 +510,11 @@ public class FastXYCompactSleigh {
 		return true;
 	}
 
-	private void startNewLayer() {
-		floor.zLevel += maxPresentHeight;
-		initializeLayer();
-		layerCount++;
+	private void startNewLayer(Surface2D surface) {
+		surface.zLevel += surface.maxPresentHeight;
+		surface.clear();
 	}
 
-	private void initializeLayer() {
-		maxPresentHeight = 0;
-		floor.clear();
-	}
-	
 	private void insert(Present present, Point2D insertionPoint, Surface2D surface) {
 		this.occupy(surface, insertionPoint.x, insertionPoint.y, present.xSize,
 				present.ySize);
@@ -473,8 +545,8 @@ public class FastXYCompactSleigh {
 		Point oneBasedInsertionPoint = new Point(insertionPoint.x + 1, insertionPoint.y + 1, surface.zLevel + 1);
 		setBoundaries(present, oneBasedInsertionPoint);
 
-		if (present.zSize > maxPresentHeight) {
-			maxPresentHeight = present.zSize;
+		if (present.zSize > surface.maxPresentHeight) {
+			surface.maxPresentHeight = present.zSize;
 		}
 
 		// System.out.println(present.order + " [" + present.xSize + ","+
