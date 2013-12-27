@@ -97,6 +97,18 @@ public class Present implements Cloneable {
 		ySize = med;
 		zSize = min;
 	}
+	
+	public void rotateXBiggerThanY() {
+		if (xSize < ySize) {
+			swapXY();
+		}
+	}
+	
+	public void rotateYBiggerThanX() {
+		if (ySize < xSize) {
+			swapXY();
+		}
+	}
 
 	public void flatestRotation() {
 		if (zSize < xSize && zSize < ySize)
