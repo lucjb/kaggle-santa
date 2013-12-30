@@ -18,7 +18,12 @@ public class IntervalSet {
 		this.span = span;
 		this.rangeSet = TreeRangeSet.create();
 	}
+	private IntervalSet(Interval span,RangeSet<Integer> rangeSet) {
+		this.span = span;
+		this.rangeSet = rangeSet;
+	}
 
+	
 	public void addRange(Interval interval) {
 		this.rangeSet.add(rangeFromInt(this.span.bound(interval)));
 	}
@@ -84,7 +89,16 @@ public class IntervalSet {
 		return intsFromRanges(subRangeSet.asRanges());
 	}
 
-	public List<Interval> getRanges(Interval verticalRange) {
+	public IntervalSet getIntervals(Interval verticalRange) {
+		RangeSet<Integer> subRangeSet = extracted(verticalRange);
+		return new IntervalSet(this.span,subRangeSet);
+	}
+	
+	private List<Interval> getRanges(Interval verticalRange) {
+		RangeSet<Integer> subRangeSet = extracted(verticalRange);
+		return intsFromRanges(subRangeSet.asRanges());
+	}
+	private RangeSet<Integer> extracted(Interval verticalRange) {
 		RangeSet<Integer> boundComplement = this.rangeSet.subRangeSet(rangeFromInt(this.span));
 		Range<Integer> lowerRangeContaining = boundComplement.rangeContaining(verticalRange.getFrom());
 		Range<Integer> rangeContaining = boundComplement.rangeContaining(verticalRange.getTo() - 1);
@@ -96,7 +110,13 @@ public class IntervalSet {
 		}
 		Range<Integer> span2 = lowerRangeContaining.span(rangeContaining);
 		RangeSet<Integer> subRangeSet = boundComplement.subRangeSet(span2);
-		return intsFromRanges(subRangeSet.asRanges());
+		return subRangeSet;
+	}
+
+	public IntervalSet getIntervalsInRange(Interval verticalRange) {
+		IntervalSet intervalSet = new IntervalSet(this.span);
+		intervalSet.addAllRanges(this.getRanges(verticalRange));
+		return intervalSet;
 	}
 
 	@Override
@@ -114,30 +134,51 @@ public class IntervalSet {
 		RangeSet<Integer> subRangeSet = rightLine.rangeSet.subRangeSet(rangeFromInt(this.span));
 		return !subRangeSet.isEmpty();
 	}
-	public Interval getRange(int y){
+
+	public Interval getRange(int y) {
 		Range<Integer> rangeContaining = this.rangeSet.rangeContaining(y);
 		return intFromRange(rangeContaining);
 	}
 
 	public boolean isEmpty() {
-		return this.rangeSet.isEmpty();
+		boolean empty = this.rangeSet.isEmpty();
+		boolean masEmpty = this.rangeSet.asRanges().isEmpty();
+		if(empty != masEmpty){
+			throw new RuntimeException("Al horno!!!");
+		}
+		return empty;
 	}
 
 	public void addAllRanges(IntervalSet intervalSets) {
 		this.rangeSet.addAll(intervalSets.rangeSet);
 	}
 
-	public void addAllRanges(List<Interval> ranges) {
+	private void addAllRanges(List<Interval> ranges) {
 		for (Interval interval : ranges) {
 			this.addRange(interval);
 		}
 	}
 
-	public void removeAllRanges(List<Interval> ranges) {
+	private void removeAllRanges(List<Interval> ranges) {
 		for (Interval interval : ranges) {
 			this.removeRange(interval);
 		}
 	}
-	
-	
+
+	public void removeAllRanges(IntervalSet ranges) {
+		this.rangeSet.removeAll(ranges.rangeSet);
+	}
+
+	public boolean contains(Interval verticalRange) {
+		return this.rangeSet.encloses(rangeFromInt(verticalRange));
+	}
+
+	public void boundear(IntervalSet lineRanges) {
+		RangeSet<Integer> boundComplement = this.boundComplement();
+		lineRanges.rangeSet.removeAll(boundComplement);
+	}
+
+	public IntervalSet complement(){
+		return new IntervalSet(this.span, this.boundComplement());
+	}
 }

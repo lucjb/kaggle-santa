@@ -35,8 +35,8 @@ public class Interval {
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
-		result = prime * result + from;
-		result = prime * result + to;
+		result = prime * result + this.from;
+		result = prime * result + this.to;
 		return result;
 	}
 
@@ -49,9 +49,9 @@ public class Interval {
 		if (getClass() != obj.getClass())
 			return false;
 		Interval other = (Interval) obj;
-		if (from != other.from)
+		if (this.from != other.from)
 			return false;
-		if (to != other.to)
+		if (this.to != other.to)
 			return false;
 		return true;
 	}
@@ -62,6 +62,10 @@ public class Interval {
 	public int length(){
 		return this.to - this.from;
 	}
-	
+
+	public boolean contains(Interval verticalRange) {
+		return this.from <= verticalRange.from && verticalRange.getTo() <= this.to;
+	}
+
 
 }

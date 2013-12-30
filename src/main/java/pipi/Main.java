@@ -10,19 +10,19 @@ import first.Point;
 public class Main {
 
 	public static void main(String[] args) throws Exception {
-		List<SuperPresent> presents = new SuperPresentsParser().parse("minip.csv");
-		IntervalSliceSleigh superSleigh = new IntervalSliceSleigh();
+		List<SuperPresent> presents = new SuperPresentsParser().parse("presents.csv");
+		IntervalSleigh superSleigh = new IntervalSleigh();
 
 		RateLimiter rateLimiter = RateLimiter.create(1.0);
 		int count = 0;
 		List<OutputPresent> outputPresents = Lists.newArrayList();
 		for (SuperPresent superPresent : presents) {
-			PresentDimension dimension = superPresent.getDimension();
-			Box box = new Box(dimension.small, dimension.medium, dimension.large);
+			Dimension3d dimension = superPresent.getDimension();
+			Box3d box3d = new Box3d(dimension.small, dimension.medium, dimension.large);
 
 			int order = superPresent.getOrder();
-			Point point = superSleigh.putPesent(box);
-			outputPresents.add(new OutputPresent(order, point, box));
+			Point point = superSleigh.putPesent(box3d);
+			outputPresents.add(new OutputPresent(order, point, box3d));
 			count++;
 			if (rateLimiter.tryAcquire()) {
 				System.out.printf("Z: %d\n", superSleigh.getCurrentZ());

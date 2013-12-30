@@ -1,27 +1,27 @@
 package pipi.interval;
 
-public class Rectangle {
-	private final Interval horizontalRange;
-	private final Interval verticalRange;
+import pipi.Box2d;
+import pipi.Point2d;
 
-	public Rectangle(Interval horizontalRange, Interval verticalRange) {
-		this.horizontalRange = horizontalRange;
-		this.verticalRange = verticalRange;
+public class Rectangle {
+	private final Point2d point2d;
+	private final Box2d box2d;
+
+	public Rectangle(Point2d point2d, Box2d box2d) {
+		this.point2d = point2d;
+		this.box2d = box2d;
 	}
-	public Interval getHorizontalRange() {
-		return this.horizontalRange;
+
+	public static Rectangle of(int x, int y, int dx, int dy) {
+		return new Rectangle(new Point2d(x, y), new Box2d(dx, dy));
 	}
-	
-	public Interval getVerticalRange() {
-		return this.verticalRange;
+
+	public Box2d getBox2d() {
+		return this.box2d;
 	}
-	
-	@Override
-	public String toString() {
-		return this.horizontalRange + "x" + this.verticalRange;
+
+	public Point2d getPoint2d() {
+		return this.point2d;
 	}
-	
-	public int area(){
-		return this.horizontalRange.length() * this.verticalRange.length();
-	}
+
 }
