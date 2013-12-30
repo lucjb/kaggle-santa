@@ -64,6 +64,8 @@ public class HeightBitMap implements Cloneable {
 	}
 
 	public int fit(int x, int y, int xSize, int ySize) {
+		if (x + xSize > 1000 || y + ySize > 1000)
+			return 1000;
 		BitSet currentLayer = currentLayer();
 		for (int p = x; p < x + xSize; p++) {
 			for (int q = y; q < y + ySize; q++) {
@@ -111,7 +113,8 @@ public class HeightBitMap implements Cloneable {
 	public void export() {
 		System.out.println("exporting..." + currentZ);
 		try {
-			CSVWriter w = new CSVWriter(new FileWriter(new File(new File("layersLucas"), "layerCSV" + currentZ + ".csv")), ',', CSVWriter.NO_QUOTE_CHARACTER);
+			CSVWriter w = new CSVWriter(new FileWriter(new File(new File("layersLucas"), "layerCSV" + currentZ + ".csv")),
+					',', CSVWriter.NO_QUOTE_CHARACTER);
 			BitSet currentLayer = currentLayer();
 			for (int xi = 0; xi < 1000; xi++) {
 				for (int yi = 0; yi < 1000; yi++) {
