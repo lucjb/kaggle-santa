@@ -25,6 +25,10 @@ public class Present {
 		this.xSize = xSize;
 		this.ySize = ySize;
 		this.zSize = zSize;
+		computeMinMedMax();
+	}
+
+	public void computeMinMedMax() {
 		ArrayList<Integer> sizes = Lists.newArrayList(xSize, ySize, zSize);
 		Collections.sort(sizes);
 		min = sizes.get(0);
@@ -40,7 +44,7 @@ public class Present {
 		}
 		return maxZ;
 	}
-
+	
 	public String toString() {
 		return ToStringBuilder.reflectionToString(this);
 	}
