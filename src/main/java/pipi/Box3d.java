@@ -1,16 +1,15 @@
 package pipi;
-import java.util.Arrays;
 
-public class Box {
+public class Box3d {
 
 	public int dx;
 	public int dy;
 	public int dz;
 
-	public Box(int small, int medium, int large) {
-		this.dx = small;
-		this.dy = medium;
-		this.dz = large;
+	public Box3d(int dx, int dy, int dz) {
+		this.dx = dx;
+		this.dy = dy;
+		this.dz = dz;
 	}
 
 	@Override

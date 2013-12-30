@@ -2,14 +2,20 @@ package pipi.bitmatrix;
 
 import static java.lang.Math.min;
 import first.BitsetsSleigh;
-import pipi.SleighSlice;
+import pipi.Slice;
 
-public class BitsetSleighSlice implements SleighSlice {
+public class BitsetSleighSlice implements Slice {
 	private PiolaBitset bitset = new PiolaBitset(1000 * 1000);
 
 	public static BitsetSleighSlice filled() {
 		BitsetSleighSlice sleighSlice = new BitsetSleighSlice();
-		sleighSlice.bitset.set(1, sleighSlice.bitset.size());
+		sleighSlice.bitset.set(0, sleighSlice.bitset.size());
+		return sleighSlice;
+	}
+
+	public static BitsetSleighSlice freed() {
+		BitsetSleighSlice sleighSlice = new BitsetSleighSlice();
+		sleighSlice.bitset.set(0, sleighSlice.bitset.size(), false);
 		return sleighSlice;
 	}
 
@@ -26,7 +32,7 @@ public class BitsetSleighSlice implements SleighSlice {
 		}
 		for (int xx = x; xx < x + dx; xx++) {
 			for (int yy = y; yy < y + dy; yy++) {
-				if (!this.bitset.get(getBitIndex(xx, yy))) {
+				if (this.bitset.get(getBitIndex(xx, yy))) {
 					return false;
 				}
 			}
@@ -83,4 +89,31 @@ public class BitsetSleighSlice implements SleighSlice {
 	public void merge(BitsetSleighSlice sleighSlice) {
 		this.bitset.or(sleighSlice.bitset);
 	}
+
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((bitset == null) ? 0 : bitset.hashCode());
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		BitsetSleighSlice other = (BitsetSleighSlice) obj;
+		if (bitset == null) {
+			if (other.bitset != null)
+				return false;
+		} else if (!bitset.equals(other.bitset))
+			return false;
+		return true;
+	}
+	
+	
 }

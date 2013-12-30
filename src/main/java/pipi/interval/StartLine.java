@@ -3,23 +3,33 @@ package pipi.interval;
 public class StartLine {
 	private int left;
 	private int start;
-	private Line line;
+	private Interval interval;
+	private SleighColumn sleighColumn;
 
-	public StartLine(int left, int start, Line line) {
+	public StartLine(SleighColumn sleighColumn, int left, int start, Interval bounderLine) {
+		this.sleighColumn = sleighColumn;
 		this.left = left;
 		this.start = start;
-		this.line = line;
+		this.interval = bounderLine;
 	}
 
 	public int getLeft() {
 		return this.left;
 	}
 
-	public Line getLine() {
-		return this.line;
+	public Interval getLine() {
+		return this.interval;
 	}
 
 	public int getStart() {
 		return this.start;
+	}
+	
+	public SleighColumn getSleighColumn() {
+		return this.sleighColumn;
+	}
+	@Override
+	public String toString() {
+		return "(" + this.getLeft() + "->" +this.getStart() + "->" + this.interval + ")";
 	}
 }

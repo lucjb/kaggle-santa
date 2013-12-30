@@ -1,51 +1,71 @@
 package pipi.interval;
 
 import java.util.Collection;
-import java.util.Map.Entry;
-import java.util.TreeMap;
-
-import com.google.common.collect.Maps;
+import java.util.List;
 
 public class SleighColumn {
-	private TreeMap<Integer, Line> lines = Maps.newTreeMap();
+	
+	private IntervalSet faces;
+	private IntervalSet lines;
 
-	public void addLine(Line sleighLine) {
-		this.lines.put(sleighLine.getSpan().getFrom(), sleighLine);
+	public SleighColumn(Interval verticalRange) {
+		this.faces = new IntervalSet(verticalRange);
+		this.lines = new IntervalSet(verticalRange);
+	}
+	
+	public void addLine(Interval verticalIntRange) {
+		this.lines.addRange(verticalIntRange);
 	}
 
-	public Line getLine(int y) {
-		Entry<Integer, Line> floorEntry = this.lines.floorEntry(y);
-		Line line = floorEntry.getValue();
-		if (line.getSpan().getTo() > y) {
-			return line;
-		}
-		return null;
+	public Interval getLine(int y) {
+		return this.lines.getRange(y);
 	}
 
-	public void destroy(IntRange verticalRange) {
-		Entry<Integer, Line> floorEntry = this.lines.floorEntry(verticalRange.getFrom());
-		if(floorEntry == null){
-			floorEntry = this.lines.firstEntry();
+	public void destroy(Interval verticalRange) {
+		//FIXME optimize
+		this.lines.removeRange(verticalRange);
+		this.faces.removeRange(verticalRange);
+		List<Interval> ranges = this.lines.getRanges();
+		for (Interval interval : ranges) {
+			List<Interval> ranges2 = this.faces.getRanges(interval);
+			if(ranges2.isEmpty()){
+				this.lines.removeRange(interval);
+			}
 		}
-		int max;
-		Entry<Integer, Line> ceilingEntry = this.lines.ceilingEntry(verticalRange.getTo());
-		if(ceilingEntry == null){
-			max = this.lines.lastEntry().getValue().getSpan().getTo();
-		}else{
-			max = ceilingEntry.getValue().getSpan().getFrom();
-		}
-		
-		this.lines.subMap(floorEntry.getKey(), max);
-		/// FIXME!!! iterate
 	}
 
-	public Collection<Line> getLines() {
-		return this.lines.values();
+	public Collection<Interval> getLinesRanges() {
+		return this.lines.getRanges();
 	}
 	
 	@Override
 	public String toString() {
-		// TODO Auto-generated method stub
-		return this.lines.toString();
+		return this.lines.toString() + "->" + this.faces.toString();
 	}
+
+	public boolean isEmpty() {
+		return this.lines.isEmpty();
+	}
+	
+	public IntervalSet getRanges() {
+		return this.faces;
+	}
+	
+	public IntervalSet getLines() {
+		return this.lines;
+	}
+	
+	public void addInterval(Interval interval){
+		//FIXME optimize
+		this.getRanges().addRange(interval);
+		List<Interval> emptyRanges = this.lines.getEmptyRanges(interval);
+		this.getRanges().removeAllRanges(emptyRanges);
+	}
+
+	public void removeLines(Collection<Interval> intervals){
+		for (Interval interval : intervals) {
+			this.destroy(interval);
+		}
+	}
+	
 }

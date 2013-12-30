@@ -1,10 +1,10 @@
 package pipi.interval;
 
-public class IntRange {
+public class Interval {
 	private final int from;
 	private final int to;
 
-	public IntRange(int from, int to) {
+	public Interval(int from, int to) {
 		this.from = from;
 		this.to = to;
 	}
@@ -17,9 +17,9 @@ public class IntRange {
 		return this.to;
 	}
 
-	public IntRange bound(IntRange intRange) {
-		return new IntRange(Math.max(this.from, intRange.from), Math.min(
-				this.to, intRange.to));
+	public Interval bound(Interval interval) {
+		return new Interval(Math.max(this.from, interval.from), Math.min(
+				this.to, interval.to));
 	}
 
 	public boolean contains(int point) {
@@ -48,7 +48,7 @@ public class IntRange {
 			return false;
 		if (getClass() != obj.getClass())
 			return false;
-		IntRange other = (IntRange) obj;
+		Interval other = (Interval) obj;
 		if (from != other.from)
 			return false;
 		if (to != other.to)
@@ -59,7 +59,13 @@ public class IntRange {
 	public boolean isEmpty() {
 		return this.to <= this.from;
 	}
-	
-	
+	public int length(){
+		return this.to - this.from;
+	}
+
+	public boolean contains(Interval verticalRange) {
+		return this.from <= verticalRange.from && verticalRange.getTo() <= this.to;
+	}
+
 
 }
