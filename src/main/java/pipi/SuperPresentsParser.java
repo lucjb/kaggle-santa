@@ -35,7 +35,7 @@ public class SuperPresentsParser {
 				int y = Integer.parseInt(yString);
 				int z = Integer.parseInt(zString);
 				SuperPresent present = new SuperPresent(order,
-						PresentDimension.create(x, y, z));
+						Dimension3d.create(x, y, z));
 				presents.add(present);
 			}
 			return presents;

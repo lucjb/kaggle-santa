@@ -1,6 +1,6 @@
 package pipi;
 
-public interface SleighSlice {
+public interface Slice {
 
 	public abstract boolean isFree(int x, int y, int dx, int dy);
 

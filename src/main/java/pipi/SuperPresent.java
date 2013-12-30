@@ -6,9 +6,9 @@ import org.apache.commons.lang3.builder.ToStringStyle;
 public class SuperPresent {
 
 	private final int order;
-	private final PresentDimension dimension;
+	private final Dimension3d dimension;
 
-	public SuperPresent(int order, PresentDimension dimension) {
+	public SuperPresent(int order, Dimension3d dimension) {
 		this.order = order;
 		this.dimension = dimension;
 	}
@@ -21,7 +21,7 @@ public class SuperPresent {
 		return this.order;
 	}
 	
-	public PresentDimension getDimension() {
+	public Dimension3d getDimension() {
 		return this.dimension;
 	}
 	

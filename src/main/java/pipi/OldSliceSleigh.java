@@ -15,7 +15,7 @@ public class OldSliceSleigh {
 
 	private int currentZ;
 
-	public SleighSlice getSlice(int level) {
+	public Slice getSlice(int level) {
 		BitsetSleighSlice sleighSlice = this.slices.get(level);
 		if (sleighSlice == null) {
 			sleighSlice = BitsetSleighSlice.filled();
@@ -30,17 +30,17 @@ public class OldSliceSleigh {
 		this.currentZ = 0;
 	}
 
-	public Point putPesent(Box box) {
+	public Point putPesent(Box3d box3d) {
 		for (;;) {
 			BitsetSleighSlice sleighSlice = this.slices.get(this.currentZ);
-			for (int x = 0; x <= 1000 - box.dx; x++) {
-				for (int y = 0; y <= 1000 - box.dy; y++) {
-					boolean canContain = sleighSlice.isFree(x, y, box.dx, box.dy);
+			for (int x = 0; x <= 1000 - box3d.dx; x++) {
+				for (int y = 0; y <= 1000 - box3d.dy; y++) {
+					boolean canContain = sleighSlice.isFree(x, y, box3d.dx, box3d.dy);
 					if (canContain) {
-						sleighSlice.free(x, y, box.dx, box.dy);
-						int newZ = this.currentZ + box.dz;
-						SleighSlice zSleighSlice = this.getSlice(newZ);
-						zSleighSlice.fill(x, y, box.dx, box.dy);
+						sleighSlice.free(x, y, box3d.dx, box3d.dy);
+						int newZ = this.currentZ + box3d.dz;
+						Slice zSleighSlice = this.getSlice(newZ);
+						zSleighSlice.fill(x, y, box3d.dx, box3d.dy);
 						return new Point(x, y, this.currentZ);
 					}
 				}

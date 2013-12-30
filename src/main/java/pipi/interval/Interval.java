@@ -62,6 +62,10 @@ public class Interval {
 	public int length(){
 		return this.to - this.from;
 	}
-	
+
+	public boolean contains(Interval verticalRange) {
+		return this.from <= verticalRange.from && verticalRange.getTo() <= this.to;
+	}
+
 
 }

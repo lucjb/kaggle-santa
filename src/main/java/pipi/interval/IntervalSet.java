@@ -99,6 +99,12 @@ public class IntervalSet {
 		return intsFromRanges(subRangeSet.asRanges());
 	}
 
+	public IntervalSet getIntervalsInRange(Interval verticalRange) {
+		IntervalSet intervalSet = new IntervalSet(span);
+		intervalSet.addAllRanges(this.getRanges(verticalRange));
+		return intervalSet;
+	}
+
 	@Override
 	public String toString() {
 		return this.rangeSet.toString();
@@ -114,7 +120,8 @@ public class IntervalSet {
 		RangeSet<Integer> subRangeSet = rightLine.rangeSet.subRangeSet(rangeFromInt(this.span));
 		return !subRangeSet.isEmpty();
 	}
-	public Interval getRange(int y){
+
+	public Interval getRange(int y) {
 		Range<Integer> rangeContaining = this.rangeSet.rangeContaining(y);
 		return intFromRange(rangeContaining);
 	}
@@ -138,6 +145,18 @@ public class IntervalSet {
 			this.removeRange(interval);
 		}
 	}
-	
-	
+
+	public void removeAllRanges(IntervalSet ranges) {
+		this.rangeSet.removeAll(ranges.rangeSet);
+	}
+
+	public boolean contains(Interval verticalRange) {
+		return this.rangeSet.encloses(rangeFromInt(verticalRange));
+	}
+
+	public void boundear(IntervalSet lineRanges) {
+		RangeSet<Integer> boundComplement = this.boundComplement();
+		lineRanges.rangeSet.removeAll(boundComplement);
+	}
+
 }

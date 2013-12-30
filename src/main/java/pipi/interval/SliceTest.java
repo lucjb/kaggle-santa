@@ -14,7 +14,7 @@ import com.google.common.collect.Lists;
 
 public class SliceTest {
 	public static void main(String[] args) {
-		InvervalSleghSlice sleighSlice = InvervalSleghSlice.empty(1000, 1000);
+		IntervalSlice sleighSlice = IntervalSlice.empty(1000, 1000);
 		BitsetSleighSlice testSleighSlice = BitsetSleighSlice.freed();
 		List<Rectangle> rectangles = Lists.newArrayList();
 //		rectangles.add(new Rectangle(0, 0, 2, 3)); //1
@@ -63,18 +63,39 @@ public class SliceTest {
 //		rectangles.add(new Rectangle(8, 286, 5, 27));
 //		rectangles.add(new Rectangle(8, 313, 2, 3));
 //		rectangles.add(new Rectangle(8, 316, 8, 9));
-		rectangles.add(new Rectangle(8, 325, 8, 15));   //3
-		rectangles.add(new Rectangle(13, 270, 8, 28));  //3
+//		rectangles.add(new Rectangle(8, 325, 8, 15));   //3
+//		rectangles.add(new Rectangle(13, 270, 8, 28));  //3
 //		rectangles.add(new Rectangle(10, 313, 2, 2));
-		rectangles.add(new Rectangle(13, 298, 4, 4));   //3
+//		rectangles.add(new Rectangle(13, 298, 4, 4));   //3
 //		rectangles.add(new Rectangle(14, 238, 15, 22));
 //		rectangles.add(new Rectangle(14, 260, 3, 6));
 //		rectangles.add(new Rectangle(105, 339, 106, 172));
-		rectangles.add(new Rectangle(17, 260, 5, 8));   //3
+//		rectangles.add(new Rectangle(17, 260, 5, 8));   //3
 //		rectangles.add(new Rectangle(17, 206, 21, 23));
 //		rectangles.add(new Rectangle(17, 298, 26, 27));
 //		rectangles.add(new Rectangle(14, 266, 3, 4));
 
+//		rectangles.add(new Rectangle(1,1,999,999)); //4
+//		rectangles.add(new Rectangle(0,1,998,998)); //4
+
+		
+//		rectangles.add(new Rectangle(0,0,999,997));  //5
+//		rectangles.add(new Rectangle(2,1,998,996));  //5
+//		rectangles.add(new Rectangle(0,0,999,1000)); //5
+
+//		rectangles.add(new Rectangle(0,0,999,997));  
+//		rectangles.add(new Rectangle(2,2,998,996));  
+//		rectangles.add(new Rectangle(0,0,999,1000)); 
+		
+		rectangles.add(new Rectangle(1,0,998,993));  
+		rectangles.add(new Rectangle(5,1,991,995));  
+		rectangles.add(new Rectangle(0,3,999,995)); 
+		
+		
+		
+
+
+		
 		 JPanelExtension marvinImagePanel = new JPanelExtension(rectangles);
 		 JFrame frame = new JFrame();
 		 frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);

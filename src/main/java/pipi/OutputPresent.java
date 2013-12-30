@@ -16,12 +16,12 @@ public class OutputPresent {
 
 	private final int order;
 	private final Point point;
-	private final Box box;
+	private final Box3d box3d;
 
-	public OutputPresent(int order, Point point, Box box) {
+	public OutputPresent(int order, Point point, Box3d box3d) {
 		this.order = order;
 		this.point = point;
-		this.box = box;
+		this.box3d = box3d;
 	}
 
 	public int getOrder() {
@@ -32,8 +32,8 @@ public class OutputPresent {
 		return this.point;
 	}
 
-	public Box getBox() {
-		return this.box;
+	public Box3d getBox() {
+		return this.box3d;
 	}
 
 	public String outputString(int lastZ) {
@@ -57,11 +57,11 @@ public class OutputPresent {
 		}
 	}
 
-	public static int[] ouputPresent(int order, Point point, Box box, int lastZ) {
+	public static int[] ouputPresent(int order, Point point, Box3d box3d, int lastZ) {
 		int[] result = new int[8 * 3 + 1];
 		result[0] = order;
 		int[] start = new int[] { point.x + 1, point.y + 1, lastZ - point.z - 1 };
-		int[] end = new int[] { start[0] + box.dx - 1, start[1] + box.dy - 1, start[2] - box.dz + 1 };
+		int[] end = new int[] { start[0] + box3d.dx - 1, start[1] + box3d.dy - 1, start[2] - box3d.dz + 1 };
 		int j = 1;
 		for (int i = 0; i < 8; i++) {
 			for (int d = 0; d < 3; d++) {
