@@ -16,13 +16,13 @@ import com.google.common.collect.Range;
 import com.google.common.collect.Sets;
 
 public class BruteForce {
-	static int size = 100;
+	static int size = 1000;
 	public static void main(String[] args) {
 		// List<Box2d> boxes = Arrays.asList(new Box2d(3, 2), new Box2d(4, 1),
 		// new Box2d(2, 1));
-		 List<Box2d> boxes = Arrays.asList(new Box2d(20, 5), new Box2d(10,
-		 10), new Box2d(5, 20));
-//		List<Box2d> boxes = Arrays.asList(new Box2d(998, 993), new Box2d(991, 995), new Box2d(999, 995));
+//		 List<Box2d> boxes = Arrays.asList(new Box2d(20, 5), new Box2d(10,
+//		 10), new Box2d(5, 20));
+		List<Box2d> boxes = Arrays.asList(new Box2d(998, 993), new Box2d(991, 995), new Box2d(999, 995));
 		int[] xs = new int[boxes.size()];
 		int[] ys = new int[boxes.size()];
 		long count=0;

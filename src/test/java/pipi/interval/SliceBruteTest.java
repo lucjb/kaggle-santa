@@ -1,5 +1,6 @@
 package pipi.interval;
 
+import static org.junit.Assert.assertEquals;
 import static pipi.interval.Rectangle.of;
 
 import java.util.Arrays;
@@ -29,7 +30,9 @@ public class SliceBruteTest {
 
 				oa(of(8, 325, 8, 15), of(13, 270, 8, 28), of(13, 298, 4, 4), of(17, 260, 5, 8)),
 
-				oa(of(289, 0, 101, 104), of(271, 104, 31, 32)), oa(of(0, 0, 2, 3), of(0, 210, 78, 160)));
+				oa(of(289, 0, 101, 104), of(271, 104, 31, 32)), oa(of(0, 0, 2, 3), of(0, 210, 78, 160))
+				,oa(of(0, 0, 10, 10), of(500, 0, 10, 50))
+				);
 	}
 
 	public SliceBruteTest(Rectangle... rectangles) {
@@ -48,11 +51,20 @@ public class SliceBruteTest {
 		}
 		BitsetSlice actualSlice = BitsetSlice.filled(1000);
 		Collection<MaximumRectangle> maximumRectangles = intervalSlice.getMaximumRectangles();
+		System.out.println(maximumRectangles);
 		for (MaximumRectangle maximumRectangle : maximumRectangles) {
 			actualSlice.free(maximumRectangle.getHorizontalRange().getFrom(), maximumRectangle.getVerticalRange().getFrom(),
 					maximumRectangle.getHorizontalRange().length(), maximumRectangle.getVerticalRange().length());
 		}
-		Assert.assertEquals(expectedSlice, actualSlice);
+		assertEquals(expectedSlice, actualSlice);
+		for (MaximumRectangle maximumRectangle : maximumRectangles) {
+			for (MaximumRectangle other : maximumRectangles) {
+				if(!maximumRectangle.equals(other)){
+					MaximumRectangle intersection = maximumRectangle.intersect(other);
+					Assert.assertNotEquals(maximumRectangle, intersection);
+				}
+			}
+		}
 	}
 
 }
