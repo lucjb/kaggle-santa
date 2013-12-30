@@ -125,14 +125,21 @@ public class IntervalSlice implements Slice {
 			} else {
 				SleighColumn rightColumnValue = rightColumn.getValue();
 				List<Interval> rangesToAccount = toAccount.getRanges();
-				IntervalSet boundedLines = new IntervalSet(new Interval(0, this.height));
+				IntervalSet deltaAccount = new IntervalSet(new Interval(0, this.height));
+
+
 				for (Interval intervalToAccount : rangesToAccount) {
+
 					IntervalSet lineRanges = rightColumnValue.getLines().getIntervalsInRange(intervalToAccount);
-					boundedLines.addAllRanges(lineRanges);
+					IntervalSet emptyLines = new IntervalSet(new Interval(0, this.height));
+					emptyLines.addAllRanges(rightColumnValue.getLines());
+					emptyLines.removeAllRanges(rightColumnValue.getRanges());
+					List<Interval> emptyIntervals = emptyLines.getRanges(intervalToAccount);
+					lines.addAllRanges(emptyIntervals);
+					
+					deltaAccount.addAllRanges(lineRanges);
 				}
-				boundedLines.removeAllRanges(rightColumnValue.getRanges());
-				toAccount.removeAllRanges(boundedLines);
-				lines.addAllRanges(boundedLines);
+				toAccount.removeAllRanges(deltaAccount);
 				rightColumn = this.rights.lowerEntry(rightColumn.getKey());
 			}
 		}
@@ -148,8 +155,8 @@ public class IntervalSlice implements Slice {
 		return leftColumn;
 	}
 
-	public Collection<Rectangle> getMaximumRectangles() {
-		Collection<Rectangle> rectangles = Lists.newArrayList();
+	public Collection<MaximumRectangle> getMaximumRectangles() {
+		Collection<MaximumRectangle> maximumRectangles = Lists.newArrayList();
 		Deque<StartLine> leftDeque = Queues.newArrayDeque();
 		for (Entry<Integer, SleighColumn> leftEntry : this.lefts.entrySet()) {
 			for (Interval line : leftEntry.getValue().getLines().getRanges()) {
@@ -177,7 +184,7 @@ public class IntervalSlice implements Slice {
 							IntervalSet intervalSet = new IntervalSet(bound);
 							intervalSet.addRange(bound);
 							intervalSet.removeAllRanges(rightSides);
-							rectangles.add(new Rectangle(new Interval(leftPair.getLeft(), higherEntry.getKey()), bound));
+							maximumRectangles.add(new MaximumRectangle(new Interval(leftPair.getLeft(), higherEntry.getKey()), bound));
 							List<Interval> ranges = intervalSet.getRanges();
 							for (Interval interval : ranges) {
 								Interval rebound = bound.bound(interval);
@@ -202,7 +209,7 @@ public class IntervalSlice implements Slice {
 			leftPair = leftDeque.pollFirst();
 		}
 
-		return rectangles;
+		return maximumRectangles;
 	}
 
 	public static IntervalSlice empty(int width, int height) {

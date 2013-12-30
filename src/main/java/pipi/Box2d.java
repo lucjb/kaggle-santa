@@ -2,8 +2,8 @@ package pipi;
 
 public class Box2d {
 
-	public int dx;
-	public int dy;
+	public final int dx;
+	public final int dy;
 
 	public Box2d(int dx, int dy) {
 		this.dx = dx;

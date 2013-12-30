@@ -7,7 +7,7 @@ import java.util.List;
 
 import javax.swing.JFrame;
 
-import pipi.bitmatrix.BitsetSleighSlice;
+import pipi.bitmatrix.BitsetSlice;
 import pipi.gui.JPanelExtension;
 
 import com.google.common.collect.Lists;
@@ -15,7 +15,7 @@ import com.google.common.collect.Lists;
 public class SliceTest {
 	public static void main(String[] args) {
 		IntervalSlice sleighSlice = IntervalSlice.empty(1000, 1000);
-		BitsetSleighSlice testSleighSlice = BitsetSleighSlice.freed();
+		BitsetSlice testSleighSlice = BitsetSlice.freed(1000);
 		List<Rectangle> rectangles = Lists.newArrayList();
 //		rectangles.add(new Rectangle(0, 0, 2, 3)); //1
 //		rectangles.add(new Rectangle(0, 3, 73, 207));
@@ -75,20 +75,20 @@ public class SliceTest {
 //		rectangles.add(new Rectangle(17, 298, 26, 27));
 //		rectangles.add(new Rectangle(14, 266, 3, 4));
 
-//		rectangles.add(new Rectangle(1,1,999,999)); //4
-//		rectangles.add(new Rectangle(0,1,998,998)); //4
+//		rectangles.add(new Rectangle(1,1,999,999)); done
+//		rectangles.add(new Rectangle(0,1,998,998)); done
 
 		
-//		rectangles.add(new Rectangle(0,0,999,997));  //5
-//		rectangles.add(new Rectangle(2,1,998,996));  //5
-//		rectangles.add(new Rectangle(0,0,999,1000)); //5
+//		rectangles.add(new Rectangle(0,0,999,997));  done
+//		rectangles.add(new Rectangle(2,1,998,996));  done
+//		rectangles.add(new Rectangle(0,0,999,1000)); done
 
-//		rectangles.add(new Rectangle(0,0,999,997));  
-//		rectangles.add(new Rectangle(2,2,998,996));  
-//		rectangles.add(new Rectangle(0,0,999,1000)); 
+//		rectangles.add(new Rectangle(0,0,999,997)); done  
+//		rectangles.add(new Rectangle(2,2,998,996)); done
+//		rectangles.add(new Rectangle(0,0,999,1000));done
 		
-		rectangles.add(new Rectangle(1,0,998,993));  
-		rectangles.add(new Rectangle(5,1,991,995));  
+		rectangles.add(new Rectangle(1,0,998,993));   
+		rectangles.add(new Rectangle(5,1,991,995)); 
 		rectangles.add(new Rectangle(0,3,999,995)); 
 		
 		
@@ -113,9 +113,9 @@ public class SliceTest {
 		for (Rectangle rectangle : rectangles) {
 			testSleighSlice.fill(rectangle.x, rectangle.y, rectangle.width, rectangle.height);
 			sleighSlice.fill(rectangle.x, rectangle.y, rectangle.width, rectangle.height);
-			Collection<pipi.interval.Rectangle> maximumRectangles = sleighSlice.getMaximumRectangles();
+			Collection<pipi.interval.MaximumRectangle> maximumRectangles = sleighSlice.getMaximumRectangles();
 			System.out.println(i + "->" + maximumRectangles);
-			for (pipi.interval.Rectangle rectangle2 : maximumRectangles) {
+			for (pipi.interval.MaximumRectangle rectangle2 : maximumRectangles) {
 				boolean free = testSleighSlice.isFree(rectangle2.getHorizontalRange().getFrom(), rectangle2.getVerticalRange().getFrom(), rectangle2.getHorizontalRange().length(), rectangle2.getVerticalRange().length());
 				if(!free){
 					System.out.println("ACA!!!");
@@ -124,6 +124,7 @@ public class SliceTest {
 			}
 			i++;
 		}
+		System.out.println("Listo");
 		
 		//		Random random = new Random();
 //		for (;;) {
