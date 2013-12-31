@@ -98,6 +98,89 @@ public class HeightBitMap implements Cloneable {
 		return layers.get(indexFor(currentZ));
 	}
 
+	public double adjacentPerimeter(Present present, Point ip) {
+		if (ip == null)
+			return -1;
+		BitSet currentLayer = currentLayer();
+		int ap = topAdjacentSide(present, ip, currentLayer);
+
+		ap += bottomAdjacentSide(present, ip, currentLayer);
+
+		ap += leftAdjacentSide(present, ip, currentLayer);
+
+		ap += rightAdjacentSide(present, ip, currentLayer);
+
+		return ap / present.xSize * 2 + present.ySize * 2;
+	}
+
+	private int rightAdjacentSide(Present present, Point ip, BitSet currentLayer) {
+		if (ip.y + present.ySize - 1 == 1000) {
+			return present.xSize;
+		}
+
+		int ap = 0;
+		int q = ip.y - 2 + present.ySize + 1;
+		int start = ip.x - 2 >= 0 ? ip.x - 2 : ip.x - 1;
+		int end = start + present.xSize + 1 <= 1000 ? start + present.xSize + 1 : start + present.xSize;
+		for (int p = start; p < end; p++) {
+			if (currentLayer.get(p * 1000 + q)) {
+				ap++;
+			}
+		}
+		return ap;
+	}
+
+	private int leftAdjacentSide(Present present, Point ip, BitSet currentLayer) {
+		if (ip.y == 1) {
+			return present.xSize;
+		}
+
+		int ap = 0;
+		int q = ip.y - 2;
+		int start = ip.x - 2 >= 0 ? ip.x - 2 : ip.x - 1;
+		int end = start + present.xSize + 1 <= 1000 ? start + present.xSize + 1 : start + present.xSize;
+		for (int p = start; p < end; p++) {
+			if (currentLayer.get(p * 1000 + q)) {
+				ap++;
+			}
+		}
+		return ap;
+	}
+
+	private int bottomAdjacentSide(Present present, Point ip, BitSet currentLayer) {
+		if (ip.x + present.xSize - 1 == 1000) {
+			return present.ySize;
+		}
+
+		int ap = 0;
+		int p = ip.x - 2 + present.xSize + 1;
+
+		int start = ip.y - 2 >= 0 ? ip.y - 2 : ip.y - 1;
+		int end = start + present.ySize + 1 <= 1000 ? start + present.ySize + 1 : start + present.ySize;
+		for (int q = ip.y - 2; q < end; q++) {
+			if (currentLayer.get(p * 1000 + q)) {
+				ap++;
+			}
+		}
+		return ap;
+	}
+
+	private int topAdjacentSide(Present present, Point ip, BitSet currentLayer) {
+		if (ip.x == 1) {
+			return present.ySize;
+		}
+		int ap = 0;
+		int p = ip.x - 2;
+		int start = ip.y - 2 >= 0 ? ip.y - 2 : ip.y - 1;
+		int end = start + present.ySize + 1 <= 1000 ? start + present.ySize + 1 : start + present.ySize;
+		for (int q = start; q < end; q++) {
+			if (currentLayer.get(p * 1000 + q)) {
+				ap++;
+			}
+		}
+		return ap;
+	}
+
 	private void unset(int x, int y, int xSize, int ySize, BitSet layer) {
 		for (int xi = x; xi < x + xSize; xi++) {
 			layer.clear(xi * 1000 + y, xi * 1000 + y + ySize);

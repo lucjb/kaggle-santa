@@ -15,12 +15,12 @@ public class Presents {
 	public static void main(String[] args) throws IOException {
 		// List<Present> presents = new PresentsParser().parse("test.csv");
 		List<Present> presents = new PresentsParser().parse("presents.csv");
-		NaiveSleigh sleigh = new NaiveSleigh();
-		// XYZCompactSleigh sleigh = new XYZCompactSleigh();
+		// NaiveSleigh sleigh = new NaiveSleigh();
+		XYZCompactSleigh sleigh = new XYZCompactSleigh();
 		// XYCompactSleigh sleigh = new XYCompactSleigh();
 		// ZCompressedSleigh sleigh = new ZCompressedSleigh();
 		sleigh.addPresents(presents);
-		CSVWriter writer = new CSVWriter(new FileWriter("naivebo.csv"), ',', CSVWriter.NO_QUOTE_CHARACTER);
+		CSVWriter writer = new CSVWriter(new FileWriter("alt.csv"), ',', CSVWriter.NO_QUOTE_CHARACTER);
 		String[] headers = new String[] { "PresentId", "x1", "y1", "z1", "x2", "y2", "z2", "x3", "y3", "z3", "x4", "y4",
 				"z4", "x5", "y5", "z5", "x6", "y6", "z6", "x7", "y7", "z7", "x8", "y8", "z8" };
 		writer.writeNext(headers);
