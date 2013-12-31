@@ -5,9 +5,9 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
-import pipi.bitmatrix.BitsetSleighSlice;
+import pipi.bitmatrix.BitsetSlice;
 import pipi.interval.IntervalSlice;
-import pipi.interval.Rectangle;
+import pipi.interval.MaximumRectangle;
 
 import com.google.common.collect.ContiguousSet;
 import com.google.common.collect.DiscreteDomain;
@@ -16,7 +16,6 @@ import com.google.common.collect.Range;
 import com.google.common.collect.Sets;
 
 public class BruteForce {
-	@SuppressWarnings("unchecked")
 	static int size = 1000;
 	public static void main(String[] args) {
 		// List<Box2d> boxes = Arrays.asList(new Box2d(3, 2), new Box2d(4, 1),
@@ -33,22 +32,22 @@ public class BruteForce {
 			// System.out.printf("(%d, %d) ", xs[i], ys[i]);
 			// }
 			// System.out.println();
-			BitsetSleighSlice bitsetSleighSlice = BitsetSleighSlice.freed();
+			BitsetSlice bitsetSlice = BitsetSlice.freed(size);
 			IntervalSlice intervalSlice = IntervalSlice.empty(size, size);
 			for (int i = 0; i < xs.length; i++) {
 				int x = xs[i];
 				int y = ys[i];
 				Box2d box2d = boxes.get(i);
-				bitsetSleighSlice.fill(x, y, box2d.dx, box2d.dy);
+				bitsetSlice.fill(x, y, box2d.dx, box2d.dy);
 				intervalSlice.fill(x, y, box2d.dx, box2d.dy);
 			}
-			BitsetSleighSlice validationSleighSlice = BitsetSleighSlice.filled();
-			Collection<Rectangle> maximumRectangles = intervalSlice.getMaximumRectangles();
-			for (Rectangle rectangle : maximumRectangles) {
-				validationSleighSlice.free(rectangle.getHorizontalRange().getFrom(), rectangle.getVerticalRange().getFrom(),
-						rectangle.getHorizontalRange().length(), rectangle.getVerticalRange().length());
+			BitsetSlice validationSleighSlice = BitsetSlice.filled(size);
+			Collection<MaximumRectangle> maximumRectangles = intervalSlice.getMaximumRectangles();
+			for (MaximumRectangle maximumRectangle : maximumRectangles) {
+				validationSleighSlice.free(maximumRectangle.getHorizontalRange().getFrom(), maximumRectangle.getVerticalRange().getFrom(),
+						maximumRectangle.getHorizontalRange().length(), maximumRectangle.getVerticalRange().length());
 			}
-			if(!validationSleighSlice.equals(bitsetSleighSlice)){
+			if(!validationSleighSlice.equals(bitsetSlice)){
 				System.out.println("--NEGATIVE--");
 				for (int i = 0; i < xs.length; i++) {
 					int x = xs[i];
@@ -56,33 +55,13 @@ public class BruteForce {
 					Box2d box2d = boxes.get(i);
 					System.out.printf("%d,%d,%d,%d\n",x, y, box2d.dx, box2d.dy);
 				}
-
 				negative++;
+				return;
 			}
 			count++;
 		} while (increment(xs, ys, boxes));
 		System.out.println("TOTAL: "+count);
 		System.out.println("NEGATIVE: "+negative);
-		// List<Set<List<Integer>>> coordinatesSet = Lists.newArrayList();
-		// for (Box2d box2d : boxes) {
-		// ContiguousSet<Integer> xSet = ContiguousSet.create(Range.closed(0,
-		// 1000 - box2d.dx), DiscreteDomain.integers());
-		// ContiguousSet<Integer> ySet = ContiguousSet.create(Range.closed(0,
-		// 1000 - box2d.dy), DiscreteDomain.integers());
-		// Set<List<Integer>> coordinate = Sets.cartesianProduct(xSet, ySet);
-		// coordinatesSet.add(coordinate);
-		// }
-		// Set<List<List<Integer>>> coordinatesProduct =
-		// Sets.cartesianProduct(coordinatesSet);
-		// for (List<List<Integer>> coordinates : coordinatesProduct) {
-		// BitsetSleighSlice bitsetSleighSlice = BitsetSleighSlice.freed();
-		// for (int i = 0; i < coordinates.size(); i++) {
-		// List<Integer> coordinate = coordinates.get(i);
-		// Box2d box2d = boxes.get(i);
-		// // bitsetSleighSlice.fill(coordinate.get(0), coordinate.get(1),
-		// box2d.dx, box2d.dy);
-		// }
-		// }
 
 	}
 

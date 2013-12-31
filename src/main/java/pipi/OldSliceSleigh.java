@@ -6,19 +6,19 @@ import java.util.PriorityQueue;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Queues;
 
-import pipi.bitmatrix.BitsetSleighSlice;
+import pipi.bitmatrix.BitsetSlice;
 import first.Point;
 
 public class OldSliceSleigh {
-	private Map<Integer, BitsetSleighSlice> slices = Maps.newHashMap();
+	private Map<Integer, BitsetSlice> slices = Maps.newHashMap();
 	private PriorityQueue<Integer> levels = Queues.newPriorityQueue();
 
 	private int currentZ;
 
 	public Slice getSlice(int level) {
-		BitsetSleighSlice sleighSlice = this.slices.get(level);
+		BitsetSlice sleighSlice = this.slices.get(level);
 		if (sleighSlice == null) {
-			sleighSlice = BitsetSleighSlice.filled();
+			sleighSlice = BitsetSlice.filled(1000);
 			this.slices.put(level, sleighSlice);
 			this.levels.offer(level);
 		}
@@ -26,13 +26,13 @@ public class OldSliceSleigh {
 	}
 
 	public OldSliceSleigh() {
-		this.slices.put(0, BitsetSleighSlice.filled());
+		this.slices.put(0, BitsetSlice.filled(1000));
 		this.currentZ = 0;
 	}
 
 	public Point putPesent(Box3d box3d) {
 		for (;;) {
-			BitsetSleighSlice sleighSlice = this.slices.get(this.currentZ);
+			BitsetSlice sleighSlice = this.slices.get(this.currentZ);
 			for (int x = 0; x <= 1000 - box3d.dx; x++) {
 				for (int y = 0; y <= 1000 - box3d.dy; y++) {
 					boolean canContain = sleighSlice.isFree(x, y, box3d.dx, box3d.dy);

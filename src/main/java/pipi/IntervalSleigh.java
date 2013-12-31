@@ -4,7 +4,7 @@ import java.util.Collection;
 import java.util.Set;
 
 import pipi.interval.IntervalSlice;
-import pipi.interval.Rectangle;
+import pipi.interval.MaximumRectangle;
 
 import com.google.common.base.Predicate;
 import com.google.common.collect.Collections2;
@@ -30,20 +30,20 @@ public class IntervalSleigh {
 
 	public Point putPesent(final Box3d box3d) {
 		for (;;) {
-			Collection<Rectangle> maximumRectangles = this.currentSlice.getMaximumRectangles();
-			Collection<Rectangle> filter = Collections2.filter(maximumRectangles, new Predicate<Rectangle>() {
+			Collection<MaximumRectangle> maximumRectangles = this.currentSlice.getMaximumRectangles();
+			Collection<MaximumRectangle> filter = Collections2.filter(maximumRectangles, new Predicate<MaximumRectangle>() {
 
 				@Override
-				public boolean apply(Rectangle input) {
+				public boolean apply(MaximumRectangle input) {
 					return input.getHorizontalRange().length() >= box3d.dx && input.getVerticalRange().length() >= box3d.dy;
 				}
 			});
 
 			if (!filter.isEmpty()) {
-				Rectangle min = new Ordering<Rectangle>() {
+				MaximumRectangle min = new Ordering<MaximumRectangle>() {
 
 					@Override
-					public int compare(Rectangle left, Rectangle right) {
+					public int compare(MaximumRectangle left, MaximumRectangle right) {
 						return Ints.compare(left.area(), right.area());
 					}
 				}.min(filter);

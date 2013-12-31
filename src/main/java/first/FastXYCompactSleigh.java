@@ -95,7 +95,7 @@ public class FastXYCompactSleigh {
 	int layerCount = 1;
 
 	public void addPresents(List<Present> presents) {
-		int zeroBasedMaxOccupiedZ = addReordering(presents);
+		int zeroBasedMaxOccupiedZ = addReorderingWithOneHeuristic(presents);
 
 		System.out.println("Total layers: " + layerCount);
 
@@ -116,6 +116,42 @@ public class FastXYCompactSleigh {
 			}
 		}
 		return presentsClones;
+	}
+	
+	private int addReorderingWithOneHeuristic(List<Present> presents) {
+		int i = 0;
+		Surface2D floor = new Surface2D(new Comparator<FastXYCompactSleigh.Point2D>() {
+			@Override
+			public int compare(Point2D o1, Point2D o2) {
+				int yComp = Integer.compare(o1.y, o2.y);
+				if (yComp != 0)
+					return yComp;
+				return Integer.compare(o1.x, o2.x);
+			}
+		});
+		
+		while(i < presents.size()) {
+			int added = fillLayerReordering(presents, i, floor);
+			
+			int next = i + added;
+			if (layerCount % 10 == 0 && next < MAX*MAX) {
+				System.out.println("Layer: " + layerCount + ", presents: " + added + ", total: " + next);
+				int area = 0;
+				for (int j = i; j < next; j++) {
+					Present p = presents.get(j);
+					area += (p.xSize * p.ySize);
+				}
+				System.out.println("Free area: " + (MAX*MAX  - area) + ", didn't fit: " + (presents.get(next).xSize * presents.get(next).ySize));
+			}
+			
+			i += added;
+			layerCount++;
+			if (i < presents.size()) {
+				startNewLayer(floor);
+			}
+		}
+		
+		return floor.zLevel + floor.maxPresentHeight;
 	}
 
 	private int addReordering(List<Present> presents) {
@@ -213,7 +249,7 @@ public class FastXYCompactSleigh {
 		for (i = start; i < presents.size(); i++) {
 			Present present = presents.get(i);
 			layerOrder.add(present);
-			if (!add(present, surface, false)) {
+			if (!add2(present, surface, false)) {
 				undoLayerWithPresents(layerOrder, surface);
 				List<Present> sortedLayer = sortByArea(layerOrder);
 				if (addAll(sortedLayer, surface, false)) {
@@ -392,7 +428,7 @@ public class FastXYCompactSleigh {
 //				exportInsertionPoints(surface);
 //				export(surface);
 //			}
-			if (!add(p, surface, solidFill)) {
+			if (!add2(p, surface, solidFill)) {
 				return false;
 			}
 		}
@@ -463,7 +499,6 @@ public class FastXYCompactSleigh {
 				newX--;
 			}
 			Point2D newPoint = new Point2D(newX, newY);
-			//findMaxPerimeterTouchRotation(present, newPoint, surface);
 			if (fits(surface, newPoint, present.xSize, present.ySize, solidFill)) {
 				surface.insertionPoints.remove(point);
 				return newPoint;
@@ -472,31 +507,106 @@ public class FastXYCompactSleigh {
 		
 		return null;
 	}
-
-	private void findMaxPerimeterTouchRotation(Present present, Point2D ip, Surface2D surface) {
-		int maxXY = Math.max(present.xSize, present.ySize);
-		int bottomTouch = 0;
-		if (ip.y == 0) {
-			bottomTouch = Math.min(maxXY, MAX - ip.x);
+	
+	private boolean add2(Present present, Surface2D surface, boolean solidFill) {
+		Point2D insertPoint = findMaxPerimeterTouchInsertionPoint(present, surface, solidFill);
+		if (insertPoint != null) {
+			insert(present, insertPoint, surface, solidFill);
+			return true;
 		}
-		else {
-			for (int i = ip.x; surface.occupied(i, ip.y - 1) && i < 1000; i++) {
-				bottomTouch++;
+		return false;
+	}
+	
+	private Point2D findMaxPerimeterTouchInsertionPoint(Present present, Surface2D surface, boolean solidFill) {
+		Point2D bestPoint = null;
+		Point2D bestPointOriginal = null;
+		int bestTouch = 0;
+		boolean rotation = false;
+		
+		for (Point2D point : surface.insertionPoints) {
+			// try to move down and try to move left (at most only one of those
+			// is going to move)
+			int newY = point.y;
+			while (nextHorizontalLineIsFeasible(surface, point.x, newY, present.xSize)) {
+				newY--;
+			}
+			int newX = point.x;
+			while (previousVerticalLineIsFeasible(surface, newX, newY, present.ySize)) {
+				newX--;
+			}
+			Point2D newPoint = new Point2D(newX, newY);
+			
+			present.rotateMedMinMax();
+			int touch = perimeterTouch(present, newPoint, surface, solidFill);
+			if (touch != -1 && touch > bestTouch) {
+				bestTouch = touch;
+				bestPoint = newPoint;
+				bestPointOriginal = point;
+				rotation = true;
+			}
+			present.rotateMinMedMax();
+			touch = perimeterTouch(present, newPoint, surface, solidFill);
+			if (touch != -1 && touch > bestTouch) {
+				bestTouch = touch;
+				bestPoint = newPoint;
+				bestPointOriginal = point;
+				rotation = false;
 			}
 		}
-		int leftTouch = 0;
-		if (ip.x == 0) {
-			leftTouch = Math.min(maxXY, MAX - ip.y);
-		}
-		else {
-			for (int i = ip.y; surface.occupied(ip.x - 1, i) && i < 1000; i++) {
-				leftTouch++;
-			}
-		}
-		if (bottomTouch >= leftTouch)
-			present.rotateXBiggerThanY();
+		
+		if (bestPointOriginal != null)
+			surface.insertionPoints.remove(bestPointOriginal);
+		
+		if (rotation)
+			present.rotateMedMinMax();
 		else
-			present.rotateYBiggerThanX();
+			present.rotateMinMedMax();
+		return bestPoint;
+	}
+
+	private int perimeterTouch(Present present, Point2D ip, Surface2D surface, boolean solidFill) {
+		int maxOccupiedX = ip.x + present.xSize - 1;
+		int maxOccupiedY = ip.y + present.ySize - 1;
+		if (maxOccupiedX >= MAX || maxOccupiedY >= MAX)
+			return -1;
+
+		//Check perimeter!
+		int perimeterTouch = 0;
+		for (int p = maxOccupiedX; p >= ip.x; p--) {
+			if (surface.occupied(p, ip.y) || surface.occupied(p, maxOccupiedY)) {
+				return -1;
+			}
+			if (ip.y == 0 || surface.occupied(p, ip.y - 1)) {
+				perimeterTouch++;
+			}
+			if (maxOccupiedY == MAX - 1 || surface.occupied(p, maxOccupiedY + 1)) {
+				perimeterTouch++;
+			}
+		}
+		for (int q = maxOccupiedY; q >= ip.y; q--) {
+			if (surface.occupied(ip.x, q) || surface.occupied(maxOccupiedX, q)) {
+				return -1;
+			}
+			if (ip.x == 0 || surface.occupied(ip.x - 1, q)) {
+				perimeterTouch++;
+			}
+			if (maxOccupiedX == MAX - 1 || surface.occupied(maxOccupiedX + 1, q)) {
+				perimeterTouch++;
+			}
+		}
+		
+		//TODO: no chequear nuevamente el perimetro
+		if (solidFill) {
+			for (int p = maxOccupiedX; p >= ip.x; p--) {
+				for (int q = maxOccupiedY; q >= ip.y; q--) {
+					if (surface.occupied(p, q)) {
+						return -1;
+					}
+				}
+			}
+		}
+		
+		return perimeterTouch;
 	}
 
 	private boolean previousVerticalLineIsFeasible(Surface2D surface, int x, int y, int height) {

@@ -5,11 +5,11 @@ import java.util.List;
 
 public class SleighColumn {
 	
-	private IntervalSet faces;
+	private IntervalSet sides;
 	private IntervalSet lines;
 
 	public SleighColumn(Interval verticalRange) {
-		this.faces = new IntervalSet(verticalRange);
+		this.sides = new IntervalSet(verticalRange);
 		this.lines = new IntervalSet(verticalRange);
 	}
 	
@@ -24,10 +24,10 @@ public class SleighColumn {
 	public void destroy(Interval verticalRange) {
 		//FIXME optimize
 		this.lines.removeRange(verticalRange);
-		this.faces.removeRange(verticalRange);
+		this.sides.removeRange(verticalRange);
 		List<Interval> ranges = this.lines.getRanges();
 		for (Interval interval : ranges) {
-			List<Interval> ranges2 = this.faces.getRanges(interval);
+			List<Interval> ranges2 = this.sides.getIntervals(interval).getRanges();
 			if(ranges2.isEmpty()){
 				this.lines.removeRange(interval);
 			}
@@ -40,15 +40,15 @@ public class SleighColumn {
 	
 	@Override
 	public String toString() {
-		return this.lines.toString() + "->" + this.faces.toString();
+		return this.lines.toString() + "->" + this.sides.toString();
 	}
 
 	public boolean isEmpty() {
 		return this.lines.isEmpty();
 	}
 	
-	public IntervalSet getRanges() {
-		return this.faces;
+	public IntervalSet getSides() {
+		return this.sides;
 	}
 	
 	public IntervalSet getLines() {
@@ -57,9 +57,9 @@ public class SleighColumn {
 	
 	public void addInterval(Interval interval){
 		//FIXME optimize
-		this.getRanges().addRange(interval);
-		List<Interval> emptyRanges = this.lines.getEmptyRanges(interval);
-		this.getRanges().removeAllRanges(emptyRanges);
+		this.getSides().addRange(interval);
+		IntervalSet emptyRanges = this.lines.complement().getIntervals(interval);
+		this.getSides().removeAllRanges(emptyRanges);
 	}
 
 	public void removeLines(Collection<Interval> intervals){
