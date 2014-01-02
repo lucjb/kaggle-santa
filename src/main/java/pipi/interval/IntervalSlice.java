@@ -176,12 +176,13 @@ public class IntervalSlice implements Slice {
 						IntervalSet leftSides = getRanges3(leftPair, bound);
 						boolean leftEmpty = leftEmpty(leftSides);
 						if (!rightEmpty(rightSides) && !leftEmpty) {
-							IntervalSet complement = rightSides.complement(bound);
-//							IntervalSet intervalSet = new IntervalSet(bound);
-//							intervalSet.addRange(bound);
-//							intervalSet.removeAllRanges(rightSides);
+//							IntervalSet complement = rightSides.complement(bound);
+//							List<Interval> ranges = complement.getRanges();
+							IntervalSet intervalSet = new IntervalSet(bound);
+							intervalSet.addRange(bound);
+							intervalSet.removeAllRanges(rightSides);
 							maximumRectangles.add(new MaximumRectangle(new Interval(leftPair.getLeft(), higherEntry.getKey()), bound));
-							List<Interval> ranges = complement.getRanges();
+							List<Interval> ranges = intervalSet.getRanges();
 							for (Interval interval : ranges) {
 								Interval rebound = bound.bound(interval);
 								if (!rebound.isEmpty()) {
