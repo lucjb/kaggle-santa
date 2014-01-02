@@ -67,5 +67,9 @@ public class Interval {
 		return this.from <= verticalRange.from && verticalRange.getTo() <= this.to;
 	}
 
+	public static Interval of(int from, int to){
+		return new Interval(from, to);
+	}
+
 
 }

@@ -3,15 +3,14 @@ package pipi.gui;
 import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
-import java.awt.Rectangle;
-import java.util.Collection;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicReferenceArray;
 
 import javax.swing.JPanel;
 
+import pipi.interval.Rectangle;
+
 public class JPanelExtension extends JPanel {
-	private final List<Rectangle> rectangles;
+	private final List<pipi.interval.Rectangle> rectangles;
 	volatile public int index = 0;
 
 	public JPanelExtension(List<Rectangle> rectangles2) {
@@ -25,8 +24,8 @@ public class JPanelExtension extends JPanel {
 		graphics2d.setColor(Color.BLACK);
 		for (int i = 0; i < this.rectangles.size(); i++) {
 			Rectangle rectangle = this.rectangles.get(i);
-			graphics2d.fillRect(rectangle.x, rectangle.y, rectangle.width,
-					rectangle.height);
+			graphics2d.fillRect(rectangle.getPoint2d().getX(), rectangle.getPoint2d().getY(), rectangle.getBox2d().dx,
+					rectangle.getBox2d().dy);
 		}
 	}
 	
