@@ -64,9 +64,9 @@ public class IntervalSleigh {
 					waste += (deltaZ - entry.getElement()) * entry.getCount();
 				}
 				waste += waste2d * deltaZ;
-				System.out.println("Present before" + this.count);
-				System.out.println("Waste: " + waste);
-				System.out.println("2D waste: " + waste2d);
+//				System.out.println("Present before" + this.count);
+//				System.out.println("Waste: " + waste);
+//				System.out.println("2D waste: " + waste2d);
 				this.currentZ = nextZ;
 				this.currentSlice = IntervalSlice.empty(1000, 1000);
 				this.currentZs.clear();

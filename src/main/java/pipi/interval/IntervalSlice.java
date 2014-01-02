@@ -1,5 +1,6 @@
 package pipi.interval;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Deque;
 import java.util.Iterator;
@@ -98,12 +99,6 @@ public class IntervalSlice implements Slice {
 		sleighColumn.addInterval(verticalRange);
 	}
 
-	private IntervalSet buildLinesForInterval(Interval verticalRange, int insertionPoint) {
-		IntervalSet toAccount = new IntervalSet(new Interval(0, this.height));
-		toAccount.addRange(verticalRange);
-		return buildLinesForIntervalSet(toAccount, insertionPoint);
-	}
-
 	private IntervalSet buildLinesForIntervalSet(IntervalSet toAccount, int insertionPoint) {
 		IntervalSet lines = new IntervalSet(new Interval(0, this.height));
 		// should remove lines already accounted for?
@@ -163,24 +158,30 @@ public class IntervalSlice implements Slice {
 			Entry<Integer, SleighColumn> higherEntry = this.rights.higherEntry(leftPair.getStart());
 			if (higherEntry != null) {
 				SleighColumn rightColumn = higherEntry.getValue();
-				IntervalSet lines = getRanges1(bounderLine, rightColumn);
-				if(lines.getRanges().size()>1){
-					throw new RuntimeException("GUARDA 1");
-				}
-				if (!lines.isEmpty()) {
-					for (Interval lineInterval : lines.getRanges()) {
-						Interval bound = bounderLine.bound(lineInterval);
-						if(!bound.equals(bounderLine)){
-							throw new RuntimeException("GUARDA 2");
-						}
+//				IntervalSet lines = getRanges1(bounderLine, rightColumn);
+				Interval line = rightColumn.getLines().getContainingInterval(bounderLine);
+//				if(lines.getRanges().isEmpty() != (line == null)){
+//					System.out.println("GUARDFA!");
+//				}
+				//				if(lines.getRanges().size()>1){
+//					throw new RuntimeException("GUARDA 1");
+//				}
+				if (line != null) {
+//					for (Interval lineInterval : Arrays.asList(line)) {
+						Interval bound = bounderLine.bound(line);
+//						if(!bound.equals(bounderLine)){
+//							throw new RuntimeException("GUARDA 2");
+//						}
 						IntervalSet rightSides = getRanges2(rightColumn, bound);
 						IntervalSet leftSides = getRanges3(leftPair, bound);
-						if (!rightSides.isEmpty() && !leftSides.isEmpty()) {
-							IntervalSet intervalSet = new IntervalSet(bound);
-							intervalSet.addRange(bound);
-							intervalSet.removeAllRanges(rightSides);
+						boolean leftEmpty = leftEmpty(leftSides);
+						if (!rightEmpty(rightSides) && !leftEmpty) {
+							IntervalSet complement = rightSides.complement(bound);
+//							IntervalSet intervalSet = new IntervalSet(bound);
+//							intervalSet.addRange(bound);
+//							intervalSet.removeAllRanges(rightSides);
 							maximumRectangles.add(new MaximumRectangle(new Interval(leftPair.getLeft(), higherEntry.getKey()), bound));
-							List<Interval> ranges = intervalSet.getRanges();
+							List<Interval> ranges = complement.getRanges();
 							for (Interval interval : ranges) {
 								Interval rebound = bound.bound(interval);
 								if (!rebound.isEmpty()) {
@@ -189,12 +190,12 @@ public class IntervalSlice implements Slice {
 								}
 							}
 						} else {
-							if (!leftSides.isEmpty()) {
+							if (!leftEmpty) {
 								leftDeque.addLast(new StartLine(leftPair.getSleighColumn(), leftPair.getLeft(), higherEntry
 										.getKey(), bound));
 							}
 						}
-					}
+//					}
 				} else {
 					leftDeque.addLast(new StartLine(leftPair.getSleighColumn(), leftPair.getLeft(), higherEntry.getKey(),
 							bounderLine));
@@ -205,6 +206,22 @@ public class IntervalSlice implements Slice {
 		}
 
 		return maximumRectangles;
+	}
+
+	private List<Interval> getRanges4(IntervalSet lines) {
+		return lines.getRanges();
+	}
+
+	private boolean leftEmpty(IntervalSet leftSides) {
+		return leftSides.isEmpty();
+	}
+
+	private boolean rightEmpty(IntervalSet rightSides) {
+		return rightSides.isEmpty();
+	}
+
+	private boolean linesEmpty(IntervalSet lines) {
+		return lines.isEmpty();
 	}
 
 	private IntervalSet getRanges3(StartLine leftPair, Interval bound) {

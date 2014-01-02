@@ -90,15 +90,15 @@ public class IntervalSet {
 	}
 
 	public IntervalSet getIntervals(Interval verticalRange) {
-		RangeSet<Integer> subRangeSet = extracted(verticalRange);
+		RangeSet<Integer> subRangeSet = internalGetIntervals(verticalRange);
 		return new IntervalSet(this.span,subRangeSet);
 	}
 	
 	private List<Interval> getRanges(Interval verticalRange) {
-		RangeSet<Integer> subRangeSet = extracted(verticalRange);
+		RangeSet<Integer> subRangeSet = internalGetIntervals(verticalRange);
 		return intsFromRanges(subRangeSet.asRanges());
 	}
-	private RangeSet<Integer> extracted(Interval verticalRange) {
+	private RangeSet<Integer> internalGetIntervals(Interval verticalRange) {
 		RangeSet<Integer> boundComplement = this.rangeSet.subRangeSet(rangeFromInt(this.span));
 		Range<Integer> lowerRangeContaining = boundComplement.rangeContaining(verticalRange.getFrom());
 		Range<Integer> rangeContaining = boundComplement.rangeContaining(verticalRange.getTo() - 1);
@@ -119,6 +119,13 @@ public class IntervalSet {
 		return intervalSet;
 	}
 
+	public Interval getContainingInterval(Interval interval){
+		Range<Integer> rangeContaining = this.rangeSet.rangeContaining(interval.getFrom());
+		if(rangeContaining == null){
+			return null;
+		}
+		return intFromRange(rangeContaining);
+	}
 	@Override
 	public String toString() {
 		return this.rangeSet.toString();
@@ -141,12 +148,7 @@ public class IntervalSet {
 	}
 
 	public boolean isEmpty() {
-		boolean empty = this.rangeSet.isEmpty();
-		boolean masEmpty = this.rangeSet.asRanges().isEmpty();
-		if(empty != masEmpty){
-			throw new RuntimeException("Al horno!!!");
-		}
-		return empty;
+		return this.rangeSet.isEmpty();
 	}
 
 	public void addAllRanges(IntervalSet intervalSets) {
@@ -181,4 +183,9 @@ public class IntervalSet {
 	public IntervalSet complement(){
 		return new IntervalSet(this.span, this.boundComplement());
 	}
+	public IntervalSet complement(Interval interval){
+		RangeSet<Integer> subRangeSet = this.rangeSet.complement().subRangeSet(rangeFromInt(interval));
+		return new IntervalSet(this.span, subRangeSet);
+	}
+
 }
