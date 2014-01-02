@@ -54,15 +54,10 @@ public class XYZCompactSleigh {
 					if (!reinsert(layer)) {
 						System.err.println("Wrong!");
 					}
-					pushDown(layer);
-					if (!encajate(present)) {
-						startLayer();
-						layer.clear();
-						add(present);
-						layer.add(present);
-					} else {
-						System.out.println("encajated!");
-					}
+					startLayer();
+					layer.clear();
+					add(present);
+					layer.add(present);
 				}
 			} else {
 				layer.add(present);
@@ -168,7 +163,7 @@ public class XYZCompactSleigh {
 
 	private boolean reinsert(List<Present> presents) {
 		for (Present p : presents) {
-			if (!encajate(p)) {
+			if (!add(p)) {
 				return false;
 			}
 		}
@@ -346,7 +341,7 @@ public class XYZCompactSleigh {
 		nextX = -1;
 		top = cloneTop(topBackup);
 		reverse = !reverse;
-
+		b = false;
 	}
 
 	private boolean add(Present present) {
@@ -386,7 +381,7 @@ public class XYZCompactSleigh {
 		currentY = 0;
 		nextX = -1;
 		topBackup = cloneTop(top);
-
+		b = false;
 	}
 
 	private void nextMax(int delta) {
@@ -397,7 +392,10 @@ public class XYZCompactSleigh {
 		}
 	}
 
+	boolean b = false;
+
 	private void insert(Present present, Point insertPoint) {
+		b = !b;
 		this.space.put(insertPoint.x - 1, insertPoint.y - 1, present.xSize, present.ySize, present.zSize);
 
 		present.boundaries.add(new Point(insertPoint.x, insertPoint.y, insertPoint.z));
@@ -438,7 +436,8 @@ public class XYZCompactSleigh {
 	}
 
 	private Point placeFor(Present present) {
-		return firstFittingPoint(present);
+		return alternate(present);
+		// return maxAdjPerPoint(present);
 	}
 
 	private Point naiveLocation(Present present) {
@@ -456,37 +455,85 @@ public class XYZCompactSleigh {
 
 	boolean reverse = false;
 
-	private Point firstFittingPoint(Present present) {
-		int xSize = present.xSize;
-		int ySize = present.ySize;
-
-		if (true) {
-			for (int xi = 0; xi <= 999;) {
-				for (int yi = 0; yi <= 999;) {
-					int skip = this.thereIsRoomFor(xi, yi, present);
-					if (skip == yi) {
-						return new Point(xi + 1, yi + 1, this.space.currentZ + 1);
-					} else {
-						yi = skip;
-					}
-				}
-				xi += 1;
-			}
+	private Point alternate(Present present) {
+		if (b) {
+			return topLeftInsertionPoint(present);
 		} else {
-			for (int xi = 1000 - xSize; xi >= 0;) {
-				for (int yi = 0; yi <= 1000 - ySize;) {
-					int skip = this.thereIsRoomFor(xi, yi, present);
-					if (skip == yi) {
-						return new Point(xi + 1, yi + 1, this.space.currentZ + 1);
-					} else {
-						yi = skip;
-					}
-				}
-				xi -= 1;
-			}
-
+			return bottomUpInsertionPoint(present);
 		}
 
+	}
+
+	private Point firstFittingPoint(Present present) {
+		present.rotateMinMedMax();
+		Point topLeftInsertionPoint = topLeftInsertionPoint(present);
+		Point bottomUpInsertionPoint = bottomUpInsertionPoint(present);
+		present.rotateMedMinMax();
+		Point rTopLeftInsertionPoint = topLeftInsertionPoint(present);
+		Point rBottomUpInsertionPoint = bottomUpInsertionPoint(present);
+
+		double tlAdjacentPerimeter = space.adjacentPerimeter(present, topLeftInsertionPoint);
+		double buAdjacentPerimeter = space.adjacentPerimeter(present, bottomUpInsertionPoint);
+		double rtlAdjacentPerimeter = space.adjacentPerimeter(present, rTopLeftInsertionPoint);
+		double rbuAdjacentPerimeter = space.adjacentPerimeter(present, rBottomUpInsertionPoint);
+		Double max = Ordering.natural().max(tlAdjacentPerimeter, buAdjacentPerimeter, rtlAdjacentPerimeter,
+				rbuAdjacentPerimeter);
+
+		if (max == tlAdjacentPerimeter) {
+			present.rotateMinMedMax();
+			return topLeftInsertionPoint;
+		}
+		if (max == buAdjacentPerimeter) {
+			present.rotateMinMedMax();
+			return bottomUpInsertionPoint;
+		}
+		if (max == rtlAdjacentPerimeter)
+			return rTopLeftInsertionPoint;
+		if (max == rbuAdjacentPerimeter)
+			return rBottomUpInsertionPoint;
+		return null;
+	}
+
+	private Point maxAdjPerPoint(Present present) {
+		Point topLeftInsertionPoint = topLeftInsertionPoint(present);
+		Point bottomUpInsertionPoint = bottomUpInsertionPoint(present);
+
+		double tlAdjacentPerimeter = space.adjacentPerimeter(present, topLeftInsertionPoint);
+		double buAdjacentPerimeter = space.adjacentPerimeter(present, bottomUpInsertionPoint);
+		if (tlAdjacentPerimeter > buAdjacentPerimeter)
+			return topLeftInsertionPoint;
+		else {
+			return bottomUpInsertionPoint;
+		}
+	}
+
+	private Point bottomUpInsertionPoint(Present present) {
+		for (int xi = 1000 - present.xSize; xi >= 0;) {
+			for (int yi = 0; yi <= 1000 - present.ySize;) {
+				int skip = this.thereIsRoomFor(xi, yi, present);
+				if (skip == yi) {
+					return new Point(xi + 1, yi + 1, this.space.currentZ + 1);
+				} else {
+					yi = skip;
+				}
+			}
+			xi -= 1;
+		}
+		return null;
+	}
+
+	private Point topLeftInsertionPoint(Present present) {
+		for (int xi = 0; xi <= 999;) {
+			for (int yi = 0; yi <= 999;) {
+				int skip = this.thereIsRoomFor(xi, yi, present);
+				if (skip == yi) {
+					return new Point(xi + 1, yi + 1, this.space.currentZ + 1);
+				} else {
+					yi = skip;
+				}
+			}
+			xi += 1;
+		}
 		return null;
 	}
 
