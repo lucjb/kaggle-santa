@@ -8,6 +8,7 @@ import java.util.Set;
 import pipi.bitmatrix.BitsetSlice;
 import pipi.interval.IntervalSlice;
 import pipi.interval.MaximumRectangle;
+import pipi.interval.Rectangle;
 
 import com.google.common.collect.ContiguousSet;
 import com.google.common.collect.DiscreteDomain;
@@ -32,22 +33,14 @@ public class BruteForce {
 			// System.out.printf("(%d, %d) ", xs[i], ys[i]);
 			// }
 			// System.out.println();
-			BitsetSlice bitsetSlice = BitsetSlice.freed(size);
-			IntervalSlice intervalSlice = IntervalSlice.empty(size, size);
+			List<Rectangle> rectangles = Lists.newArrayList();
 			for (int i = 0; i < xs.length; i++) {
 				int x = xs[i];
 				int y = ys[i];
 				Box2d box2d = boxes.get(i);
-				bitsetSlice.fill(x, y, box2d.dx, box2d.dy);
-				intervalSlice.fill(x, y, box2d.dx, box2d.dy);
+				rectangles.add(Rectangle.of(x, y, box2d.dx, box2d.dy));
 			}
-			BitsetSlice validationSleighSlice = BitsetSlice.filled(size);
-			Collection<MaximumRectangle> maximumRectangles = intervalSlice.getMaximumRectangles();
-			for (MaximumRectangle maximumRectangle : maximumRectangles) {
-				validationSleighSlice.free(maximumRectangle.getHorizontalRange().getFrom(), maximumRectangle.getVerticalRange().getFrom(),
-						maximumRectangle.getHorizontalRange().length(), maximumRectangle.getVerticalRange().length());
-			}
-			if(!validationSleighSlice.equals(bitsetSlice)){
+			if(!BruteForce.assertRectangles(rectangles)){
 				System.out.println("--NEGATIVE--");
 				for (int i = 0; i < xs.length; i++) {
 					int x = xs[i];
@@ -79,5 +72,38 @@ public class BruteForce {
 			return true;
 		}
 		return false;
+	}
+
+	public static boolean assertRectangles(List<Rectangle> rectangles) {
+		BitsetSlice expectedSlice = BitsetSlice.freed(1000);
+		IntervalSlice intervalSlice = IntervalSlice.empty(1000, 1000);
+		for (Rectangle rectangle : rectangles) {
+			expectedSlice.fill(rectangle.getPoint2d().getX(), rectangle.getPoint2d().getY(), rectangle.getBox2d().dx,
+					rectangle.getBox2d().dy);
+			intervalSlice.fill(rectangle.getPoint2d().getX(), rectangle.getPoint2d().getY(), rectangle.getBox2d().dx,
+					rectangle.getBox2d().dy);
+			Collection<MaximumRectangle> maximumRectangles = intervalSlice.getMaximumRectangles();
+			BitsetSlice actualSlice = BitsetSlice.filled(1000);
+			for (MaximumRectangle maximumRectangle : maximumRectangles) {
+				actualSlice.free(maximumRectangle.getHorizontalRange().getFrom(), maximumRectangle.getVerticalRange().getFrom(),
+						maximumRectangle.getHorizontalRange().length(), maximumRectangle.getVerticalRange().length());
+			}
+			if(!expectedSlice.equals(actualSlice)){
+				return false;
+			}
+		}
+		Collection<MaximumRectangle> maximumRectangles = intervalSlice.getMaximumRectangles();
+//		System.out.println(maximumRectangles);
+		for (MaximumRectangle maximumRectangle : maximumRectangles) {
+			for (MaximumRectangle other : maximumRectangles) {
+				if(!maximumRectangle.equals(other)){
+					MaximumRectangle intersection = maximumRectangle.intersect(other);
+					if(maximumRectangle.equals(intersection)){
+						return false;
+					}
+				}
+			}
+		}
+		return true;
 	}
 }

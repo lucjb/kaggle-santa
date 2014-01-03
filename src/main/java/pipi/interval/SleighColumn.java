@@ -9,33 +9,30 @@ public class SleighColumn {
 	private IntervalSet lines;
 
 	public SleighColumn(Interval verticalRange) {
-		this.sides = new IntervalSet(verticalRange);
-		this.lines = new IntervalSet(verticalRange);
+		this.sides = IntervalSlice.buildIntervalSet(verticalRange.getTo());
+		this.lines = IntervalSlice.buildIntervalSet(verticalRange.getTo());
 	}
 	
 	public void addLine(Interval verticalIntRange) {
-		this.lines.addRange(verticalIntRange);
+		this.lines.addInterval(verticalIntRange);
 	}
 
-	public Interval getLine(int y) {
-		return this.lines.getRange(y);
-	}
 
 	public void destroy(Interval verticalRange) {
 		//FIXME optimize
-		this.lines.removeRange(verticalRange);
-		this.sides.removeRange(verticalRange);
-		List<Interval> ranges = this.lines.getRanges();
+		this.lines.removeInterval(verticalRange);
+		this.sides.removeInterval(verticalRange);
+		List<Interval> ranges = this.lines.getIntervals();
 		for (Interval interval : ranges) {
-			List<Interval> ranges2 = this.sides.getIntervals(interval).getRanges();
+			List<Interval> ranges2 = this.sides.getContainedIntervals(interval).getIntervals();
 			if(ranges2.isEmpty()){
-				this.lines.removeRange(interval);
+				this.lines.removeInterval(interval);
 			}
 		}
 	}
 
 	public Collection<Interval> getLinesRanges() {
-		return this.lines.getRanges();
+		return this.lines.getIntervals();
 	}
 	
 	@Override
@@ -57,8 +54,8 @@ public class SleighColumn {
 	
 	public void addInterval(Interval interval){
 		//FIXME optimize
-		this.getSides().addRange(interval);
-		IntervalSet emptyRanges = this.lines.complement().getIntervals(interval);
+		this.getSides().addInterval(interval);
+		IntervalSet emptyRanges = this.lines.complement().getContainedIntervals(interval);
 		this.getSides().removeAllRanges(emptyRanges);
 	}
 

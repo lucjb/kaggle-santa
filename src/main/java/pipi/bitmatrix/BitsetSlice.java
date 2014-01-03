@@ -1,6 +1,7 @@
 package pipi.bitmatrix;
 
 import static java.lang.Math.min;
+import pipi.PiolaBitset;
 import pipi.Slice;
 
 public class BitsetSlice implements Slice {

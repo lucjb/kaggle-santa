@@ -12,7 +12,9 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
-import pipi.bitmatrix.BitsetSlice;
+import com.google.common.collect.Lists;
+
+import pipi.BruteForce;
 
 @RunWith(Parameterized.class)
 public class SliceBruteTest {
@@ -30,9 +32,9 @@ public class SliceBruteTest {
 
 				oa(of(8, 325, 8, 15), of(13, 270, 8, 28), of(13, 298, 4, 4), of(17, 260, 5, 8)),
 
-				oa(of(289, 0, 101, 104), of(271, 104, 31, 32)), oa(of(0, 0, 2, 3), of(0, 210, 78, 160))
-				,oa(of(0, 0, 10, 10), of(500, 0, 10, 50))
-				);
+				oa(of(289, 0, 101, 104), of(271, 104, 31, 32)), oa(of(0, 0, 2, 3), of(0, 210, 78, 160)),
+				oa(of(0, 0, 10, 10), of(500, 0, 10, 50)),
+				oa(of(24, 353, 23, 54), of(21, 411, 3, 8), of(26, 407, 3, 4), of(24, 410, 2, 7)));
 	}
 
 	public SliceBruteTest(Rectangle... rectangles) {
@@ -41,30 +43,7 @@ public class SliceBruteTest {
 
 	@Test
 	public void testArea() {
-		BitsetSlice expectedSlice = BitsetSlice.freed(1000);
-		IntervalSlice intervalSlice = IntervalSlice.empty(1000, 1000);
-		for (Rectangle rectangle : this.rectangles) {
-			expectedSlice.fill(rectangle.getPoint2d().getX(), rectangle.getPoint2d().getY(), rectangle.getBox2d().dx,
-					rectangle.getBox2d().dy);
-			intervalSlice.fill(rectangle.getPoint2d().getX(), rectangle.getPoint2d().getY(), rectangle.getBox2d().dx,
-					rectangle.getBox2d().dy);
-		}
-		BitsetSlice actualSlice = BitsetSlice.filled(1000);
-		Collection<MaximumRectangle> maximumRectangles = intervalSlice.getMaximumRectangles();
-		System.out.println(maximumRectangles);
-		for (MaximumRectangle maximumRectangle : maximumRectangles) {
-			actualSlice.free(maximumRectangle.getHorizontalRange().getFrom(), maximumRectangle.getVerticalRange().getFrom(),
-					maximumRectangle.getHorizontalRange().length(), maximumRectangle.getVerticalRange().length());
-		}
-		assertEquals(expectedSlice, actualSlice);
-		for (MaximumRectangle maximumRectangle : maximumRectangles) {
-			for (MaximumRectangle other : maximumRectangles) {
-				if(!maximumRectangle.equals(other)){
-					MaximumRectangle intersection = maximumRectangle.intersect(other);
-					Assert.assertNotEquals(maximumRectangle, intersection);
-				}
-			}
-		}
+		Assert.assertTrue(BruteForce.assertRectangles(Lists.newArrayList(this.rectangles)));
 	}
 
 }

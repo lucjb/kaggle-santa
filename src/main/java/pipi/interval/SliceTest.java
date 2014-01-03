@@ -1,12 +1,15 @@
 package pipi.interval;
 
+import static pipi.interval.Rectangle.of;
+
 import java.awt.Dimension;
-import java.awt.Rectangle;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
 import javax.swing.JFrame;
 
+import pipi.BruteForce;
 import pipi.bitmatrix.BitsetSlice;
 import pipi.gui.JPanelExtension;
 
@@ -16,7 +19,6 @@ public class SliceTest {
 	public static void main(String[] args) {
 		IntervalSlice sleighSlice = IntervalSlice.empty(1000, 1000);
 		BitsetSlice testSleighSlice = BitsetSlice.freed(1000);
-		List<Rectangle> rectangles = Lists.newArrayList();
 //		rectangles.add(new Rectangle(0, 0, 2, 3)); //1
 //		rectangles.add(new Rectangle(0, 3, 73, 207));
 //		rectangles.add(new Rectangle(0, 210, 78, 160));//1
@@ -87,12 +89,21 @@ public class SliceTest {
 //		rectangles.add(new Rectangle(2,2,998,996)); done
 //		rectangles.add(new Rectangle(0,0,999,1000));done
 		
-		rectangles.add(new Rectangle(1,0,998,993));   
-		rectangles.add(new Rectangle(5,1,991,995)); 
-		rectangles.add(new Rectangle(0,3,999,995)); 
+//		rectangles.add(new Rectangle(1,0,998,993));   
+//		rectangles.add(new Rectangle(5,1,991,995)); 
+//		rectangles.add(new Rectangle(0,3,999,995)); 
+
+//		rectangles.add(new Rectangle(0,3,999,995)); 
+
 		
+
 		
-		
+		List<pipi.interval.Rectangle> rectangles = Arrays.asList(
+				of(24, 353, 23, 54)
+				,of(21, 411, 3, 8)
+				,of(26, 407, 3, 4)
+				,of(24, 410, 2, 7)
+				);
 
 
 		
@@ -110,20 +121,24 @@ public class SliceTest {
 
 		
 		int i = 0;
-		for (Rectangle rectangle : rectangles) {
-			testSleighSlice.fill(rectangle.x, rectangle.y, rectangle.width, rectangle.height);
-			sleighSlice.fill(rectangle.x, rectangle.y, rectangle.width, rectangle.height);
-			Collection<pipi.interval.MaximumRectangle> maximumRectangles = sleighSlice.getMaximumRectangles();
-			System.out.println(i + "->" + maximumRectangles);
-			for (pipi.interval.MaximumRectangle rectangle2 : maximumRectangles) {
-				boolean free = testSleighSlice.isFree(rectangle2.getHorizontalRange().getFrom(), rectangle2.getVerticalRange().getFrom(), rectangle2.getHorizontalRange().length(), rectangle2.getVerticalRange().length());
-				if(!free){
-					System.out.println("ACA!!!");
-					return;
-				}
-			}
-			i++;
+		boolean assertRectangles = BruteForce.assertRectangles(rectangles);
+		if(!assertRectangles){
+			System.out.println("CHAN!");
 		}
+//		for (Rectangle rectangle : rectangles) {
+//			testSleighSlice.fill(rectangle.x, rectangle.y, rectangle.width, rectangle.height);
+//			sleighSlice.fill(rectangle.x, rectangle.y, rectangle.width, rectangle.height);
+//			Collection<pipi.interval.MaximumRectangle> maximumRectangles = sleighSlice.getMaximumRectangles();
+//			System.out.println(i + "->" + maximumRectangles);
+//			for (pipi.interval.MaximumRectangle rectangle2 : maximumRectangles) {
+//				boolean free = testSleighSlice.isFree(rectangle2.getHorizontalRange().getFrom(), rectangle2.getVerticalRange().getFrom(), rectangle2.getHorizontalRange().length(), rectangle2.getVerticalRange().length());
+//				if(!free){
+//					System.out.println("ACA!!!");
+//					return;
+//				}
+//			}
+//			i++;
+//		}
 		System.out.println("Listo");
 		
 		//		Random random = new Random();

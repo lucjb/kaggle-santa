@@ -13,7 +13,7 @@ public class Main {
 		List<SuperPresent> presents = new SuperPresentsParser().parse("presents.csv");
 		IntervalSleigh superSleigh = new IntervalSleigh();
 
-		RateLimiter rateLimiter = RateLimiter.create(1.0);
+//		RateLimiter rateLimiter = RateLimiter.create(1.0);
 		int count = 0;
 		List<OutputPresent> outputPresents = Lists.newArrayList();
 		for (SuperPresent superPresent : presents) {
@@ -22,12 +22,13 @@ public class Main {
 
 			int order = superPresent.getOrder();
 			Point point = superSleigh.putPesent(box3d);
+//			System.out.printf("%d, %d, %d, %d\n", point.x, point.y, box3d.dx, box3d.dy);
 			outputPresents.add(new OutputPresent(order, point, box3d));
 			count++;
-			if (rateLimiter.tryAcquire()) {
-				System.out.printf("Z: %d\n", superSleigh.getCurrentZ());
-				System.out.printf("Progress: %d\n", count);
-			}
+//			if (rateLimiter.tryAcquire()) {
+//				System.out.printf("Z: %d\n", superSleigh.getCurrentZ());
+//				System.out.printf("Progress: %d\n", count);
+//			}
 		}
 		OutputPresent.outputPresents(outputPresents, superSleigh.getLastZ(), "intervals.csv");
 	}

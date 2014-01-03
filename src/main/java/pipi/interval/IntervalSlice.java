@@ -1,12 +1,13 @@
 package pipi.interval;
 
 import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Deque;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Set;
-import java.util.SortedMap;
 import java.util.TreeMap;
 
 import org.apache.commons.lang3.tuple.Pair;
@@ -16,6 +17,7 @@ import pipi.Slice;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Queues;
+import com.google.common.primitives.Ints;
 
 public class IntervalSlice implements Slice {
 
@@ -69,54 +71,49 @@ public class IntervalSlice implements Slice {
 		}
 	}
 
-	private void addColumn(TreeMap<Integer, SleighColumn> side, TreeMap<Integer, SleighColumn> otherSide, int insertionPoint, Interval verticalRange) {
+	private void addColumn(TreeMap<Integer, SleighColumn> side, TreeMap<Integer, SleighColumn> otherSide,
+			int insertionPoint, Interval verticalRange) {
 		SleighColumn sleighColumn = side.get(insertionPoint);
 		if (sleighColumn == null) {
-			IntervalSet intervalSet = new IntervalSet(new Interval(0, this.height));
-			intervalSet.addRange(verticalRange);
+			IntervalSet treeIntervalSet = buildIntervalSet(this.height);
+			treeIntervalSet.addInterval(verticalRange);
 			SleighColumn otherColumn = otherSide.get(insertionPoint);
-			if(otherColumn!= null){
-				intervalSet.removeAllRanges(otherColumn.getSides());
+			if (otherColumn != null) {
+				treeIntervalSet.removeAllRanges(otherColumn.getSides());
 			}
-			IntervalSet lines = buildLinesForIntervalSet(intervalSet, insertionPoint);
+			IntervalSet lines = buildLinesForIntervalSet(treeIntervalSet, insertionPoint);
 			sleighColumn = new SleighColumn(new Interval(0, this.height));
 			sleighColumn.getLines().addAllRanges(lines);
 			sleighColumn.addInterval(verticalRange);
-			if(!sleighColumn.getSides().isEmpty()){
+			if (!sleighColumn.getSides().isEmpty()) {
 				side.put(insertionPoint, sleighColumn);
 			}
 			return;
 		}
 
 		if (!sleighColumn.getLines().contains(verticalRange)) {
-			IntervalSet intervalSet = new IntervalSet(new Interval(0, this.height));
-			intervalSet.addRange(verticalRange);
-			intervalSet.removeAllRanges(sleighColumn.getLines());
-			IntervalSet buildLinesForIntervalSet = this.buildLinesForIntervalSet(intervalSet, insertionPoint);
+			IntervalSet treeIntervalSet = buildIntervalSet(height);
+			treeIntervalSet.addInterval(verticalRange);
+			treeIntervalSet.removeAllRanges(sleighColumn.getLines());
+			IntervalSet buildLinesForIntervalSet = this.buildLinesForIntervalSet(treeIntervalSet, insertionPoint);
 			sleighColumn.getLines().addAllRanges(buildLinesForIntervalSet);
 		}
 		sleighColumn.addInterval(verticalRange);
 	}
 
-	private IntervalSet buildLinesForInterval(Interval verticalRange, int insertionPoint) {
-		IntervalSet toAccount = new IntervalSet(new Interval(0, this.height));
-		toAccount.addRange(verticalRange);
-		return buildLinesForIntervalSet(toAccount, insertionPoint);
-	}
-
 	private IntervalSet buildLinesForIntervalSet(IntervalSet toAccount, int insertionPoint) {
-		IntervalSet lines = new IntervalSet(new Interval(0, this.height));
+		IntervalSet lines = buildIntervalSet(height);
 		// should remove lines already accounted for?
 
 		Entry<Integer, SleighColumn> leftColumn = this.lefts.floorEntry(insertionPoint);
 		Entry<Integer, SleighColumn> rightColumn = this.rights.floorEntry(insertionPoint);
-		while (!toAccount.isEmpty() && (leftColumn != null || rightColumn != null)) {
-			if ((leftColumn != null) && (rightColumn == null || leftColumn.getKey() > rightColumn.getKey())) {
+		while (!rightIsEmpty(toAccount) && (leftColumn != null || rightColumn != null)) {
+			if ((leftColumn != null) && (rightColumn == null || leftColumn.getKey() >= rightColumn.getKey())) {
 				SleighColumn leftColumnValue = leftColumn.getValue();
-				List<Interval> rangesToAccount = toAccount.getRanges();
-				IntervalSet boundedLines = new IntervalSet(new Interval(0, this.height));
+				List<Interval> rangesToAccount = toAccount.getIntervals();
+				IntervalSet boundedLines = buildIntervalSet(this.height);
 				for (Interval intervalToAccount : rangesToAccount) {
-					IntervalSet lineRanges = leftColumnValue.getLines().getIntervalsInRange(intervalToAccount);
+					IntervalSet lineRanges = leftColumnValue.getLines().getContainedIntervals(intervalToAccount);
 					boundedLines.addAllRanges(lineRanges);
 				}
 				toAccount.removeAllRanges(boundedLines);
@@ -124,19 +121,18 @@ public class IntervalSlice implements Slice {
 				leftColumn = this.lefts.lowerEntry(leftColumn.getKey());
 			} else {
 				SleighColumn rightColumnValue = rightColumn.getValue();
-				List<Interval> rangesToAccount = toAccount.getRanges();
-				IntervalSet deltaAccount = new IntervalSet(new Interval(0, this.height));
-
+				List<Interval> rangesToAccount = toAccount.getIntervals();
+				IntervalSet deltaAccount = buildIntervalSet(this.height);
 
 				for (Interval intervalToAccount : rangesToAccount) {
 
-					IntervalSet lineRanges = rightColumnValue.getLines().getIntervalsInRange(intervalToAccount);
-					IntervalSet emptyLines = new IntervalSet(new Interval(0, this.height));
+					IntervalSet lineRanges = rightColumnValue.getLines().getContainedIntervals(intervalToAccount);
+					IntervalSet emptyLines = buildIntervalSet(this.height);
 					emptyLines.addAllRanges(rightColumnValue.getLines());
 					emptyLines.removeAllRanges(rightColumnValue.getSides());
-					IntervalSet emptyIntervals = emptyLines.getIntervals(intervalToAccount);
+					IntervalSet emptyIntervals = emptyLines.getContainedIntervals(intervalToAccount);
 					lines.addAllRanges(emptyIntervals);
-					
+
 					deltaAccount.addAllRanges(lineRanges);
 				}
 				toAccount.removeAllRanges(deltaAccount);
@@ -146,11 +142,23 @@ public class IntervalSlice implements Slice {
 		return lines;
 	}
 
+	public static IntervalSet buildIntervalSet(int height2) {
+		// return new TreeIntervalSet(new Interval(0, height2));
+		return new BitIntervalSet(height2);
+	}
+
 	public Collection<MaximumRectangle> getMaximumRectangles() {
 		Collection<MaximumRectangle> maximumRectangles = Lists.newArrayList();
 		Deque<StartLine> leftDeque = Queues.newArrayDeque();
+
+		List<Entry<Integer, SleighColumn>> rightEntries = Lists.newArrayList(this.rights.entrySet());
+
+		// for (int i = 0; i < rightEntries.size(); i++) {
+		// Entry<Integer, SleighColumn> entry = rightEntries.get(i);
+		//
+		// }
 		for (Entry<Integer, SleighColumn> leftEntry : this.lefts.entrySet()) {
-			for (Interval line : leftEntry.getValue().getLines().getRanges()) {
+			for (Interval line : leftEntry.getValue().getLines().getIntervals()) {
 				Interval bounderLine = line;
 				leftDeque.addLast(new StartLine(leftEntry.getValue(), leftEntry.getKey(), leftEntry.getKey(), bounderLine));
 			}
@@ -160,44 +168,41 @@ public class IntervalSlice implements Slice {
 		while (leftPair != null) {
 			Interval bounderLine = leftPair.getLine();
 
-			Entry<Integer, SleighColumn> higherEntry = this.rights.higherEntry(leftPair.getStart());
-			if (higherEntry != null) {
+			int binarySearch = Collections.binarySearch(rightEntries,
+					Pair.<Integer, SleighColumn> of(Integer.valueOf(leftPair.getStart()), null),
+					new Comparator<Entry<Integer, SleighColumn>>() {
+
+						@Override
+						public int compare(Entry<Integer, SleighColumn> o1, Entry<Integer, SleighColumn> o2) {
+							return Ints.compare(o1.getKey(), o2.getKey());
+						}
+					});
+			if (binarySearch >= 0) {
+				binarySearch++;
+			} else {
+				binarySearch = -binarySearch - 1;
+			}
+
+			while (binarySearch < rightEntries.size()) {
+				Entry<Integer, SleighColumn> higherEntry = rightEntries.get(binarySearch);
 				SleighColumn rightColumn = higherEntry.getValue();
-				IntervalSet lines = getRanges1(bounderLine, rightColumn);
-				if(lines.getRanges().size()>1){
-					throw new RuntimeException("GUARDA 1");
-				}
-				if (!lines.isEmpty()) {
-					for (Interval lineInterval : lines.getRanges()) {
-						Interval bound = bounderLine.bound(lineInterval);
-						if(!bound.equals(bounderLine)){
-							throw new RuntimeException("GUARDA 2");
+				IntervalSet rightSides = getRightSides(rightColumn, bounderLine);
+				if (!rightIsEmpty(rightSides)) {
+					boolean leftEmpty = isLeftEmpty(leftPair, bounderLine);
+					if (!leftEmpty) {
+						List<Interval> ranges = getComplementRanges2(rightSides, bounderLine);
+						maximumRectangles.add(new MaximumRectangle(new Interval(leftPair.getLeft(), higherEntry.getKey()),
+								bounderLine));
+						for (Interval interval : ranges) {
+							leftDeque.addLast(new StartLine(leftPair.getSleighColumn(), leftPair.getLeft(), higherEntry
+										.getKey(), interval));
 						}
-						IntervalSet rightSides = getRanges2(rightColumn, bound);
-						IntervalSet leftSides = getRanges3(leftPair, bound);
-						if (!rightSides.isEmpty() && !leftSides.isEmpty()) {
-							IntervalSet intervalSet = new IntervalSet(bound);
-							intervalSet.addRange(bound);
-							intervalSet.removeAllRanges(rightSides);
-							maximumRectangles.add(new MaximumRectangle(new Interval(leftPair.getLeft(), higherEntry.getKey()), bound));
-							List<Interval> ranges = intervalSet.getRanges();
-							for (Interval interval : ranges) {
-								Interval rebound = bound.bound(interval);
-								if (!rebound.isEmpty()) {
-									leftDeque.addLast(new StartLine(leftPair.getSleighColumn(), leftPair.getLeft(),
-											higherEntry.getKey(), rebound));
-								}
-							}
-						} else {
-							if (!leftSides.isEmpty()) {
-								leftDeque.addLast(new StartLine(leftPair.getSleighColumn(), leftPair.getLeft(), higherEntry
-										.getKey(), bound));
-							}
-						}
+						break;
+					} else {
+						break;
 					}
 				} else {
-					leftDeque.addLast(new StartLine(leftPair.getSleighColumn(), leftPair.getLeft(), higherEntry.getKey(),
-							bounderLine));
+					binarySearch++;
 				}
 
 			}
@@ -207,26 +212,38 @@ public class IntervalSlice implements Slice {
 		return maximumRectangles;
 	}
 
-	private IntervalSet getRanges3(StartLine leftPair, Interval bound) {
-		return leftPair.getSleighColumn().getSides().getIntervals(bound);
+	private boolean isLeftEmpty(StartLine leftPair, Interval bound) {
+		IntervalSet sides = leftPair.getSleighColumn().getSides();
+		return !sides.isAnythingInside(bound);
 	}
 
-	private IntervalSet getRanges2(SleighColumn rightColumn, Interval bound) {
-		return rightColumn.getSides().getIntervals(bound);
+	private List<Interval> getComplementRanges2(IntervalSet rightSides, Interval bound) {
+//		IntervalSet treeIntervalSet = buildIntervalSet(this.height);
+//		treeIntervalSet.addInterval(bound);
+//		treeIntervalSet.removeAllRanges(rightSides);
+//		List<Interval> ranges = treeIntervalSet.getIntervals();
+//		return ranges;
+		BitIntervalSet complement = (BitIntervalSet) rightSides.complement();
+		complement.fastSubIntervals(bound);
+		return complement.getIntervals();
 	}
 
-	private IntervalSet getRanges1(Interval bounderLine, SleighColumn rightColumn) {
-		return rightColumn.getLines().getIntervals(bounderLine);
+	private boolean rightIsEmpty(IntervalSet rightSides) {
+		return rightSides.isEmpty();
+	}
+
+	private IntervalSet getRightSides(SleighColumn rightColumn, Interval bound) {
+		return rightColumn.getSides().getSubIntervals(bound);
 	}
 
 	public static IntervalSlice empty(int width, int height) {
 		IntervalSlice intervalSlice = new IntervalSlice(width, height);
 		SleighColumn leftSleighColumn = intervalSlice.lefts.lastEntry().getValue();
 		leftSleighColumn.addLine(new Interval(0, height));
-		leftSleighColumn.getSides().addRange(new Interval(0, height));
+		leftSleighColumn.getSides().addInterval(new Interval(0, height));
 		SleighColumn rightSleighColumn = intervalSlice.rights.lastEntry().getValue();
 		rightSleighColumn.addLine(new Interval(0, height));
-		rightSleighColumn.getSides().addRange(new Interval(0, height));
+		rightSleighColumn.getSides().addInterval(new Interval(0, height));
 		return intervalSlice;
 	}
 
