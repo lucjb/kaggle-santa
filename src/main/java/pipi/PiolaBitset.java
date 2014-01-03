@@ -99,7 +99,7 @@ public class PiolaBitset implements Cloneable, java.io.Serializable {
 	 */
 	/* use serialVersionUID from JDK 1.0.2 for interoperability */
 	private static final long serialVersionUID = 7997698588986878753L;
-	private int nbits;
+	public int nbits;
 
 	/**
 	 * Given a bit index, return word index containing it.
@@ -507,11 +507,13 @@ public class PiolaBitset implements Cloneable, java.io.Serializable {
 			throw new IndexOutOfBoundsException("bitIndex < 0: " + bitIndex);
 
 		int wordIndex = wordIndex(bitIndex);
-		if (wordIndex >= this.words.length)
-			return;
 
+		clearWord(wordIndex, bitIndex);
+
+	}
+
+	public void clearWord(int wordIndex, int bitIndex) {
 		words[wordIndex] &= ~(1L << bitIndex);
-
 	}
 
 	/**
@@ -618,7 +620,7 @@ public class PiolaBitset implements Cloneable, java.io.Serializable {
 		return getWord(wordIndex, bitIndex);
 	}
 
-	private boolean getWord(int wordIndex, int bitIndex) {
+	public boolean getWord(int wordIndex, int bitIndex) {
 		return ((words[wordIndex] & (1L << bitIndex)) != 0);
 	}
 

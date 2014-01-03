@@ -365,17 +365,19 @@ public class BitIntervalSet implements IntervalSet {
 	}
 
 	public IntervalSet complement() {
-		if (!this.froms.get(0)) {
-			this.tos.set(0);
+		if (!this.froms.getWord(0, 0)) {
+			this.tos.setWord(0, 0);
 		} else {
-			this.froms.clear(0);
+			this.froms.clearWord(0, 0);
 		}
 
 		int lastIndex = lastIndex();
-		if (!this.tos.get(lastIndex)) {
-			this.froms.set(lastIndex);
+		int wordLastIndex = PiolaBitset.wordIndex(lastIndex);
+		
+		if (!this.tos.getWord(wordLastIndex, lastIndex)) {
+			this.froms.setWord(wordLastIndex, lastIndex);
 		} else {
-			this.tos.clear(lastIndex);
+			this.tos.clearWord(wordLastIndex, lastIndex);
 		}
 		long[] temp = this.froms.words;
 		this.froms.words = this.tos.words;
