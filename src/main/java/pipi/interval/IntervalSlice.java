@@ -70,7 +70,7 @@ public class IntervalSlice implements Slice {
 			int insertionPoint, Interval verticalRange) {
 		SleighColumn sleighColumn = side.get(insertionPoint);
 		if (sleighColumn == null) {
-			IntervalSet treeIntervalSet = this.buildIntervalSet(this.height);
+			IntervalSet treeIntervalSet = buildIntervalSet(this.height);
 			treeIntervalSet.addInterval(verticalRange);
 			SleighColumn otherColumn = otherSide.get(insertionPoint);
 			if (otherColumn != null) {
@@ -194,8 +194,14 @@ public class IntervalSlice implements Slice {
 	}
 
 	private boolean isLeftEmpty(StartLine leftPair, Interval bound) {
-		IntervalSet leftSides = leftPair.getSleighColumn().getSides().getSubIntervals(bound);
-		return leftSides.isEmpty();
+//		IntervalSet leftSides = leftPair.getSleighColumn().getSides().getSubIntervals(bound);
+//		boolean orig = leftSides.isEmpty();
+		IntervalSet sides = leftPair.getSleighColumn().getSides();
+		boolean opt = !sides.isAnythingInside(bound);
+//		if(opt != orig){
+//			System.out.println("Todo mal");
+//		}
+		return opt;
 	}
 
 	private List<Interval> getComplementRanges2(IntervalSet rightSides, Interval bound) {
@@ -210,24 +216,12 @@ public class IntervalSlice implements Slice {
 		return rightSides.isEmpty();
 	}
 
-	private List<Interval> getRanges4(IntervalSet lines) {
-		return lines.getIntervals();
-	}
-
 	private boolean rightEmpty(IntervalSet rightSides) {
 		return rightIsEmpty(rightSides);
 	}
 
-	private boolean linesEmpty(IntervalSet lines) {
-		return rightIsEmpty(lines);
-	}
-
 	private IntervalSet getRightSides(SleighColumn rightColumn, Interval bound) {
 		return rightColumn.getSides().getSubIntervals(bound);
-	}
-
-	private IntervalSet getRanges1(Interval bounderLine, SleighColumn rightColumn) {
-		return rightColumn.getLines().getContainedIntervals(bounderLine);
 	}
 
 	public static IntervalSlice empty(int width, int height) {

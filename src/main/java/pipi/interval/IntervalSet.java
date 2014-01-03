@@ -24,4 +24,6 @@ public interface IntervalSet {
 
 	public abstract IntervalSet complement();
 
+	public abstract boolean isAnythingInside(Interval bound);
+
 }

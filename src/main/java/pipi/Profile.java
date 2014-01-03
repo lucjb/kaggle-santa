@@ -8,7 +8,6 @@ import com.google.common.util.concurrent.RateLimiter;
 import first.Point;
 
 public class Profile {
-
 	public static void main(String[] args) throws Exception {
 		List<SuperPresent> presents = new SuperPresentsParser().parse("prof.csv");
 		IntervalSleigh superSleigh = new IntervalSleigh();

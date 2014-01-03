@@ -11,16 +11,16 @@ import com.google.common.collect.Lists;
 public class BitIntervalSet implements IntervalSet {
 	private final PiolaBitset froms;
 	private final PiolaBitset tos;
-	private TreeIntervalSet treeIntervalSet;
+//	private TreeIntervalSet treeIntervalSet;
 	
 	public BitIntervalSet(int range) {
 		this.froms = new PiolaBitset(range + 1);
 		this.tos = new PiolaBitset(range + 1);
-		this.treeIntervalSet =  new TreeIntervalSet(new Interval(0, range));
+//		this.treeIntervalSet =  new TreeIntervalSet(new Interval(0, range));
 	}
 
 	private BitIntervalSet(PiolaBitset from, PiolaBitset to) {
-		this.treeIntervalSet =  new TreeIntervalSet(new Interval(0, from.size() - 1));
+//		this.treeIntervalSet =  new TreeIntervalSet(new Interval(0, from.size() - 1));
 		this.froms = from;
 		this.tos = to;
 	}
@@ -37,8 +37,8 @@ public class BitIntervalSet implements IntervalSet {
 		this.froms.set(from);
 		this.tos.clear(from + 1, to + 1);
 		this.tos.set(to);
-		treeIntervalSet.addInterval(interval);
-		Assert.assertEquals(treeIntervalSet.getIntervals(), this.getIntervals());
+//		treeIntervalSet.addInterval(interval);
+//		Assert.assertEquals(treeIntervalSet.getIntervals(), this.getIntervals());
 	}
 
 	@Override
@@ -66,8 +66,8 @@ public class BitIntervalSet implements IntervalSet {
 
 		this.froms.clear(from, to);
 		this.tos.clear(from + 1, to + 1);
-		treeIntervalSet.removeInterval(interval);
-		Assert.assertEquals(treeIntervalSet.getIntervals(), this.getIntervals());
+//		treeIntervalSet.removeInterval(interval);
+//		Assert.assertEquals(treeIntervalSet.getIntervals(), this.getIntervals());
 
 	}
 
@@ -151,7 +151,7 @@ public class BitIntervalSet implements IntervalSet {
 		subs.clearOutside(from, to);
 
 		
-		Assert.assertEquals(treeIntervalSet.getContainedIntervals(verticalRange).getIntervals(), subs.getIntervals());
+//		Assert.assertEquals(treeIntervalSet.getContainedIntervals(verticalRange).getIntervals(), subs.getIntervals());
 
 		return subs;
 	}
@@ -181,7 +181,7 @@ public class BitIntervalSet implements IntervalSet {
 		}
 		subs.clearOutside(from, to);
 
-		Assert.assertEquals(treeIntervalSet.getSubIntervals(verticalRange).getIntervals(), subs.getIntervals());
+//		Assert.assertEquals(treeIntervalSet.getSubIntervals(verticalRange).getIntervals(), subs.getIntervals());
 		return subs;
 		
 
@@ -197,7 +197,7 @@ public class BitIntervalSet implements IntervalSet {
 		boolean realContains = realContains(verticalRange);
 
 		
-		Assert.assertEquals(treeIntervalSet.contains(verticalRange), realContains);
+//		Assert.assertEquals(treeIntervalSet.contains(verticalRange), realContains);
 
 		return realContains;
 	}
@@ -230,8 +230,8 @@ public class BitIntervalSet implements IntervalSet {
 		} else {
 			complement.froms.clear(lastIndex);
 		}
-		Assert.assertEquals(this.treeIntervalSet.complement().getIntervals(), complement.getIntervals());
-		complement.treeIntervalSet=(TreeIntervalSet) this.treeIntervalSet.complement();
+//		Assert.assertEquals(this.treeIntervalSet.complement().getIntervals(), complement.getIntervals());
+//		complement.treeIntervalSet=(TreeIntervalSet) this.treeIntervalSet.complement();
 		return complement;
 	}
 
@@ -249,5 +249,29 @@ public class BitIntervalSet implements IntervalSet {
 	@Override
 	public String toString() {
 		return this.getIntervals().toString();
+	}
+
+	@Override
+	public boolean isAnythingInside(Interval bound) {
+		int toSetBit = this.tos.nextSetBit(bound.getFrom()+1);
+		if(toSetBit != -1){
+			if(toSetBit <= bound.getTo()){
+				return true;
+			}
+		}else{
+			return false;
+		}
+
+		int fromSetBit = this.froms.nextSetBit(bound.getFrom());
+		if(fromSetBit != -1){
+			if(fromSetBit < bound.getTo()){
+				return true;
+			}else{
+				return false;
+			}
+		}else{
+			return true;
+		}
+
 	}
 }

@@ -160,5 +160,9 @@ public class TreeIntervalSet implements IntervalSet {
 	public String toString() {
 		return this.rangeSet.toString();
 	}
+	@Override
+	public boolean isAnythingInside(Interval bound) {
+		return this.getSubIntervals(bound).isEmpty();
+	}
 
 }
