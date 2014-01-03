@@ -22,7 +22,7 @@ public interface IntervalSet {
 
 	public abstract boolean contains(Interval verticalRange);
 
-	public abstract IntervalSet complement();
+	public abstract IntervalSet getComplement();
 
 	public abstract boolean isAnythingInside(Interval bound);
 

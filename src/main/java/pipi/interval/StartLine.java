@@ -4,10 +4,10 @@ public class StartLine {
 	private int left;
 	private int start;
 	private Interval interval;
-	private SleighColumn sleighColumn;
+	private SliceColumn sliceColumn;
 
-	public StartLine(SleighColumn sleighColumn, int left, int start, Interval bounderLine) {
-		this.sleighColumn = sleighColumn;
+	public StartLine(SliceColumn sliceColumn, int left, int start, Interval bounderLine) {
+		this.sliceColumn = sliceColumn;
 		this.left = left;
 		this.start = start;
 		this.interval = bounderLine;
@@ -25,8 +25,8 @@ public class StartLine {
 		return this.start;
 	}
 	
-	public SleighColumn getSleighColumn() {
-		return this.sleighColumn;
+	public SliceColumn getSleighColumn() {
+		return this.sliceColumn;
 	}
 	@Override
 	public String toString() {

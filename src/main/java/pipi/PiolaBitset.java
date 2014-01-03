@@ -92,7 +92,7 @@ public class PiolaBitset implements Cloneable, java.io.Serializable {
 	/**
 	 * The internal field corresponding to the serialField "bits".
 	 */
-	private long[] words;
+	public long[] words;
 
 	/**
 	 * The number of words in the logical size of this BitSet.
@@ -104,8 +104,8 @@ public class PiolaBitset implements Cloneable, java.io.Serializable {
 	/**
 	 * Given a bit index, return word index containing it.
 	 */
-	private static int wordIndex(int bitIndex) {
-		return bitIndex >> ADDRESS_BITS_PER_WORD;
+	public static int wordIndex(int bitIndex) {
+		return bitIndex >>> ADDRESS_BITS_PER_WORD;
 	}
 
 	// /**
@@ -306,19 +306,6 @@ public class PiolaBitset implements Cloneable, java.io.Serializable {
 		return Arrays.copyOf(words, this.words.length);
 	}
 
-	/**
-	 * Ensures that the BitSet can hold enough words.
-	 * 
-	 * @param wordsRequired
-	 *            the minimum acceptable number of words.
-	 */
-	private void ensureCapacity(int wordsRequired) {
-		if (words.length < wordsRequired) {
-			// Allocate larger of doubled size or required size
-			int request = Math.max(2 * words.length, wordsRequired);
-			words = Arrays.copyOf(words, request);
-		}
-	}
 
 	/**
 	 * Checks that fromIndex ... toIndex is a valid range of bit indices.
@@ -413,10 +400,14 @@ public class PiolaBitset implements Cloneable, java.io.Serializable {
 
 		int wordIndex = wordIndex(bitIndex);
 
-		long mask = 1L << bitIndex;
-		this.words[wordIndex] |= mask; // Restores invariants
+		setWord(wordIndex, bitIndex);
 
 		// checkInvariants();
+	}
+
+	public void setWord(int wordIndex, int bitIndex) {
+		long mask = 1L << bitIndex;
+		this.words[wordIndex] |= mask; // Restores invariants
 	}
 
 	/**
@@ -624,7 +615,11 @@ public class PiolaBitset implements Cloneable, java.io.Serializable {
 			throw new IndexOutOfBoundsException("bitIndex < 0: " + bitIndex);
 
 		int wordIndex = wordIndex(bitIndex);
-		return (wordIndex < this.words.length) && ((words[wordIndex] & (1L << bitIndex)) != 0);
+		return getWord(wordIndex, bitIndex);
+	}
+
+	private boolean getWord(int wordIndex, int bitIndex) {
+		return ((words[wordIndex] & (1L << bitIndex)) != 0);
 	}
 
 	/**

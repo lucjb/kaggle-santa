@@ -99,10 +99,10 @@ public class SliceTest {
 
 		
 		List<pipi.interval.Rectangle> rectangles = Arrays.asList(
-				of(24, 353, 23, 54)
-				,of(21, 411, 3, 8)
-				,of(26, 407, 3, 4)
-				,of(24, 410, 2, 7)
+				of(0, 692, 114, 219)
+				,
+				of(100, 215, 22, 28),
+				of(118, 466, 14, 16)
 				);
 
 

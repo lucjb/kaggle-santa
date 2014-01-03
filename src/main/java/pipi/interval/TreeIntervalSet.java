@@ -102,7 +102,7 @@ public class TreeIntervalSet implements IntervalSet {
 	 * @see pipi.interval.IntervalSet#complement()
 	 */
 	@Override
-	public IntervalSet complement(){
+	public IntervalSet getComplement(){
 		return new TreeIntervalSet(this.span, this.boundComplement());
 	}
 

@@ -3,12 +3,12 @@ package pipi.interval;
 import java.util.Collection;
 import java.util.List;
 
-public class SleighColumn {
+public class SliceColumn {
 	
 	private IntervalSet sides;
 	private IntervalSet lines;
 
-	public SleighColumn(Interval verticalRange) {
+	public SliceColumn(Interval verticalRange) {
 		this.sides = IntervalSlice.buildIntervalSet(verticalRange.getTo());
 		this.lines = IntervalSlice.buildIntervalSet(verticalRange.getTo());
 	}
@@ -55,7 +55,7 @@ public class SleighColumn {
 	public void addInterval(Interval interval){
 		//FIXME optimize
 		this.getSides().addInterval(interval);
-		IntervalSet emptyRanges = this.lines.complement().getContainedIntervals(interval);
+		IntervalSet emptyRanges = this.lines.getComplement().getContainedIntervals(interval);
 		this.getSides().removeAllRanges(emptyRanges);
 	}
 

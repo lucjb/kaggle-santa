@@ -12,7 +12,7 @@ public class Main {
 	public static void main(String[] args) throws Exception {
 		List<SuperPresent> presents = new SuperPresentsParser().parse("presents.csv");
 		IntervalSleigh superSleigh = new IntervalSleigh();
-
+//		assert false;
 //		RateLimiter rateLimiter = RateLimiter.create(1.0);
 		int count = 0;
 		List<OutputPresent> outputPresents = Lists.newArrayList();
