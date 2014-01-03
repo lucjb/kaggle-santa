@@ -108,7 +108,6 @@ public class PiolaBitset implements Cloneable, java.io.Serializable {
 		return bitIndex >> ADDRESS_BITS_PER_WORD;
 	}
 
-
 	// /**
 	// * Creates a new bit set. All bits are initially {@code false}.
 	// */
@@ -417,7 +416,7 @@ public class PiolaBitset implements Cloneable, java.io.Serializable {
 		long mask = 1L << bitIndex;
 		this.words[wordIndex] |= mask; // Restores invariants
 
-//		checkInvariants();
+		// checkInvariants();
 	}
 
 	/**
@@ -570,7 +569,31 @@ public class PiolaBitset implements Cloneable, java.io.Serializable {
 			// Handle last word
 			words[endWordIndex] &= ~lastWordMask;
 		}
+	}
 
+	public void clearTo(int toIndex) {
+		if (toIndex == 0) {
+			return;
+		}
+		int endWordIndex = wordIndex(toIndex - 1);
+
+		long lastWordMask = WORD_MASK >>> -toIndex;
+		for (int i = 0; i < endWordIndex; i++) {
+			words[i] = 0;
+		}
+		words[endWordIndex] &= ~lastWordMask;
+	}
+
+	public void clearFrom(int fromIndex) {
+		int startWordIndex = wordIndex(fromIndex);
+		if (startWordIndex >= this.words.length)
+			return;
+
+		long firstWordMask = WORD_MASK << fromIndex;
+		words[startWordIndex] &= ~firstWordMask;
+		for (int i = startWordIndex + 1; i < this.words.length; i++) {
+			words[i] = 0;
+		}
 	}
 
 	/**
@@ -581,7 +604,7 @@ public class PiolaBitset implements Cloneable, java.io.Serializable {
 	public void clear() {
 		for (int i = 0; i < this.words.length; i++) {
 			this.words[i] = 0;
-			
+
 		}
 	}
 
@@ -599,7 +622,6 @@ public class PiolaBitset implements Cloneable, java.io.Serializable {
 	public boolean get(int bitIndex) {
 		if (bitIndex < 0)
 			throw new IndexOutOfBoundsException("bitIndex < 0: " + bitIndex);
-
 
 		int wordIndex = wordIndex(bitIndex);
 		return (wordIndex < this.words.length) && ((words[wordIndex] & (1L << bitIndex)) != 0);
@@ -683,7 +705,6 @@ public class PiolaBitset implements Cloneable, java.io.Serializable {
 	public int nextSetBit(int fromIndex) {
 		if (fromIndex < 0)
 			throw new IndexOutOfBoundsException("fromIndex < 0: " + fromIndex);
-
 
 		int u = wordIndex(fromIndex);
 		if (u >= this.words.length)
@@ -822,7 +843,6 @@ public class PiolaBitset implements Cloneable, java.io.Serializable {
 			throw new IndexOutOfBoundsException("fromIndex < -1: " + fromIndex);
 		}
 
-
 		int u = wordIndex(fromIndex);
 		if (u >= this.words.length)
 			return fromIndex;
@@ -850,7 +870,8 @@ public class PiolaBitset implements Cloneable, java.io.Serializable {
 		if (this.words.length == 0)
 			return 0;
 
-		return BITS_PER_WORD * (this.words.length - 1) + (BITS_PER_WORD - Long.numberOfLeadingZeros(words[this.words.length - 1]));
+		return BITS_PER_WORD * (this.words.length - 1)
+				+ (BITS_PER_WORD - Long.numberOfLeadingZeros(words[this.words.length - 1]));
 	}
 
 	/**
@@ -862,7 +883,7 @@ public class PiolaBitset implements Cloneable, java.io.Serializable {
 	 */
 	public boolean isEmpty() {
 		for (long word : this.words) {
-			if (word != 0){
+			if (word != 0) {
 				return false;
 			}
 		}
@@ -911,15 +932,15 @@ public class PiolaBitset implements Cloneable, java.io.Serializable {
 	 */
 	public void and(PiolaBitset set) {
 		throw new RuntimeException("No anda");
-		//		if (this == set)
-//			return;
-//
-//		while (this.words.length > set.words.length)
-//			words[--wordsInUse] = 0;
-//
-//		// Perform logical AND on words in common
-//		for (int i = 0; i < wordsInUse; i++)
-//			words[i] &= set.words[i];
+		// if (this == set)
+		// return;
+		//
+		// while (this.words.length > set.words.length)
+		// words[--wordsInUse] = 0;
+		//
+		// // Perform logical AND on words in common
+		// for (int i = 0; i < wordsInUse; i++)
+		// words[i] &= set.words[i];
 
 	}
 
@@ -934,26 +955,27 @@ public class PiolaBitset implements Cloneable, java.io.Serializable {
 	 */
 	public void or(PiolaBitset set) {
 		throw new RuntimeException("No anda");
-//		if (this == set)
-//			return;
-//
-//		int wordsInCommon = Math.min(wordsInUse, set.wordsInUse);
-//
-//		if (wordsInUse < set.wordsInUse) {
-//			ensureCapacity(set.wordsInUse);
-//			wordsInUse = set.wordsInUse;
-//		}
-//
-//		// Perform logical OR on words in common
-//		for (int i = 0; i < wordsInCommon; i++)
-//			words[i] |= set.words[i];
-//
-//		// Copy any remaining words
-//		if (wordsInCommon < set.wordsInUse)
-//			System.arraycopy(set.words, wordsInCommon, words, wordsInCommon, wordsInUse - wordsInCommon);
-//
-//		// recalculateWordsInUse() is unnecessary
-//		checkInvariants();
+		// if (this == set)
+		// return;
+		//
+		// int wordsInCommon = Math.min(wordsInUse, set.wordsInUse);
+		//
+		// if (wordsInUse < set.wordsInUse) {
+		// ensureCapacity(set.wordsInUse);
+		// wordsInUse = set.wordsInUse;
+		// }
+		//
+		// // Perform logical OR on words in common
+		// for (int i = 0; i < wordsInCommon; i++)
+		// words[i] |= set.words[i];
+		//
+		// // Copy any remaining words
+		// if (wordsInCommon < set.wordsInUse)
+		// System.arraycopy(set.words, wordsInCommon, words, wordsInCommon,
+		// wordsInUse - wordsInCommon);
+		//
+		// // recalculateWordsInUse() is unnecessary
+		// checkInvariants();
 	}
 
 	/**
@@ -973,23 +995,24 @@ public class PiolaBitset implements Cloneable, java.io.Serializable {
 	public void xor(PiolaBitset set) {
 		throw new RuntimeException("No anda");
 
-//		int wordsInCommon = Math.min(wordsInUse, set.wordsInUse);
-//
-//		if (wordsInUse < set.wordsInUse) {
-//			ensureCapacity(set.wordsInUse);
-//			wordsInUse = set.wordsInUse;
-//		}
-//
-//		// Perform logical XOR on words in common
-//		for (int i = 0; i < wordsInCommon; i++)
-//			words[i] ^= set.words[i];
-//
-//		// Copy any remaining words
-//		if (wordsInCommon < set.wordsInUse)
-//			System.arraycopy(set.words, wordsInCommon, words, wordsInCommon, set.wordsInUse - wordsInCommon);
-//
-//		recalculateWordsInUse();
-//		checkInvariants();
+		// int wordsInCommon = Math.min(wordsInUse, set.wordsInUse);
+		//
+		// if (wordsInUse < set.wordsInUse) {
+		// ensureCapacity(set.wordsInUse);
+		// wordsInUse = set.wordsInUse;
+		// }
+		//
+		// // Perform logical XOR on words in common
+		// for (int i = 0; i < wordsInCommon; i++)
+		// words[i] ^= set.words[i];
+		//
+		// // Copy any remaining words
+		// if (wordsInCommon < set.wordsInUse)
+		// System.arraycopy(set.words, wordsInCommon, words, wordsInCommon,
+		// set.wordsInUse - wordsInCommon);
+		//
+		// recalculateWordsInUse();
+		// checkInvariants();
 	}
 
 	/**
@@ -1001,13 +1024,13 @@ public class PiolaBitset implements Cloneable, java.io.Serializable {
 	 * @since 1.2
 	 */
 	public void andNot(PiolaBitset set) {
-//		 Perform logical (a & !b) on words in common
+		// Perform logical (a & !b) on words in common
 		throw new RuntimeException("No anda");
-//	for (int i = Math.min(wordsInUse, set.wordsInUse) - 1; i >= 0; i--)
-//			words[i] &= ~set.words[i];
-//
-//		recalculateWordsInUse();
-//		checkInvariants();
+		// for (int i = Math.min(wordsInUse, set.wordsInUse) - 1; i >= 0; i--)
+		// words[i] &= ~set.words[i];
+		//
+		// recalculateWordsInUse();
+		// checkInvariants();
 	}
 
 	/**
@@ -1077,7 +1100,6 @@ public class PiolaBitset implements Cloneable, java.io.Serializable {
 
 		PiolaBitset set = (PiolaBitset) obj;
 
-
 		if (this.words.length != set.words.length)
 			return false;
 
@@ -1142,9 +1164,7 @@ public class PiolaBitset implements Cloneable, java.io.Serializable {
 	 * 
 	 * <pre>
 	 * drPepper.set(2);
-	 * </pre>
-	 * 
-	 * Now {@code drPepper.toString()} returns "{@code 2}}".
+	 * </pre>Now {@code drPepper.toString()} returns "{@code 2} ".
 	 * <p>
 	 * 
 	 * <pre>
@@ -1152,7 +1172,7 @@ public class PiolaBitset implements Cloneable, java.io.Serializable {
 	 * drPepper.set(10);
 	 * </pre>
 	 * 
-	 * Now {@code drPepper.toString()} returns "{@code 2, 4, 10}}".
+	 * Now {@code drPepper.toString()} returns "{@code 2, 4, 10} ".
 	 * 
 	 * @return a string representation of this bit set
 	 */

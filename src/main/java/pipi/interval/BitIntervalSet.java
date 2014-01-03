@@ -183,10 +183,36 @@ public class BitIntervalSet implements IntervalSet {
 
 //		Assert.assertEquals(treeIntervalSet.getSubIntervals(verticalRange).getIntervals(), subs.getIntervals());
 		return subs;
+	}
+
+	public void fastSubIntervals(Interval verticalRange) {
+		int from = verticalRange.getFrom();
+		int to = verticalRange.getTo();
+
 		
+		int previousSetBitFrom = this.froms.previousSetBit(from);
+		if (previousSetBitFrom != -1) {
+			int nextSetBitFrom = this.tos.nextSetBit(previousSetBitFrom);
+			if (nextSetBitFrom > from) {
+				this.froms.set(from);
+			}
+		}
+		int nextSetBitTo = this.tos.nextSetBit(to);
+		{
+			if (nextSetBitTo != -1) {
+				int previousSetBitTo = this.froms.previousSetBit(to);
+				if (previousSetBitTo >= 0 && previousSetBitTo <= to) {
+					this.tos.set(to);
+				}
+			}
+		}
+		this.clearOutside(from, to);
+
+//		Assert.assertEquals(treeIntervalSet.getSubIntervals(verticalRange).getIntervals(), subs.getIntervals());
 
 	}
 
+	
 	@Override
 	public boolean isEmpty() {
 		return this.froms.isEmpty();
@@ -239,11 +265,11 @@ public class BitIntervalSet implements IntervalSet {
 		return this.tos.size() - 1;
 	}
 
-	void clearOutside(int from, int to) {
-		this.froms.clear(0, from);
-		this.tos.clear(0, from+1);
-		this.froms.clear(to, this.froms.size());
-		this.tos.clear(to + 1, this.tos.size());
+	public void clearOutside(int from, int to) {
+		this.froms.clearTo(from);
+		this.tos.clearTo(from+1);
+		this.froms.clearFrom(to);
+		this.tos.clearFrom(to + 1);
 	}
 
 	@Override
