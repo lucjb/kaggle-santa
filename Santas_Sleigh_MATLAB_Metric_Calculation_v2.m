@@ -127,30 +127,30 @@ for i = 1:numPresentsSubmit
 end
 fprintf('Collision check PASSED: No packages collided\n');
 
-% %% Computing the Evaluation Metric
-% % How well Santa's sleigh is packed will be judged by the overall
-% % compactness of the packing and the ordering of the presents: 
-% % metric  = 2 * max(z-coordinates) + sigma(order)
-% 
-% % Ideal order is the original order
-% idealOrder = input(:,1); 
-% 
-% % Determine the max z-coordinate; this is the max height of the sleigh
-% maxZ = max(max(submit(:,4:3:end)));
-% 
-% % Go down the layers from top to bottom, reorder presents in numeric order
-% % for each layer
-% maxZCoord = zeros(numPresentsSubmit,2);
-% for i = 1:numPresentsSubmit
-%     maxZCoord(i,1) = submit(i);
-%     maxZCoord(i,2) = max(submit(i,4:3:end));
-% end
-% maxzCoordSorted = sortrows(maxZCoord,[-2 1]); %sort max z-coord for each present
-% reOrder = maxzCoordSorted(:,1);
-% 
-% % Compare the new order to the ideal order
-% order = sum(abs(idealOrder - reOrder));
-% 
-% % Compute metric
-% metric = 2*maxZ + order;
-% fprintf('Evaluation metric score is %d\n', metric);
+%% Computing the Evaluation Metric
+% How well Santa's sleigh is packed will be judged by the overall
+% compactness of the packing and the ordering of the presents: 
+% metric  = 2 * max(z-coordinates) + sigma(order)
+
+% Ideal order is the original order
+idealOrder = input(:,1); 
+
+% Determine the max z-coordinate; this is the max height of the sleigh
+maxZ = max(max(submit(:,4:3:end)));
+
+% Go down the layers from top to bottom, reorder presents in numeric order
+% for each layer
+maxZCoord = zeros(numPresentsSubmit,2);
+for i = 1:numPresentsSubmit
+    maxZCoord(i,1) = submit(i);
+    maxZCoord(i,2) = max(submit(i,4:3:end));
+end
+maxzCoordSorted = sortrows(maxZCoord,[-2 1]); %sort max z-coord for each present
+reOrder = maxzCoordSorted(:,1);
+
+% Compare the new order to the ideal order
+order = sum(abs(idealOrder - reOrder));
+
+% Compute metric
+metric = 2*maxZ + order;
+fprintf('Evaluation metric score is %d\n', metric);

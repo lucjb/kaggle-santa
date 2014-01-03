@@ -157,46 +157,31 @@ public class IntervalSlice implements Slice {
 			rightIndexes[i] = entry.getKey();
 		}
 
-		// for (int i = 0; i < rightEntries.size(); i++) {
-		// Entry<Integer, SleighColumn> entry = rightEntries.get(i);
-		//
-		// }
 		for (Entry<Integer, SliceColumn> leftEntry : this.lefts.entrySet()) {
 			for (Interval line : leftEntry.getValue().getLines().getIntervals()) {
-				Interval bounderLine = line;
-				leftDeque.addLast(new StartLine(leftEntry.getValue(), leftEntry.getKey(), leftEntry.getKey(), bounderLine));
+				leftDeque.addLast(new StartLine(leftEntry.getValue(), leftEntry.getKey(), leftEntry.getKey(), line));
 			}
 		}
 
 		StartLine leftPair = leftDeque.pollFirst();
 		while (leftPair != null) {
 			Interval bounderLine = leftPair.getLine();
-			boolean leftEmpty = isLeftEmpty(leftPair, bounderLine);
-			if (!leftEmpty) {
-
-				int binarySearch = Arrays.binarySearch(rightIndexes, leftPair.getStart());
-				if (binarySearch >= 0) {
-					binarySearch++;
-				} else {
-					binarySearch = -binarySearch - 1;
-				}
-
-				while (binarySearch < rightIndexes.length) {
-					SliceColumn rightColumn = rightColumns[binarySearch];
-					if (rightColumn.getSides().isAnythingInside(bounderLine)) {
-//						IntervalSet rightSides = getRightSides(rightColumn, bounderLine); 
-						List<Interval> ranges = getEmptyIntervals(rightColumn.getSides(), bounderLine);
-						maximumRectangles.add(new MaximumRectangle(new Interval(leftPair.getLeft(),
-								rightIndexes[binarySearch]), bounderLine));
+			if (!isLeftEmpty(leftPair, bounderLine)) {
+				int index = nextIndex(rightIndexes, leftPair.getStart());
+				while (index < rightIndexes.length) {
+					SliceColumn rightColumn = rightColumns[index];
+					if (isRightEmpty(rightColumn, bounderLine)) {
+						maximumRectangles.add(new MaximumRectangle(new Interval(leftPair.getLeft(), rightIndexes[index]),
+								bounderLine));
+						List<Interval> ranges = emptyPaths(rightColumn.getSides(), bounderLine);
 						for (Interval interval : ranges) {
 							leftDeque.addLast(new StartLine(leftPair.getSleighColumn(), leftPair.getLeft(),
-									rightIndexes[binarySearch], interval));
+									rightIndexes[index], interval));
 						}
 						break;
 					} else {
-						binarySearch++;
+						index++;
 					}
-
 				}
 			}
 			leftPair = leftDeque.pollFirst();
@@ -205,17 +190,32 @@ public class IntervalSlice implements Slice {
 		return maximumRectangles;
 	}
 
+	private boolean isRightEmpty(SliceColumn rightColumn, Interval bounderLine) {
+		return rightColumn.getSides().isAnythingInside(bounderLine);
+	}
+
+	private int nextIndex(int[] rightIndexes, int start) {
+		int binarySearch = Arrays.binarySearch(rightIndexes, start);
+		if (binarySearch >= 0) {
+			binarySearch++;
+		} else {
+			binarySearch = -binarySearch - 1;
+		}
+		return binarySearch;
+	}
+
 	private boolean isLeftEmpty(StartLine leftPair, Interval bound) {
 		IntervalSet sides = leftPair.getSleighColumn().getSides();
 		return !sides.isAnythingInside(bound);
 	}
 
-	private List<Interval> getEmptyIntervals(IntervalSet rightSides, Interval bound) {
-		List<Interval> safeGetEmptyIntervals = safeGetEmptyIntervals(rightSides, bound);
-		assert safeGetEmptyIntervals.equals(oldIntervals(rightSides, bound)); 
-		assert safeGetEmptyIntervals.equals(newIntervals(rightSides, bound)); 
-		return safeGetEmptyIntervals;
-		 // List<Interval> ranges = treeIntervalSet.getIntervals();
+	private List<Interval> emptyPaths(IntervalSet rightSides, Interval bound) {
+		// List<Interval> safeGetEmptyIntervals =
+		// safeGetEmptyIntervals(rightSides, bound);
+		// assert safeGetEmptyIntervals.equals(oldIntervals(rightSides, bound));
+		// assert safeGetEmptyIntervals.equals(newIntervals(rightSides, bound));
+		// return safeGetEmptyIntervals;
+		// List<Interval> ranges = treeIntervalSet.getIntervals();
 		// return ranges;
 		// List<Interval> intervals = oldIntervals(rightSides, bound);
 		// List<Interval> complementaryIntervals = newIntervals(rightSides,
@@ -223,17 +223,17 @@ public class IntervalSlice implements Slice {
 		// if(!intervals.equals(complementaryIntervals)) {
 		// System.out.println("NAH");
 		// }
-//		return newIntervals(rightSides, bound);
+		return optimizedEmptyPaths(rightSides, bound);
 	}
 
 	private List<Interval> safeGetEmptyIntervals(IntervalSet rightSides, Interval bound) {
 		IntervalSet treeIntervalSet = buildIntervalSet(this.height);
-		 treeIntervalSet.addInterval(bound);
-		 treeIntervalSet.removeAllRanges(rightSides);
-		 return treeIntervalSet.getIntervals();
+		treeIntervalSet.addInterval(bound);
+		treeIntervalSet.removeAllRanges(rightSides);
+		return treeIntervalSet.getIntervals();
 	}
 
-	private List<Interval> newIntervals(IntervalSet rightSides, Interval bound) {
+	private List<Interval> optimizedEmptyPaths(IntervalSet rightSides, Interval bound) {
 		BitIntervalSet bit = (BitIntervalSet) rightSides;
 		bit.complement();
 		List<Interval> fastIntervals = bit.fastIntervals(bound);
@@ -250,10 +250,6 @@ public class IntervalSlice implements Slice {
 
 	private boolean rightIsEmpty(IntervalSet rightSides) {
 		return rightSides.isEmpty();
-	}
-
-	private IntervalSet getRightSides(SliceColumn rightColumn, Interval bound) {
-		return rightColumn.getSides().getSubIntervals(bound);
 	}
 
 	public static IntervalSlice empty(int width, int height) {
