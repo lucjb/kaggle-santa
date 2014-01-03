@@ -43,7 +43,9 @@ public class HeightBitMap implements Cloneable {
 		int index = indexFor(z);
 		if (index >= layers.size()) {
 			for (int i = layers.size(); i < index + 1; i++) {
-				layers.add(new BitSet(1000 * 1000));
+				BitSet bitSet = new BitSet(1000 * 1000);
+				bitSet.set(0, 1000 * 1000);
+				layers.add(bitSet);
 			}
 		}
 		return this.layers.get(index);
@@ -53,9 +55,11 @@ public class HeightBitMap implements Cloneable {
 		return z - currentZ;
 	}
 
-	public void put(int x, int y, int xSize, int ySize, int zSize) {
-		unset(x, y, xSize, ySize, currentLayer());
-		set(x, y, xSize, ySize, getLayer(currentZ + zSize));
+	public void put(int x, int y, int z, int xSize, int ySize, int zSize) {
+		for (int zi = z; zi < z + zSize; zi++) {
+			unset(x, y, xSize, ySize, getLayer(zi));
+		}
+		set(x, y, xSize, ySize, getLayer(z + zSize));
 	}
 
 	public void pushDown(int x, int y, int xSize, int ySize, int zSize, int delta) {
@@ -76,6 +80,48 @@ public class HeightBitMap implements Cloneable {
 						return 1000;
 					} else {
 						return nextSetBit % 1000;
+					}
+				}
+			}
+		}
+		return y;
+	}
+
+	public int fit(int x, int y, int xSize, int ySize, int z) {
+		if (x + xSize > 1000 || y + ySize > 1000)
+			return 1000;
+		BitSet currentLayer = getLayer(z);
+		for (int p = x; p < x + xSize; p++) {
+			for (int q = y; q < y + ySize; q++) {
+				int bitIndex = p * 1000 + q;
+				if (!currentLayer.get(bitIndex)) {
+					int nextSetBit = currentLayer.nextSetBit(bitIndex + 1);
+					if (nextSetBit < 0 || nextSetBit / 1000 != p) {
+						return 1000;
+					} else {
+						return nextSetBit % 1000;
+					}
+				}
+			}
+		}
+		return y;
+	}
+
+	public int reverseFit(int x, int y, int xSize, int ySize) {
+		if (x + xSize > 1000 || y + ySize > 1000)
+			return -1;
+		BitSet currentLayer = currentLayer();
+		for (int p = x; p < x + xSize; p++) {
+			for (int q = y; q < y + ySize; q++) {
+				int bitIndex = p * 1000 + q;
+				if (!currentLayer.get(bitIndex)) {
+					if (y - ySize < 0)
+						return -1;
+					int prevSetBit = currentLayer.previousSetBit(p * 1000 + y - ySize);
+					if (prevSetBit < 0 || prevSetBit / 1000 != p) {
+						return -1;
+					} else {
+						return prevSetBit % 1000;
 					}
 				}
 			}
@@ -110,12 +156,13 @@ public class HeightBitMap implements Cloneable {
 
 		ap += rightAdjacentSide(present, ip, currentLayer);
 
-		return ap / present.xSize * 2 + present.ySize * 2;
+		// return ap / present.xSize * 2 + present.ySize * 2;
+		return ap;
 	}
 
 	private int rightAdjacentSide(Present present, Point ip, BitSet currentLayer) {
 		if (ip.y + present.ySize - 1 == 1000) {
-			return present.xSize;
+			return 2 * present.xSize;
 		}
 
 		int ap = 0;
@@ -123,7 +170,7 @@ public class HeightBitMap implements Cloneable {
 		int start = ip.x - 2 >= 0 ? ip.x - 2 : ip.x - 1;
 		int end = start + present.xSize + 1 <= 1000 ? start + present.xSize + 1 : start + present.xSize;
 		for (int p = start; p < end; p++) {
-			if (currentLayer.get(p * 1000 + q)) {
+			if (!currentLayer.get(p * 1000 + q)) {
 				ap++;
 			}
 		}
@@ -132,7 +179,7 @@ public class HeightBitMap implements Cloneable {
 
 	private int leftAdjacentSide(Present present, Point ip, BitSet currentLayer) {
 		if (ip.y == 1) {
-			return present.xSize;
+			return 2 * present.xSize;
 		}
 
 		int ap = 0;
@@ -140,7 +187,7 @@ public class HeightBitMap implements Cloneable {
 		int start = ip.x - 2 >= 0 ? ip.x - 2 : ip.x - 1;
 		int end = start + present.xSize + 1 <= 1000 ? start + present.xSize + 1 : start + present.xSize;
 		for (int p = start; p < end; p++) {
-			if (currentLayer.get(p * 1000 + q)) {
+			if (!currentLayer.get(p * 1000 + q)) {
 				ap++;
 			}
 		}
@@ -149,7 +196,7 @@ public class HeightBitMap implements Cloneable {
 
 	private int bottomAdjacentSide(Present present, Point ip, BitSet currentLayer) {
 		if (ip.x + present.xSize - 1 == 1000) {
-			return present.ySize;
+			return 2 * present.ySize;
 		}
 
 		int ap = 0;
@@ -158,7 +205,7 @@ public class HeightBitMap implements Cloneable {
 		int start = ip.y - 2 >= 0 ? ip.y - 2 : ip.y - 1;
 		int end = start + present.ySize + 1 <= 1000 ? start + present.ySize + 1 : start + present.ySize;
 		for (int q = ip.y - 2; q < end; q++) {
-			if (currentLayer.get(p * 1000 + q)) {
+			if (!currentLayer.get(p * 1000 + q)) {
 				ap++;
 			}
 		}
@@ -167,14 +214,14 @@ public class HeightBitMap implements Cloneable {
 
 	private int topAdjacentSide(Present present, Point ip, BitSet currentLayer) {
 		if (ip.x == 1) {
-			return present.ySize;
+			return 2 * present.ySize;
 		}
 		int ap = 0;
 		int p = ip.x - 2;
 		int start = ip.y - 2 >= 0 ? ip.y - 2 : ip.y - 1;
 		int end = start + present.ySize + 1 <= 1000 ? start + present.ySize + 1 : start + present.ySize;
 		for (int q = start; q < end; q++) {
-			if (currentLayer.get(p * 1000 + q)) {
+			if (!currentLayer.get(p * 1000 + q)) {
 				ap++;
 			}
 		}

@@ -2,6 +2,7 @@ package first;
 
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
 
@@ -39,25 +40,30 @@ public class XYZCompactSleigh {
 
 	private void addPresentsOrdering(List<Present> presents) {
 		List<Present> layer = Lists.newArrayList();
-		for (Present present : presents) {
+		Iterator<Present> iterator = presents.iterator();
+		for (; iterator.hasNext();) {
+			Present present = (Present) iterator.next();
 			if (!add(present)) {
 				undoLayer(layer);
-				layer.add(present);
-				List<Present> sortedLayer;
-				sortedLayer = sortSupX(layer);
-
-				if (reinsert(sortedLayer)) {
+				List<Present> sortedLayer = sandongueo(layer, present);
+				if (sortedLayer != null) {
 					layer = sortedLayer;
 				} else {
-					undoLayer(sortedLayer);
+					undoLayer(layer);
+					present.boundaries.clear();
 					layer.remove(present);
 					if (!reinsert(layer)) {
 						System.err.println("Wrong!");
 					}
-					startLayer();
-					layer.clear();
-					add(present);
-					layer.add(present);
+					present = stuff(present, iterator);
+					pushDown(layer);
+					if (present != null) {
+						System.out.println("current z: " + (space.currentZ + 1) + ", presents: " + layer.size());
+						startLayer();
+						layer.clear();
+						add(present);
+						layer.add(present);
+					}
 				}
 			} else {
 				layer.add(present);
@@ -68,7 +74,82 @@ public class XYZCompactSleigh {
 			}
 			i++;
 		}
+		System.out.println(layer.size());
+	}
 
+	private List<Present> sandongueo(List<Present> layer, Present present) {
+		List<Present> sortedLayer = sortSupY(layer);
+		Present blocker = present;
+		for (int i = 0; i < 10; i++) {
+			sortedLayer.remove(blocker);
+			sortedLayer.add(0, blocker);
+			blocker = reinsertAndReturn(sortedLayer);
+			// System.out.println(blocker);
+			if (blocker == null) {
+				return sortedLayer;
+			}
+			undoLayer(sortedLayer);
+		}
+		return null;
+	}
+
+	private Present stuff(Present blocker, Iterator<Present> iterator) {
+		int fromZ = space.currentZ + 1;
+		Point topLeftInsertionPoint = stuffingInsertionPoint(fromZ, blocker);
+		if (topLeftInsertionPoint != null && topLeftInsertionPoint.z + blocker.zSize < maxZ) {
+			insert(blocker, topLeftInsertionPoint);
+			fromZ = topLeftInsertionPoint.z - 1;
+		} else {
+			return blocker;
+
+		}
+
+		for (; iterator.hasNext();) {
+			Present present = iterator.next();
+			topLeftInsertionPoint = stuffingInsertionPoint(fromZ, present);
+			if (topLeftInsertionPoint != null && topLeftInsertionPoint.z + present.zSize < maxZ) {
+				insert(present, topLeftInsertionPoint);
+				fromZ = topLeftInsertionPoint.z - 1;
+			} else {
+				return present;
+
+			}
+		}
+		return null;
+	}
+
+	private Point stuffingInsertionPoint(int fromZ, Present present) {
+		for (int z = fromZ; z < maxZ; z++) {
+
+			present.rotateMaxMedMin();
+			Point topLeftInsertionPoint = topLeftInsertionPoint(present, z);
+
+			if (topLeftInsertionPoint == null) {
+				present.rotateMedMaxMin();
+				topLeftInsertionPoint = topLeftInsertionPoint(present, z);
+			}
+			if (topLeftInsertionPoint == null) {
+				present.rotateMinMaxMed();
+				topLeftInsertionPoint = topLeftInsertionPoint(present, z);
+			}
+			if (topLeftInsertionPoint == null) {
+				present.rotateMaxMinMed();
+				topLeftInsertionPoint = topLeftInsertionPoint(present, z);
+			}
+			if (topLeftInsertionPoint == null) {
+				present.rotateMinMedMax();
+				topLeftInsertionPoint = topLeftInsertionPoint(present, z);
+			}
+			if (topLeftInsertionPoint == null) {
+				present.rotateMedMinMax();
+				topLeftInsertionPoint = topLeftInsertionPoint(present, z);
+			}
+			if (topLeftInsertionPoint != null) {
+				return topLeftInsertionPoint;
+			}
+
+		}
+		return null;
 	}
 
 	private boolean encajate(Present present) {
@@ -168,6 +249,15 @@ public class XYZCompactSleigh {
 			}
 		}
 		return true;
+	}
+
+	private Present reinsertAndReturn(List<Present> presents) {
+		for (Present p : presents) {
+			if (!add(p)) {
+				return p;
+			}
+		}
+		return null;
 	}
 
 	private List<Present> sort(List<Present> layer) {
@@ -331,6 +421,7 @@ public class XYZCompactSleigh {
 
 	private void undoLayer(List<Present> layer) {
 		for (Present present : layer) {
+			present.rotateMinMedMax();
 			present.boundaries.clear();
 		}
 		maxZ = prevMax;
@@ -395,8 +486,7 @@ public class XYZCompactSleigh {
 	boolean b = false;
 
 	private void insert(Present present, Point insertPoint) {
-		b = !b;
-		this.space.put(insertPoint.x - 1, insertPoint.y - 1, present.xSize, present.ySize, present.zSize);
+		this.space.put(insertPoint.x - 1, insertPoint.y - 1, insertPoint.z - 1, present.xSize, present.ySize, present.zSize);
 
 		present.boundaries.add(new Point(insertPoint.x, insertPoint.y, insertPoint.z));
 		present.boundaries.add(new Point(insertPoint.x, insertPoint.y + present.ySize - 1, insertPoint.z));
@@ -436,8 +526,9 @@ public class XYZCompactSleigh {
 	}
 
 	private Point placeFor(Present present) {
-		return alternate(present);
-		// return maxAdjPerPoint(present);
+		// return alternate(present);
+		return maxAdjPerPoint(present);
+		// return firstFittingPoint(present);
 	}
 
 	private Point naiveLocation(Present present) {
@@ -459,7 +550,7 @@ public class XYZCompactSleigh {
 		if (b) {
 			return topLeftInsertionPoint(present);
 		} else {
-			return bottomUpInsertionPoint(present);
+			return bottomRightInsertionPoint(present);
 		}
 
 	}
@@ -467,10 +558,17 @@ public class XYZCompactSleigh {
 	private Point firstFittingPoint(Present present) {
 		present.rotateMinMedMax();
 		Point topLeftInsertionPoint = topLeftInsertionPoint(present);
-		Point bottomUpInsertionPoint = bottomUpInsertionPoint(present);
+		Point bottomUpInsertionPoint = null;
+		if (topLeftInsertionPoint != null) {
+			bottomUpInsertionPoint = bottomRightInsertionPoint(present);
+		}
 		present.rotateMedMinMax();
+
 		Point rTopLeftInsertionPoint = topLeftInsertionPoint(present);
-		Point rBottomUpInsertionPoint = bottomUpInsertionPoint(present);
+		Point rBottomUpInsertionPoint = null;
+		if (rTopLeftInsertionPoint != null) {
+			rBottomUpInsertionPoint = bottomRightInsertionPoint(present);
+		}
 
 		double tlAdjacentPerimeter = space.adjacentPerimeter(present, topLeftInsertionPoint);
 		double buAdjacentPerimeter = space.adjacentPerimeter(present, bottomUpInsertionPoint);
@@ -496,21 +594,34 @@ public class XYZCompactSleigh {
 
 	private Point maxAdjPerPoint(Present present) {
 		Point topLeftInsertionPoint = topLeftInsertionPoint(present);
-		Point bottomUpInsertionPoint = bottomUpInsertionPoint(present);
+		if (topLeftInsertionPoint == null)
+			return null;
+		Point topRightInsertionPoint = topRightInsertionPoint(present);
+		Point bottomLeftInsertionPoint = bottomLeftInsertionPoint(present);
+		Point bottomRightInsertionPoint = bottomRightInsertionPoint(present);
 
 		double tlAdjacentPerimeter = space.adjacentPerimeter(present, topLeftInsertionPoint);
-		double buAdjacentPerimeter = space.adjacentPerimeter(present, bottomUpInsertionPoint);
-		if (tlAdjacentPerimeter > buAdjacentPerimeter)
+		double trAdjacentPerimeter = space.adjacentPerimeter(present, topRightInsertionPoint);
+		double blAdjacentPerimeter = space.adjacentPerimeter(present, bottomLeftInsertionPoint);
+		double brAdjacentPerimeter = space.adjacentPerimeter(present, bottomRightInsertionPoint);
+
+		Double max = Ordering.natural().max(tlAdjacentPerimeter, trAdjacentPerimeter, blAdjacentPerimeter,
+				brAdjacentPerimeter);
+
+		if (max == tlAdjacentPerimeter)
 			return topLeftInsertionPoint;
-		else {
-			return bottomUpInsertionPoint;
-		}
+		if (max == trAdjacentPerimeter)
+			return topRightInsertionPoint;
+		if (max == blAdjacentPerimeter)
+			return bottomLeftInsertionPoint;
+		return bottomRightInsertionPoint;
+
 	}
 
-	private Point bottomUpInsertionPoint(Present present) {
+	private Point bottomLeftInsertionPoint(Present present) {
 		for (int xi = 1000 - present.xSize; xi >= 0;) {
 			for (int yi = 0; yi <= 1000 - present.ySize;) {
-				int skip = this.thereIsRoomFor(xi, yi, present);
+				int skip = space.fit(xi, yi, present.xSize, present.ySize);
 				if (skip == yi) {
 					return new Point(xi + 1, yi + 1, this.space.currentZ + 1);
 				} else {
@@ -522,12 +633,57 @@ public class XYZCompactSleigh {
 		return null;
 	}
 
-	private Point topLeftInsertionPoint(Present present) {
-		for (int xi = 0; xi <= 999;) {
-			for (int yi = 0; yi <= 999;) {
-				int skip = this.thereIsRoomFor(xi, yi, present);
+	private Point bottomRightInsertionPoint(Present present) {
+		for (int xi = 1000 - present.xSize; xi >= 0;) {
+			for (int yi = 1000 - present.ySize; yi >= 0;) {
+				int skip = space.reverseFit(xi, yi, present.xSize, present.ySize);
 				if (skip == yi) {
 					return new Point(xi + 1, yi + 1, this.space.currentZ + 1);
+				} else {
+					yi = skip;
+				}
+			}
+			xi -= 1;
+		}
+		return null;
+	}
+
+	private Point topRightInsertionPoint(Present present) {
+		for (int xi = 0; xi <= 1000 - present.xSize;) {
+			for (int yi = 1000 - present.ySize; yi >= 0;) {
+				int skip = space.reverseFit(xi, yi, present.xSize, present.ySize);
+				if (skip == yi) {
+					return new Point(xi + 1, yi + 1, this.space.currentZ + 1);
+				} else {
+					yi = skip;
+				}
+			}
+			xi += 1;
+		}
+		return null;
+	}
+
+	private Point topLeftInsertionPoint(Present present) {
+		for (int xi = 0; xi <= 1000 - present.xSize;) {
+			for (int yi = 0; yi <= 1000 - present.ySize;) {
+				int skip = space.fit(xi, yi, present.xSize, present.ySize);
+				if (skip == yi) {
+					return new Point(xi + 1, yi + 1, this.space.currentZ + 1);
+				} else {
+					yi = skip;
+				}
+			}
+			xi += 1;
+		}
+		return null;
+	}
+
+	private Point topLeftInsertionPoint(Present present, int z) {
+		for (int xi = 0; xi <= 1000 - present.xSize;) {
+			for (int yi = 0; yi <= 1000 - present.ySize;) {
+				int skip = space.fit(xi, yi, present.xSize, present.ySize, z);
+				if (skip == yi) {
+					return new Point(xi + 1, yi + 1, z + 1);
 				} else {
 					yi = skip;
 				}

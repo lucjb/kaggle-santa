@@ -12,6 +12,11 @@ import com.google.common.primitives.Ints;
 
 public class Presents {
 
+	// perimetro maximo topright top left perimetro relativo
+	// perimetro maximo topright top left con pushdoen perimetro relativo
+	// perimetro maximo 4 alternativas, plain perimetro, con pudhdown
+	// perimetro maximo 4 alternativas, weghted perimetro, con pushdown
+
 	public static void main(String[] args) throws IOException {
 		// List<Present> presents = new PresentsParser().parse("test.csv");
 		List<Present> presents = new PresentsParser().parse("presents.csv");
@@ -20,7 +25,7 @@ public class Presents {
 		// XYCompactSleigh sleigh = new XYCompactSleigh();
 		// ZCompressedSleigh sleigh = new ZCompressedSleigh();
 		sleigh.addPresents(presents);
-		CSVWriter writer = new CSVWriter(new FileWriter("alt.csv"), ',', CSVWriter.NO_QUOTE_CHARACTER);
+		CSVWriter writer = new CSVWriter(new FileWriter("ASANDONGA.csv"), ',', CSVWriter.NO_QUOTE_CHARACTER);
 		String[] headers = new String[] { "PresentId", "x1", "y1", "z1", "x2", "y2", "z2", "x3", "y3", "z3", "x4", "y4",
 				"z4", "x5", "y5", "z5", "x6", "y6", "z6", "x7", "y7", "z7", "x8", "y8", "z8" };
 		writer.writeNext(headers);
