@@ -1,5 +1,6 @@
-package pipi;
+package pipi.sandbox;
 
+import pipi.Box3d;
 import first.Point;
 
 public class HeightmapSuperSleigh {

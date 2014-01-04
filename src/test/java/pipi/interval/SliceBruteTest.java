@@ -14,7 +14,7 @@ import org.junit.runners.Parameterized.Parameters;
 
 import com.google.common.collect.Lists;
 
-import pipi.BruteForce;
+import pipi.main.BruteForce;
 
 @RunWith(Parameterized.class)
 public class SliceBruteTest {

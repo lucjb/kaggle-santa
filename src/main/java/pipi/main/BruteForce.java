@@ -1,20 +1,15 @@
-package pipi;
+package pipi.main;
 
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
-import java.util.Set;
 
-import pipi.bitmatrix.BitsetSlice;
+import pipi.Box2d;
 import pipi.interval.IntervalSlice;
-import pipi.interval.MaximumRectangle;
 import pipi.interval.Rectangle;
+import pipi.sandbox.BitsetSlice;
 
-import com.google.common.collect.ContiguousSet;
-import com.google.common.collect.DiscreteDomain;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Range;
-import com.google.common.collect.Sets;
 
 public class BruteForce {
 	static int size = 1000;
@@ -82,22 +77,22 @@ public class BruteForce {
 					rectangle.getBox2d().dy);
 			intervalSlice.fill(rectangle.getPoint2d().getX(), rectangle.getPoint2d().getY(), rectangle.getBox2d().dx,
 					rectangle.getBox2d().dy);
-			Collection<MaximumRectangle> maximumRectangles = intervalSlice.getMaximumRectangles();
+			Collection<Rectangle> maximumRectangles = intervalSlice.getMaximumRectangles();
 			BitsetSlice actualSlice = BitsetSlice.filled(1000);
-			for (MaximumRectangle maximumRectangle : maximumRectangles) {
-				actualSlice.free(maximumRectangle.getHorizontalRange().getFrom(), maximumRectangle.getVerticalRange().getFrom(),
-						maximumRectangle.getHorizontalRange().length(), maximumRectangle.getVerticalRange().length());
+			for (Rectangle maximumRectangle : maximumRectangles) {
+				actualSlice.free(maximumRectangle.getPoint2d().getX(), maximumRectangle.getPoint2d().getY(),
+						maximumRectangle.getBox2d().dx, maximumRectangle.getBox2d().dy);
 			}
 			if(!expectedSlice.equals(actualSlice)){
 				return false;
 			}
 		}
-		Collection<MaximumRectangle> maximumRectangles = intervalSlice.getMaximumRectangles();
+		Collection<Rectangle> maximumRectangles = intervalSlice.getMaximumRectangles();
 //		System.out.println(maximumRectangles);
-		for (MaximumRectangle maximumRectangle : maximumRectangles) {
-			for (MaximumRectangle other : maximumRectangles) {
+		for (Rectangle maximumRectangle : maximumRectangles) {
+			for (Rectangle other : maximumRectangles) {
 				if(!maximumRectangle.equals(other)){
-					MaximumRectangle intersection = maximumRectangle.intersect(other);
+					Rectangle intersection = maximumRectangle.intersection(other);
 					if(maximumRectangle.equals(intersection)){
 						return false;
 					}

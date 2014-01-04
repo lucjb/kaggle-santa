@@ -9,9 +9,9 @@ import java.util.List;
 
 import javax.swing.JFrame;
 
-import pipi.BruteForce;
-import pipi.bitmatrix.BitsetSlice;
 import pipi.gui.JPanelExtension;
+import pipi.main.BruteForce;
+import pipi.sandbox.BitsetSlice;
 
 import com.google.common.collect.Lists;
 

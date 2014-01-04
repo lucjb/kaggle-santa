@@ -25,4 +25,9 @@ public class Dimension3d {
 		return String.format("%dx%dx%d", this.small, this.medium, this.large);
 	}
 
+	public Dimension2d smallFace() {
+		return new Dimension2d(this.small, this.medium);
+	}
+
+	
 }

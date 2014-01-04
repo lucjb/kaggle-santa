@@ -1,4 +1,4 @@
-package pipi;
+package pipi.sandbox;
 import static java.lang.Math.max;
 import static java.lang.Math.min;
 

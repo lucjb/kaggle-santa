@@ -44,14 +44,14 @@ public class OutputPresent {
 				Ints.asList(ouputPresent));
 	}
 
-	static void outputPresents(List<OutputPresent> outputPresents, int lastZ, String filename) throws IOException {
+	public static void outputPresents(List<OutputPresent> outputPresents, int lastZ, String filename) throws IOException {
 		try (BufferedWriter newBufferedWriter = Files.newBufferedWriter(
 				Paths.get(".", filename), Charsets.UTF_8)) {
 			newBufferedWriter
 					.write("PresentId,x1,y1,z1,x2,y2,z2,x3,y3,z3,x4,y4,z4,x5,y5,z5,x6,y6,z6,x7,y7,z7,x8,y8,z8");
 			newBufferedWriter.newLine();
 			for (OutputPresent outputPresent : outputPresents) {
-				newBufferedWriter.write(outputPresent.outputString(lastZ));
+				newBufferedWriter.write(outputPresent.outputString(lastZ+1));
 				newBufferedWriter.newLine();
 			}
 		}

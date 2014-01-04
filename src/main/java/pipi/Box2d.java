@@ -15,4 +15,16 @@ public class Box2d {
 		return String.format("%dx%d", this.dx, this.dy);
 	}
 
+	public int area() {
+		return this.dx * this.dy;
+	}
+
+	public Dimension2d dimension() {
+		return Dimension2d.create(this.dx, this.dy);
+	}
+
+	public boolean contains(Box2d vertical) {
+		return this.dx >= vertical.dx & this.dy >= vertical.dy;
+	}
+
 }

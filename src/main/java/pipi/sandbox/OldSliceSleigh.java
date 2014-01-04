@@ -1,4 +1,4 @@
-package pipi;
+package pipi.sandbox;
 
 import java.util.Map;
 import java.util.PriorityQueue;
@@ -6,7 +6,8 @@ import java.util.PriorityQueue;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Queues;
 
-import pipi.bitmatrix.BitsetSlice;
+import pipi.Box3d;
+import pipi.Slice;
 import first.Point;
 
 public class OldSliceSleigh {

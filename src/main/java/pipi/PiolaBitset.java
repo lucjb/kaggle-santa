@@ -71,12 +71,12 @@ public class PiolaBitset implements Cloneable, java.io.Serializable {
 	 * which consists of 64 bits, requiring 6 address bits. The choice of word
 	 * size is determined purely by performance concerns.
 	 */
-	private final static int ADDRESS_BITS_PER_WORD = 6;
-	private final static int BITS_PER_WORD = 1 << ADDRESS_BITS_PER_WORD;
+	public final static int ADDRESS_BITS_PER_WORD = 6;
+	public final static int BITS_PER_WORD = 1 << ADDRESS_BITS_PER_WORD;
 	private final static int BIT_INDEX_MASK = BITS_PER_WORD - 1;
 
 	/* Used to shift left or right for a partial word mask */
-	private static final long WORD_MASK = 0xffffffffffffffffL;
+	public static final long WORD_MASK = 0xffffffffffffffffL;
 
 	/**
 	 * @serialField
@@ -703,18 +703,25 @@ public class PiolaBitset implements Cloneable, java.io.Serializable {
 		if (fromIndex < 0)
 			throw new IndexOutOfBoundsException("fromIndex < 0: " + fromIndex);
 
-		int u = wordIndex(fromIndex);
-		if (u >= this.words.length)
-			return -1;
+		int wordIndex = wordIndex(fromIndex);
 
-		long word = words[u] & (WORD_MASK << fromIndex);
+		return nextSetBitWord(wordIndex, fromIndex);
+	}
 
+	public int nextSetBitWord(int wordIndex, int fromIndex) {
+		return nextSetBitWord(wordIndex, fromIndex, -1);
+	}
+
+	public int nextSetBitWord(int wordIndex, int fromIndex, int failureValue) {
+		long word = words[wordIndex] & (WORD_MASK << fromIndex);
+		
 		while (true) {
 			if (word != 0)
-				return (u * BITS_PER_WORD) + Long.numberOfTrailingZeros(word);
-			if (++u == this.words.length)
-				return -1;
-			word = words[u];
+				return (wordIndex * BITS_PER_WORD) + Long.numberOfTrailingZeros(word);
+			if (++wordIndex == this.words.length) {
+				return failureValue;
+			}
+			word = words[wordIndex];
 		}
 	}
 
@@ -799,23 +806,26 @@ public class PiolaBitset implements Cloneable, java.io.Serializable {
 	 */
 	public int previousSetBit(int fromIndex) {
 		if (fromIndex < 0) {
-			if (fromIndex == -1)
-				return -1;
-			throw new IndexOutOfBoundsException("fromIndex < -1: " + fromIndex);
+			if (fromIndex < -1) {
+				throw new IndexOutOfBoundsException("fromIndex < -1: " + fromIndex);
+			}
+			return -1;
 		}
 
-		int u = wordIndex(fromIndex);
-		if (u >= this.words.length)
-			return length() - 1;
+		int wordIndex = wordIndex(fromIndex);
 
-		long word = words[u] & (WORD_MASK >>> -(fromIndex + 1));
+		return previousSetBitWord(wordIndex, fromIndex);
+	}
+
+	public int previousSetBitWord(int wordIndex, int fromIndex) {
+		long word = words[wordIndex] & (WORD_MASK >>> -(fromIndex + 1));
 
 		while (true) {
 			if (word != 0)
-				return (u + 1) * BITS_PER_WORD - 1 - Long.numberOfLeadingZeros(word);
-			if (u-- == 0)
+				return (wordIndex + 1) * BITS_PER_WORD - 1 - Long.numberOfLeadingZeros(word);
+			if (wordIndex-- == 0)
 				return -1;
-			word = words[u];
+			word = words[wordIndex];
 		}
 	}
 
