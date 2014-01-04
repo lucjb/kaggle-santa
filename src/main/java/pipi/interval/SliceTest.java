@@ -121,10 +121,7 @@ public class SliceTest {
 
 		
 		int i = 0;
-		boolean assertRectangles = BruteForce.assertRectangles(rectangles);
-		if(!assertRectangles){
-			System.out.println("CHAN!");
-		}
+		BruteForce.assertRectangles(rectangles);
 //		for (Rectangle rectangle : rectangles) {
 //			testSleighSlice.fill(rectangle.x, rectangle.y, rectangle.width, rectangle.height);
 //			sleighSlice.fill(rectangle.x, rectangle.y, rectangle.width, rectangle.height);

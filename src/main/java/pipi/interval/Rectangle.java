@@ -31,4 +31,38 @@ public class Rectangle {
 				Math.min(this.point2d.y + this.box2d.dy, other.point2d.y + other.box2d.dy) - y);
 	}
 
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((this.box2d == null) ? 0 : this.box2d.hashCode());
+		result = prime * result + ((this.point2d == null) ? 0 : this.point2d.hashCode());
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		Rectangle other = (Rectangle) obj;
+		if (this.box2d == null) {
+			if (other.box2d != null)
+				return false;
+		} else if (!this.box2d.equals(other.box2d))
+			return false;
+		if (this.point2d == null) {
+			if (other.point2d != null)
+				return false;
+		} else if (!this.point2d.equals(other.point2d))
+			return false;
+		return true;
+	}
+	
+	
+
+	
 }

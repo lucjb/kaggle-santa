@@ -4,6 +4,8 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
+import org.junit.Assert;
+
 import pipi.Box2d;
 import pipi.interval.IntervalSlice;
 import pipi.interval.Rectangle;
@@ -13,15 +15,16 @@ import com.google.common.collect.Lists;
 
 public class BruteForce {
 	static int size = 1000;
+
 	public static void main(String[] args) {
 		// List<Box2d> boxes = Arrays.asList(new Box2d(3, 2), new Box2d(4, 1),
 		// new Box2d(2, 1));
-//		 List<Box2d> boxes = Arrays.asList(new Box2d(20, 5), new Box2d(10,
-//		 10), new Box2d(5, 20));
-		List<Box2d> boxes = Arrays.asList(new Box2d(998, 993), new Box2d(991, 995), new Box2d(999, 995));
+		// List<Box2d> boxes = Arrays.asList(new Box2d(20, 5), new Box2d(10,
+		// 10), new Box2d(5, 20));
+		List<Box2d> boxes = Arrays.asList(new Box2d(998, 996), new Box2d(996, 998), new Box2d(997, 997));
 		int[] xs = new int[boxes.size()];
 		int[] ys = new int[boxes.size()];
-		long count=0;
+		long count = 0;
 		long negative = 0;
 		do {
 			// for (int i = 0; i < boxes.size(); i++) {
@@ -35,21 +38,23 @@ public class BruteForce {
 				Box2d box2d = boxes.get(i);
 				rectangles.add(Rectangle.of(x, y, box2d.dx, box2d.dy));
 			}
-			if(!BruteForce.assertRectangles(rectangles)){
+			try {
+				BruteForce.assertRectangles(rectangles);
+			} catch (AssertionError assertionError) {
 				System.out.println("--NEGATIVE--");
 				for (int i = 0; i < xs.length; i++) {
 					int x = xs[i];
 					int y = ys[i];
 					Box2d box2d = boxes.get(i);
-					System.out.printf("%d,%d,%d,%d\n",x, y, box2d.dx, box2d.dy);
+					System.out.printf("%d,%d,%d,%d\n", x, y, box2d.dx, box2d.dy);
 				}
 				negative++;
 				return;
 			}
 			count++;
 		} while (increment(xs, ys, boxes));
-		System.out.println("TOTAL: "+count);
-		System.out.println("NEGATIVE: "+negative);
+		System.out.println("TOTAL: " + count);
+		System.out.println("NEGATIVE: " + negative);
 
 	}
 
@@ -69,36 +74,45 @@ public class BruteForce {
 		return false;
 	}
 
-	public static boolean assertRectangles(List<Rectangle> rectangles) {
+	public static void assertRectangles(List<Rectangle> rectangles) {
 		BitsetSlice expectedSlice = BitsetSlice.freed(1000);
 		IntervalSlice intervalSlice = IntervalSlice.empty(1000, 1000);
 		for (Rectangle rectangle : rectangles) {
+			boolean free = expectedSlice.isFree(rectangle.getPoint2d().getX(), rectangle.getPoint2d().getY(), rectangle.getBox2d().dx,
+					rectangle.getBox2d().dy);
+			boolean actualFree = intervalSlice.isFree(rectangle.getPoint2d().getX(), rectangle.getPoint2d().getY(),
+					rectangle.getBox2d().dx, rectangle.getBox2d().dy);
+			
+			Assert.assertEquals(free,actualFree);
 			expectedSlice.fill(rectangle.getPoint2d().getX(), rectangle.getPoint2d().getY(), rectangle.getBox2d().dx,
 					rectangle.getBox2d().dy);
+
 			intervalSlice.fill(rectangle.getPoint2d().getX(), rectangle.getPoint2d().getY(), rectangle.getBox2d().dx,
 					rectangle.getBox2d().dy);
+
+			
+			
+			Assert.assertFalse(intervalSlice.isFree(rectangle.getPoint2d().getX(), rectangle.getPoint2d().getY(),
+					rectangle.getBox2d().dx, rectangle.getBox2d().dy));
+
 			Collection<Rectangle> maximumRectangles = intervalSlice.getMaximumRectangles();
 			BitsetSlice actualSlice = BitsetSlice.filled(1000);
 			for (Rectangle maximumRectangle : maximumRectangles) {
 				actualSlice.free(maximumRectangle.getPoint2d().getX(), maximumRectangle.getPoint2d().getY(),
 						maximumRectangle.getBox2d().dx, maximumRectangle.getBox2d().dy);
+				Assert.assertTrue(intervalSlice.isFree(maximumRectangle.getPoint2d().getX(), maximumRectangle.getPoint2d()
+						.getY(), maximumRectangle.getBox2d().dx, maximumRectangle.getBox2d().dy));
 			}
-			if(!expectedSlice.equals(actualSlice)){
-				return false;
-			}
+			Assert.assertEquals(expectedSlice, actualSlice);
 		}
 		Collection<Rectangle> maximumRectangles = intervalSlice.getMaximumRectangles();
-//		System.out.println(maximumRectangles);
-		for (Rectangle maximumRectangle : maximumRectangles) {
+		for (Rectangle rectangle : maximumRectangles) {
 			for (Rectangle other : maximumRectangles) {
-				if(!maximumRectangle.equals(other)){
-					Rectangle intersection = maximumRectangle.intersection(other);
-					if(maximumRectangle.equals(intersection)){
-						return false;
-					}
+				if (!rectangle.equals(other)) {
+					Rectangle intersection = rectangle.intersection(other);
+					Assert.assertNotEquals(intersection, rectangle);
 				}
 			}
 		}
-		return true;
 	}
 }

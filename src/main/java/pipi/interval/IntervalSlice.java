@@ -31,8 +31,44 @@ public class IntervalSlice implements Slice {
 
 	@Override
 	public boolean isFree(int x, int y, int dx, int dy) {
-		// TODO Auto-generated method stub
-		return false;
+		Interval verticalRange = new Interval(y, y + dy);
+		Interval horizontalRange = new Interval(x, x + dx);
+
+		Set<Entry<Integer, SliceColumn>> entrySet = this.lefts
+				.subMap(horizontalRange.getFrom() + 1, horizontalRange.getTo()).entrySet();
+		for (Iterator<Entry<Integer, SliceColumn>> iterator = entrySet.iterator(); iterator.hasNext();) {
+			Entry<Integer, SliceColumn> entry = iterator.next();
+			SliceColumn sliceColumn = entry.getValue();
+			if (sliceColumn.getSides().isAnythingInside(verticalRange)) {
+				return false;
+			}
+		}
+
+		Set<Entry<Integer, SliceColumn>> rightSet = this.rights.subMap(horizontalRange.getFrom() + 1,
+				horizontalRange.getTo()).entrySet();
+		for (Iterator<Entry<Integer, SliceColumn>> iterator = rightSet.iterator(); iterator.hasNext();) {
+			Entry<Integer, SliceColumn> entry = iterator.next();
+			SliceColumn sliceColumn = entry.getValue();
+			if (sliceColumn.getSides().isAnythingInside(verticalRange)) {
+				return false;
+			}
+		}
+		
+		IntervalSet leftInterval = buildIntervalSet(this.height);
+		leftInterval.addInterval(verticalRange);
+		IntervalSet leftLines = this.buildLinesForIntervalSet(leftInterval, horizontalRange.getFrom());
+		if (!leftLines.contains(verticalRange)) {
+			return false;
+		}
+
+		IntervalSet rightInterval = buildIntervalSet(this.height);
+		rightInterval.addInterval(verticalRange);
+		IntervalSet rightLines = this.buildLinesForIntervalSet(rightInterval, horizontalRange.getTo() - 1);
+		if (!rightLines.contains(verticalRange)) {
+			return false;
+		}
+
+		return true;
 	}
 
 	@Override
