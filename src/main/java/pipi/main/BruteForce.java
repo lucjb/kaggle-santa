@@ -78,30 +78,29 @@ public class BruteForce {
 		BitsetSlice expectedSlice = BitsetSlice.freed(1000);
 		IntervalSlice intervalSlice = IntervalSlice.empty(1000, 1000);
 		for (Rectangle rectangle : rectangles) {
-			boolean free = expectedSlice.isFree(rectangle.getPoint2d().getX(), rectangle.getPoint2d().getY(), rectangle.getBox2d().dx,
+			boolean free = expectedSlice.isFree(rectangle.point2d.x, rectangle.point2d.y, rectangle.getBox2d().dx,
 					rectangle.getBox2d().dy);
-			boolean actualFree = intervalSlice.isFree(rectangle.getPoint2d().getX(), rectangle.getPoint2d().getY(),
+			boolean actualFree = intervalSlice.isFree(rectangle.point2d.x, rectangle.point2d.y,
 					rectangle.getBox2d().dx, rectangle.getBox2d().dy);
 			
 			Assert.assertEquals(free,actualFree);
-			expectedSlice.fill(rectangle.getPoint2d().getX(), rectangle.getPoint2d().getY(), rectangle.getBox2d().dx,
+			expectedSlice.fill(rectangle.point2d.x, rectangle.point2d.y, rectangle.getBox2d().dx,
 					rectangle.getBox2d().dy);
 
-			intervalSlice.fill(rectangle.getPoint2d().getX(), rectangle.getPoint2d().getY(), rectangle.getBox2d().dx,
+			intervalSlice.fill(rectangle.point2d.x, rectangle.point2d.y, rectangle.getBox2d().dx,
 					rectangle.getBox2d().dy);
 
 			
 			
-			Assert.assertFalse(intervalSlice.isFree(rectangle.getPoint2d().getX(), rectangle.getPoint2d().getY(),
+			Assert.assertFalse(intervalSlice.isFree(rectangle.point2d.x, rectangle.point2d.y,
 					rectangle.getBox2d().dx, rectangle.getBox2d().dy));
 
 			Collection<Rectangle> maximumRectangles = intervalSlice.getMaximumRectangles();
 			BitsetSlice actualSlice = BitsetSlice.filled(1000);
 			for (Rectangle maximumRectangle : maximumRectangles) {
-				actualSlice.free(maximumRectangle.getPoint2d().getX(), maximumRectangle.getPoint2d().getY(),
+				actualSlice.free(maximumRectangle.point2d.x, maximumRectangle.point2d.y,
 						maximumRectangle.getBox2d().dx, maximumRectangle.getBox2d().dy);
-				Assert.assertTrue(intervalSlice.isFree(maximumRectangle.getPoint2d().getX(), maximumRectangle.getPoint2d()
-						.getY(), maximumRectangle.getBox2d().dx, maximumRectangle.getBox2d().dy));
+				Assert.assertTrue(intervalSlice.isFree(maximumRectangle.point2d.x, maximumRectangle.point2d.y, maximumRectangle.getBox2d().dx, maximumRectangle.getBox2d().dy));
 			}
 			Assert.assertEquals(expectedSlice, actualSlice);
 		}

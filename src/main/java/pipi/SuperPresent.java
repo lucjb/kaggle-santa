@@ -3,7 +3,7 @@ package pipi;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 
-public class SuperPresent {
+public class SuperPresent{
 
 	private final int order;
 	private final Dimension3d dimension;

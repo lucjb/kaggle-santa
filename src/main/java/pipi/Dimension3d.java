@@ -2,7 +2,7 @@ package pipi;
 
 import java.util.Arrays;
 
-public class Dimension3d {
+public class Dimension3d{
 
 	public int small;
 	public int medium;
@@ -30,8 +30,23 @@ public class Dimension3d {
 		return new Dimension2d(this.small, this.medium);
 	}
 
+	public Dimension2d mediumFace() {
+		return new Dimension2d(this.small, this.large);
+	}
+
 	public Dimension2d largeFace() {
 		return new Dimension2d(this.medium, this.large);
+	}
+	
+	public OrientedDimension3d smallOriented(){
+		return new OrientedDimension3d(this.smallFace(), this.large);
+	}
+	
+	public OrientedDimension3d mediumOriented(){
+		return new OrientedDimension3d(this.mediumFace(), this.medium);
+	}
+	public OrientedDimension3d largeOriented(){
+		return new OrientedDimension3d(this.largeFace(), this.small);
 	}
 
 }

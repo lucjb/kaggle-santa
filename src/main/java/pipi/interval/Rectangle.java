@@ -20,10 +20,6 @@ public class Rectangle {
 		return this.box2d;
 	}
 
-	public Point2d getPoint2d() {
-		return this.point2d;
-	}
-
 	public Rectangle intersection(Rectangle other) {
 		int x = Math.max(this.point2d.x, other.point2d.x);
 		int y = Math.max(this.point2d.y, other.point2d.y);

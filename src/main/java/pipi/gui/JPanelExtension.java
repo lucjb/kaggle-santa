@@ -24,7 +24,7 @@ public class JPanelExtension extends JPanel {
 		graphics2d.setColor(Color.BLACK);
 		for (int i = 0; i < this.rectangles.size(); i++) {
 			Rectangle rectangle = this.rectangles.get(i);
-			graphics2d.fillRect(rectangle.getPoint2d().getX(), rectangle.getPoint2d().getY(), rectangle.getBox2d().dx,
+			graphics2d.fillRect(rectangle.point2d.x, rectangle.point2d.y, rectangle.getBox2d().dx,
 					rectangle.getBox2d().dy);
 		}
 	}
