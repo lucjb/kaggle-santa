@@ -1,4 +1,5 @@
 package pipi;
+
 import java.util.Arrays;
 
 public class Dimension3d {
@@ -15,11 +16,11 @@ public class Dimension3d {
 	}
 
 	public static Dimension3d create(int i, int j, int k) {
-		int[] array = new int[]{i, j, k};
+		int[] array = new int[] { i, j, k };
 		Arrays.sort(array);
 		return new Dimension3d(array[0], array[1], array[2]);
 	}
-	
+
 	@Override
 	public String toString() {
 		return String.format("%dx%dx%d", this.small, this.medium, this.large);
@@ -29,5 +30,8 @@ public class Dimension3d {
 		return new Dimension2d(this.small, this.medium);
 	}
 
-	
+	public Dimension2d largeFace() {
+		return new Dimension2d(this.medium, this.large);
+	}
+
 }

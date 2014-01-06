@@ -1,4 +1,5 @@
 package pipi;
+
 import java.util.Arrays;
 
 public class Dimension2d {
@@ -13,11 +14,11 @@ public class Dimension2d {
 	}
 
 	public static Dimension2d create(int i, int j) {
-		int[] array = new int[]{i, j};
+		int[] array = new int[] { i, j };
 		Arrays.sort(array);
 		return new Dimension2d(array[0], array[1]);
 	}
-	
+
 	@Override
 	public String toString() {
 		return String.format("%dx%dx", this.small, this.large);
@@ -27,11 +28,15 @@ public class Dimension2d {
 		return this.small >= base.small && this.large >= base.large;
 	}
 
-	public Box2d horizontal(){
+	public Box2d horizontal() {
 		return new Box2d(this.large, this.small);
 	}
 
-	public Box2d vertical(){
+	public Box2d vertical() {
 		return new Box2d(this.small, this.large);
+	}
+
+	public int area() {
+		return this.small * this.large;
 	}
 }
