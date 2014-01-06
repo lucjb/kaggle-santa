@@ -53,7 +53,7 @@ public class IntervalSlice implements Slice {
 				return false;
 			}
 		}
-		
+
 		IntervalSet leftInterval = buildIntervalSet(this.height);
 		leftInterval.addInterval(verticalRange);
 		IntervalSet leftLines = this.buildLinesForIntervalSet(leftInterval, horizontalRange.getFrom());
@@ -179,8 +179,8 @@ public class IntervalSlice implements Slice {
 		return new BitIntervalSet(height2);
 	}
 
-	public Collection<Rectangle> getMaximumRectangles() {
-		Collection<Rectangle> maximumRectangles = Lists.newArrayList();
+	public Collection<MaximumRectangle> getMaximumRectangles() {
+		Collection<MaximumRectangle> maximumRectangles = Lists.newArrayList();
 		Deque<StartLine> leftDeque = Queues.newArrayDeque();
 
 		Set<Entry<Integer, SliceColumn>> entrySet = this.rights.entrySet();
@@ -205,12 +205,11 @@ public class IntervalSlice implements Slice {
 			int left = leftPair.getLeft();
 			Interval line = leftPair.getLine();
 			int start = leftPair.getStart();
-			// if (!isLeftEmpty(leftColumn, line)) {
 			int index = nextIndex(rightIndexes, start);
 			while (index < rightIndexes.length) {
 				SliceColumn rightColumn = rightColumns[index];
 				if (rightIsNotEmpty(rightColumn, line)) {
-					maximumRectangles.add(Rectangle.of(left, line.getFrom(), rightIndexes[index] - left, line.length()));
+					maximumRectangles.add(new MaximumRectangle(Rectangle.of(left, line.getFrom(), rightIndexes[index] - left, line.length()),null));
 					List<Interval> emptyPaths = emptyPaths(rightColumn.getSides(), line);
 					Iterator<Interval> emptyPathsIterator = emptyPaths.iterator();
 					if (emptyPathsIterator.hasNext()) {
@@ -229,23 +228,16 @@ public class IntervalSlice implements Slice {
 							break;
 						}
 					} else {
-						nothing();
 						break;
 					}
 				} else {
 					index++;
 				}
 			}
-			// }
 			leftPair = leftDeque.pollFirst();
 		}
 
 		return maximumRectangles;
-	}
-
-	private void nothing() {
-		// TODO Auto-generated method stub
-
 	}
 
 	private boolean rightIsNotEmpty(SliceColumn rightColumn, Interval bounderLine) {

@@ -406,6 +406,15 @@ public class BitIntervalSet implements IntervalSet {
 			return false;
 		}
 		return true;
-
 	}
+
+	public PiolaBitset getFroms() {
+		return this.froms;
+	}
+
+	public PiolaBitset getTos() {
+		return this.tos;
+	}
+	
+	
 }

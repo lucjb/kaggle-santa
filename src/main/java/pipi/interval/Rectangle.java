@@ -58,7 +58,10 @@ public class Rectangle {
 		return true;
 	}
 	
-	
+	@Override
+	public String toString() {
+		return this.point2d + "|" + this.box2d;
+	}
 
 	
 }

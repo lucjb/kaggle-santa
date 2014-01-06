@@ -31,8 +31,8 @@ public class IntervalPacker {
 
 		for (Dimension2d dimension2d : sortedDimensions) {
 			final Dimension2d base = dimension2d;
-			Collection<Rectangle> maximumRectangles = this.currentSlice.getMaximumRectangles();
-			Collection<Rectangle> fittingRectangles = fittingRectangles(maximumRectangles, base);
+			Collection<MaximumRectangle> maximumRectangles = this.currentSlice.getMaximumRectangles();
+			Collection<MaximumRectangle> fittingRectangles = fittingRectangles(maximumRectangles, base);
 
 			if (!fittingRectangles.isEmpty()) {
 				Rectangle bestRectangle = bestRectangle(fittingRectangles);
@@ -43,7 +43,8 @@ public class IntervalPacker {
 					orientation = base.horizontal();
 				}
 
-				assert this.currentSlice.isFree(bestRectangle.point2d.x, bestRectangle.point2d.y, orientation.dx, orientation.dy);
+				assert this.currentSlice.isFree(bestRectangle.point2d.x, bestRectangle.point2d.y, orientation.dx,
+						orientation.dy);
 				this.currentSlice.fill(bestRectangle.point2d.x, bestRectangle.point2d.y, orientation.dx, orientation.dy);
 				result.add(new Rectangle(bestRectangle.point2d, orientation));
 			} else {
@@ -53,21 +54,21 @@ public class IntervalPacker {
 		return result;
 	}
 
-	private Rectangle bestRectangle(Collection<Rectangle> fittingRectangles) {
-		return new Ordering<Rectangle>() {
+	private Rectangle bestRectangle(Collection<MaximumRectangle> fittingRectangles) {
+		return new Ordering<MaximumRectangle>() {
 
 			@Override
-			public int compare(Rectangle left, Rectangle right) {
-				return Ints.compare(left.getBox2d().area(), right.getBox2d().area());
+			public int compare(MaximumRectangle left, MaximumRectangle right) {
+				return Ints.compare(left.rectangle.getBox2d().area(), right.rectangle.getBox2d().area());
 			}
-		}.min(fittingRectangles);
+		}.min(fittingRectangles).rectangle;
 	}
 
-	private Collection<Rectangle> fittingRectangles(Collection<Rectangle> maximumRectangles, final Dimension2d base) {
-		return Collections2.filter(maximumRectangles, new Predicate<Rectangle>() {
+	private Collection<MaximumRectangle> fittingRectangles(Collection<MaximumRectangle> maximumRectangles, final Dimension2d base) {
+		return Collections2.filter(maximumRectangles, new Predicate<MaximumRectangle>() {
 			@Override
-			public boolean apply(Rectangle rectangle) {
-				return rectangle.getBox2d().dimension().contains(base);
+			public boolean apply(MaximumRectangle rectangle) {
+				return rectangle.rectangle.getBox2d().dimension().contains(base);
 			}
 		});
 	}

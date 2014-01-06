@@ -21,7 +21,7 @@ public class Dimension2d {
 
 	@Override
 	public String toString() {
-		return String.format("%dx%dx", this.small, this.large);
+		return String.format("%dx%d", this.small, this.large);
 	}
 
 	public boolean contains(Dimension2d base) {

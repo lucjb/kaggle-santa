@@ -7,7 +7,13 @@ import java.util.List;
 import org.junit.Assert;
 
 import pipi.Box2d;
+import pipi.Point2d;
+import pipi.interval.BitIntervalSet;
+import pipi.interval.Interval;
+import pipi.interval.IntervalSet;
 import pipi.interval.IntervalSlice;
+import pipi.interval.MaximumRectangle;
+import pipi.interval.Perimeter;
 import pipi.interval.Rectangle;
 import pipi.sandbox.BitsetSlice;
 
@@ -80,38 +86,89 @@ public class BruteForce {
 		for (Rectangle rectangle : rectangles) {
 			boolean free = expectedSlice.isFree(rectangle.point2d.x, rectangle.point2d.y, rectangle.getBox2d().dx,
 					rectangle.getBox2d().dy);
-			boolean actualFree = intervalSlice.isFree(rectangle.point2d.x, rectangle.point2d.y,
-					rectangle.getBox2d().dx, rectangle.getBox2d().dy);
-			
-			Assert.assertEquals(free,actualFree);
-			expectedSlice.fill(rectangle.point2d.x, rectangle.point2d.y, rectangle.getBox2d().dx,
+			boolean actualFree = intervalSlice.isFree(rectangle.point2d.x, rectangle.point2d.y, rectangle.getBox2d().dx,
 					rectangle.getBox2d().dy);
 
-			intervalSlice.fill(rectangle.point2d.x, rectangle.point2d.y, rectangle.getBox2d().dx,
-					rectangle.getBox2d().dy);
+			Assert.assertEquals(free, actualFree);
+			expectedSlice.fill(rectangle.point2d.x, rectangle.point2d.y, rectangle.getBox2d().dx, rectangle.getBox2d().dy);
 
-			
-			
-			Assert.assertFalse(intervalSlice.isFree(rectangle.point2d.x, rectangle.point2d.y,
-					rectangle.getBox2d().dx, rectangle.getBox2d().dy));
+			intervalSlice.fill(rectangle.point2d.x, rectangle.point2d.y, rectangle.getBox2d().dx, rectangle.getBox2d().dy);
 
-			Collection<Rectangle> maximumRectangles = intervalSlice.getMaximumRectangles();
+			Assert.assertFalse(intervalSlice.isFree(rectangle.point2d.x, rectangle.point2d.y, rectangle.getBox2d().dx,
+					rectangle.getBox2d().dy));
+
+			Collection<MaximumRectangle> maximumRectangles = intervalSlice.getMaximumRectangles();
 			BitsetSlice actualSlice = BitsetSlice.filled(1000);
-			for (Rectangle maximumRectangle : maximumRectangles) {
-				actualSlice.free(maximumRectangle.point2d.x, maximumRectangle.point2d.y,
-						maximumRectangle.getBox2d().dx, maximumRectangle.getBox2d().dy);
-				Assert.assertTrue(intervalSlice.isFree(maximumRectangle.point2d.x, maximumRectangle.point2d.y, maximumRectangle.getBox2d().dx, maximumRectangle.getBox2d().dy));
+			for (MaximumRectangle maximumRectangle : maximumRectangles) {
+				actualSlice.free(maximumRectangle.rectangle.point2d.x, maximumRectangle.rectangle.point2d.y,
+						maximumRectangle.rectangle.getBox2d().dx, maximumRectangle.rectangle.getBox2d().dy);
+				Assert.assertTrue(intervalSlice.isFree(maximumRectangle.rectangle.point2d.x,
+						maximumRectangle.rectangle.point2d.y, maximumRectangle.rectangle.getBox2d().dx,
+						maximumRectangle.rectangle.getBox2d().dy));
+				Perimeter expectedPerimeter = expectedPerimeter(maximumRectangle, expectedSlice);
+				Assert.assertEquals(expectedPerimeter, maximumRectangle.perimeter);
 			}
 			Assert.assertEquals(expectedSlice, actualSlice);
 		}
-		Collection<Rectangle> maximumRectangles = intervalSlice.getMaximumRectangles();
-		for (Rectangle rectangle : maximumRectangles) {
-			for (Rectangle other : maximumRectangles) {
+		Collection<MaximumRectangle> maximumRectangles = intervalSlice.getMaximumRectangles();
+		for (MaximumRectangle rectangle : maximumRectangles) {
+			for (MaximumRectangle other : maximumRectangles) {
 				if (!rectangle.equals(other)) {
-					Rectangle intersection = rectangle.intersection(other);
+					Rectangle intersection = rectangle.rectangle.intersection(other.rectangle);
 					Assert.assertNotEquals(intersection, rectangle);
 				}
 			}
 		}
+	}
+
+	private static Perimeter expectedPerimeter(MaximumRectangle maximumRectangle, BitsetSlice expectedSlice) {
+		Point2d point2d = maximumRectangle.rectangle.point2d;
+		Box2d box2d = maximumRectangle.rectangle.box2d;
+
+		IntervalSet perimeterLeft = new BitIntervalSet(box2d.dy);
+		IntervalSet perimiterRight = new BitIntervalSet(box2d.dy);
+		IntervalSet perimeterUp = new BitIntervalSet(box2d.dx);
+		IntervalSet perimeterDown = new BitIntervalSet(box2d.dx);
+
+		if (point2d.x == 0) {
+			perimeterLeft.addInterval(new Interval(0, box2d.dy));
+		} else {
+			for (int y = point2d.y; y < point2d.y + box2d.dy; y++) {
+				if (!expectedSlice.isFree(point2d.x - 1, y, 1, 1)) {
+					perimeterLeft.addInterval(Interval.of(y, y + 1));
+				}
+			}
+		}
+		if (point2d.y == 0) {
+			perimeterUp.addInterval(new Interval(0, box2d.dx));
+		} else {
+			for (int x = point2d.x; x < point2d.x + box2d.dx; x++) {
+				if (!expectedSlice.isFree(x, point2d.y - 1, 1, 1)) {
+					perimeterUp.addInterval(Interval.of(x, x + 1));
+				}
+			}
+		}
+
+		
+		if (point2d.x + box2d.dx == 1000) {
+			perimiterRight.addInterval(new Interval(0, box2d.dy));
+		} else {
+			for (int y = point2d.y; y < point2d.y + box2d.dy; y++) {
+				if (!expectedSlice.isFree(point2d.x + 1, y, 1, 1)) {
+					perimiterRight.addInterval(Interval.of(y, y + 1));
+				}
+			}
+		}
+		if (point2d.y + box2d.dy == 1000) {
+			perimeterDown.addInterval(new Interval(0, box2d.dx));
+		} else {
+			for (int x = point2d.x; x < point2d.x + box2d.dx; x++) {
+				if (!expectedSlice.isFree(x, point2d.y + 1, 1, 1)) {
+					perimeterDown.addInterval(Interval.of(x, x + 1));
+				}
+			}
+		}
+		Perimeter perimeter = new Perimeter(perimeterLeft, perimiterRight, perimeterUp, perimeterDown);
+		return perimeter;
 	}
 }

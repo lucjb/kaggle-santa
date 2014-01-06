@@ -58,31 +58,65 @@ public class Main {
 	}
 
 	private static Pair<List<Rectangle>, Multimap<Dimension2d, SuperPresent>> packNextBatch(List<SuperPresent> presents,
-			int currentPresentIndex, int originalEndIndex) {
+			int startIndex, int endIndex) {
 		List<Rectangle> packedPresents;
 		List<SuperPresent> subPresents;
 		Multimap<Dimension2d, SuperPresent> presentsWithDimension;
-		int endIndex = originalEndIndex + 1;
-		do {
-			endIndex--;
-			subPresents = presents.subList(currentPresentIndex, endIndex);
-			IntervalPacker packer = new IntervalPacker();
-			presentsWithDimension = HashMultimap.create();
 
-			for (SuperPresent superPresent : subPresents) {
-				Dimension3d dimension = superPresent.getDimension();
-				Dimension2d smallFace = dimension.smallFace();
-				presentsWithDimension.put(smallFace, superPresent);
-			}
+		int searchEnd = endIndex;
+		int searchStart = endIndex;
+		for(;;){
+			subPresents = presents.subList(startIndex, searchStart);
+			IntervalPacker packer = new IntervalPacker();
+			presentsWithDimension = presentsWithDimension(subPresents);
 			packedPresents = packer.packPesents(presentsWithDimension.keys());
-		} while (packedPresents.size() != subPresents.size());
+			if(packedPresents.size() == subPresents.size()){
+				break;
+			}
+			searchEnd = searchStart;
+			searchStart = searchStart - 1;
+//			searchStart = (int) (searchStart * 0.9);
+		}
+		for(;;){
+			if(searchEnd - searchStart <= 1){
+				break;
+			}
+			int searchMid = searchStart + (searchEnd - searchStart) / 2;
+
+			List<SuperPresent> subsubPresents = presents.subList(startIndex, searchMid);
+			IntervalPacker packer = new IntervalPacker();
+			Multimap<Dimension2d, SuperPresent>  subpresentsWithDimension = presentsWithDimension(subsubPresents);
+			List<Rectangle> subpackedPresents = packer.packPesents(subpresentsWithDimension.keys());
+			if(packedPresents.size() == subsubPresents.size()){
+				startIndex = searchMid;
+				subPresents = subsubPresents;
+				presentsWithDimension = subpresentsWithDimension;
+				packedPresents = subpackedPresents;
+				searchStart = searchMid;
+			}else{
+				searchEnd = searchMid;
+			}
+		}
+		
+		
 		Pair<List<Rectangle>, Multimap<Dimension2d, SuperPresent>> pair = Pair.of(packedPresents, presentsWithDimension);
 
-		int maximumEndIndex = saturateAreaSmall(presents, currentPresentIndex, 1000 * 1000);
-		System.out.printf("Original: %d Real: %d Diff: %d n%%: %2.2f\n", maximumEndIndex - currentPresentIndex,
-				packedPresents.size(), originalEndIndex - currentPresentIndex - packedPresents.size(),
-				(double) packedPresents.size() / (maximumEndIndex - currentPresentIndex));
+		int maximumEndIndex = saturateAreaSmall(presents, startIndex, 1000 * 1000);
+		System.out.printf("Original: %d Real: %d Diff: %d n%%: %2.2f\n", maximumEndIndex - startIndex,
+				packedPresents.size(), endIndex - startIndex - packedPresents.size(),
+				(double) packedPresents.size() / (maximumEndIndex - startIndex));
 		return pair;
+	}
+
+	private static Multimap<Dimension2d, SuperPresent> presentsWithDimension(List<SuperPresent> subPresents) {
+		Multimap<Dimension2d, SuperPresent> presentsWithDimension;
+		presentsWithDimension = HashMultimap.create();
+		for (SuperPresent superPresent : subPresents) {
+			Dimension3d dimension = superPresent.getDimension();
+			Dimension2d smallFace = dimension.smallFace();
+			presentsWithDimension.put(smallFace, superPresent);
+		}
+		return presentsWithDimension;
 	}
 
 	private static int saturateAreaSmall(List<SuperPresent> presents, int start, int leftArea) {
