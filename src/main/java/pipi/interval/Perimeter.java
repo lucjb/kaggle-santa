@@ -1,12 +1,15 @@
 package pipi.interval;
 
+import java.util.List;
+
 public class Perimeter {
 	public IntervalSet perimeterLeft;
 	public IntervalSet perimeterRight;
 	public IntervalSet perimeterUp;
 	public IntervalSet perimeterDown;
 
-	public Perimeter(IntervalSet perimeterLeft, IntervalSet perimeterRight, IntervalSet perimeterUp, IntervalSet perimeterDown) {
+	public Perimeter(IntervalSet perimeterLeft, IntervalSet perimeterRight, IntervalSet perimeterUp,
+			IntervalSet perimeterDown) {
 		this.perimeterLeft = perimeterLeft;
 		this.perimeterRight = perimeterRight;
 		this.perimeterUp = perimeterUp;
@@ -61,6 +64,19 @@ public class Perimeter {
 		return "Perimeter [perimeterLeft=" + this.perimeterLeft + ", perimeterRight=" + this.perimeterRight
 				+ ", perimeterUp=" + this.perimeterUp + ", perimeterDown=" + this.perimeterDown + "]";
 	}
-	
-	
+
+	public int perimeter() {
+		return sumIntervals(this.perimeterLeft.getIntervals()) + sumIntervals(this.perimeterRight.getIntervals())
+				+ sumIntervals(this.perimeterUp.getIntervals()) + sumIntervals(this.perimeterDown.getIntervals());
+	}
+
+	public static int sumIntervals(List<Interval> intervals) {
+		int sum = 0;
+		for (Interval interval : intervals) {
+			sum += interval.length();
+		}
+		return sum;
+	}
+
+
 }

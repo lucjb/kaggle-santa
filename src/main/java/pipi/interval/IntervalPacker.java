@@ -37,24 +37,56 @@ public class IntervalPacker {
 			Collection<MaximumRectangle> fittingRectangles = fittingRectangles(maximumRectangles, base);
 
 			if (!fittingRectangles.isEmpty()) {
-				Rectangle bestRectangle = bestRectangle(fittingRectangles);
-				Box2d orientation;
-				if (bestRectangle.getBox2d().contains(base.vertical())) {
-					orientation = base.vertical();
-				} else {
-					orientation = base.horizontal();
-				}
+				List<InsertionPoint> insertionPoints = Lists.newArrayList();
+				for (MaximumRectangle maximumRectangle : fittingRectangles) {
+					Box2d vertical = base.vertical();
+					Rectangle rectangle = maximumRectangle.rectangle;
+					if (rectangle.getBox2d().contains(vertical)) {
+						addOrientedInsertionPoints(insertionPoints, rectangle, vertical);
+					} 
+					Box2d horizontal = base.horizontal();
+					if (maximumRectangle.rectangle.getBox2d().contains(horizontal) && ! vertical.contains(horizontal)) {
+						addOrientedInsertionPoints(insertionPoints, rectangle, horizontal);
 
-				assert this.currentSlice.isFree(bestRectangle.point2d.x, bestRectangle.point2d.y, orientation.dx,
+					} 
+				}
+				InsertionPoint bestInsertionPoint = new Ordering<InsertionPoint>() {
+				
+					@Override
+					public int compare(InsertionPoint left, InsertionPoint right) {
+						return Ints.compare(left.perimeter, right.perimeter);
+					}
+				}.max(insertionPoints);
+
+				Box2d orientation = bestInsertionPoint.orientation;
+				
+				assert this.currentSlice.isFree(bestInsertionPoint.point2d.x, bestInsertionPoint.point2d.y, orientation.dx,
 						orientation.dy);
-				this.currentSlice.fill(bestRectangle.point2d.x, bestRectangle.point2d.y, orientation.dx, orientation.dy);
-				this.perimeterSlice.fill(bestRectangle.point2d.y, bestRectangle.point2d.x, orientation.dy, orientation.dx);
-				result.add(new Rectangle(bestRectangle.point2d, orientation));
+				this.currentSlice.fill(bestInsertionPoint.point2d.x, bestInsertionPoint.point2d.y, orientation.dx, orientation.dy);
+				this.perimeterSlice.fill(bestInsertionPoint.point2d.y, bestInsertionPoint.point2d.x, orientation.dy, orientation.dx);
+				result.add(new Rectangle(bestInsertionPoint.point2d, orientation));
 			} else {
 				return result;
 			}
 		}
 		return result;
+	}
+
+	private void addOrientedInsertionPoints(List<InsertionPoint> insertionPoints, Rectangle rectangle, Box2d vertical) {
+		addInsertionPoint(insertionPoints, rectangle.upperLeft(), vertical);
+		if(rectangle.getBox2d().dx != vertical.dx){
+			addInsertionPoint(insertionPoints, rectangle.upperRight(vertical), vertical);
+		}
+		if(rectangle.getBox2d().dy != vertical.dy){
+			addInsertionPoint(insertionPoints, rectangle.bottomLeft(vertical), vertical);
+			if(rectangle.getBox2d().dx != vertical.dx){
+				addInsertionPoint(insertionPoints, rectangle.bottomRight(vertical), vertical);
+			}
+		}
+	}
+
+	private boolean addInsertionPoint(List<InsertionPoint> insertionPoints, Point2d point2d, Box2d vertical) {
+		return insertionPoints.add(new InsertionPoint(point2d, vertical, getPerimeter(point2d, vertical)));
 	}
 
 	private Rectangle bestRectangle(Collection<MaximumRectangle> fittingRectangles) {
@@ -98,7 +130,7 @@ public class IntervalPacker {
 		return this.outputPresents;
 	}
 	
-	public Perimeter getPerimeter(Point2d point2d, Box2d box2d){
-		return this.currentSlice.getPerimeter(point2d, box2d, this.perimeterSlice);
+	public int getPerimeter(Point2d point2d, Box2d box2d){
+		return this.currentSlice.getPerimeterInt(point2d, box2d, this.perimeterSlice);
 	}
 }

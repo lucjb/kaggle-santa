@@ -33,8 +33,8 @@ public class Main {
 		}
 
 		int maximumZ = sleigh.getCurrentZ();
-		// OutputPresent.outputPresents(sleigh.getOutputPresents(), maximumZ,
-		// "intervals.csv");
+		 OutputPresent.outputPresents(sleigh.getOutputPresents(), maximumZ,
+		 "intervals.csv");
 		System.out.println(maximumZ * 2);
 
 		// RateLimiter rateLimiter = RateLimiter.create(0.1);

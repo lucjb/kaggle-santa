@@ -2,6 +2,7 @@ package pipi.interval;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Deque;
 import java.util.Iterator;
 import java.util.List;
@@ -341,13 +342,41 @@ public class IntervalSlice implements Slice {
 		Interval line = Interval.of(point2d.y, point2d.y + box2d.dy);
 		Interval hori = Interval.of(point2d.x, point2d.x + box2d.dx);
 
-		IntervalSet perimeterLeft = this.lefts.get(hori.getFrom()).getSides().getSubIntervals(line);
-		IntervalSet perimeterRight = this.rights.get(hori.getTo()).getSides().getSubIntervals(line);
-		IntervalSet perimeterUp = perimeterSlice.lefts.get(line.getFrom()).getSides().getSubIntervals(hori);
-		IntervalSet perimeterDown = perimeterSlice.rights.get(line.getTo()).getSides().getSubIntervals(hori);
+		IntervalSet perimeterLeft = getSideInterval(this.lefts, hori.getFrom(), line);
+		IntervalSet perimeterRight = getSideInterval(this.rights, hori.getTo(), line);
+		IntervalSet perimeterUp = getSideInterval(perimeterSlice.lefts, line.getFrom(), hori);
+		IntervalSet perimeterDown = getSideInterval(perimeterSlice.rights, line.getTo(), hori);
 
 		Perimeter perimeter = new Perimeter(perimeterLeft, perimeterRight, perimeterUp, perimeterDown);
 		return perimeter;
+	}
+
+	private IntervalSet getSideInterval(TreeMap<Integer, SliceColumn> tree, int point, Interval line) {
+		SliceColumn sliceColumn = tree.get(point);
+		if(sliceColumn == null){
+			return new BitIntervalSet(1000);
+		}
+		return sliceColumn.getSides().getSubIntervals(line);
+	}
+
+	public int getPerimeterInt(Point2d point2d, Box2d box2d, IntervalSlice perimeterSlice) {
+		Interval line = Interval.of(point2d.y, point2d.y + box2d.dy);
+		Interval hori = Interval.of(point2d.x, point2d.x + box2d.dx);
+
+		List<Interval> perimeterLeft = getSideIntervalInt(this.lefts, hori.getFrom(), line);
+		List<Interval> perimeterRight = getSideIntervalInt(this.rights, hori.getTo(), line);
+		List<Interval> perimeterUp = getSideIntervalInt(perimeterSlice.lefts, line.getFrom(), hori);
+		List<Interval> perimeterDown = getSideIntervalInt(perimeterSlice.rights, line.getTo(), hori);
+		return Perimeter.sumIntervals(perimeterLeft) + Perimeter.sumIntervals(perimeterRight)
+				+ Perimeter.sumIntervals(perimeterUp) + Perimeter.sumIntervals(perimeterDown);
+	}
+
+	private List<Interval> getSideIntervalInt(TreeMap<Integer, SliceColumn> tree, int point, Interval line) {
+		SliceColumn sliceColumn = tree.get(point);
+		if(sliceColumn == null){
+			return Collections.emptyList();
+		}
+		return ((BitIntervalSet)sliceColumn.getSides()).fastIntervals(line);
 	}
 
 }
