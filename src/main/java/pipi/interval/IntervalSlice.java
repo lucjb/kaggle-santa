@@ -9,6 +9,8 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeMap;
 
+import pipi.Box2d;
+import pipi.Point2d;
 import pipi.Slice;
 
 import com.google.common.collect.Lists;
@@ -22,11 +24,17 @@ public class IntervalSlice implements Slice {
 	private final TreeMap<Integer, SliceColumn> lefts = Maps.newTreeMap();
 	private final TreeMap<Integer, SliceColumn> rights = Maps.newTreeMap();
 
+	private final TreeMap<Integer, SliceColumn> ups = Maps.newTreeMap();
+	private final TreeMap<Integer, SliceColumn> downs = Maps.newTreeMap();
+
 	private IntervalSlice(int width, int height) {
 		this.width = width;
 		this.height = height;
 		this.lefts.put(0, new SliceColumn(new Interval(0, height)));
 		this.rights.put(width, new SliceColumn(new Interval(0, height)));
+
+		this.ups.put(0, new SliceColumn(new Interval(0, height)));
+		this.downs.put(width, new SliceColumn(new Interval(0, height)));
 	}
 
 	@Override
@@ -56,14 +64,16 @@ public class IntervalSlice implements Slice {
 
 		IntervalSet leftInterval = buildIntervalSet(this.height);
 		leftInterval.addInterval(verticalRange);
-		IntervalSet leftLines = this.buildLinesForIntervalSet(leftInterval, horizontalRange.getFrom());
+		IntervalSet leftLines = this.buildLinesForIntervalSet(this.lefts, this.rights, leftInterval,
+				horizontalRange.getFrom());
 		if (!leftLines.contains(verticalRange)) {
 			return false;
 		}
 
 		IntervalSet rightInterval = buildIntervalSet(this.height);
 		rightInterval.addInterval(verticalRange);
-		IntervalSet rightLines = this.buildLinesForIntervalSet(rightInterval, horizontalRange.getTo() - 1);
+		IntervalSet rightLines = this.buildLinesForIntervalSet(this.lefts, this.rights, rightInterval,
+				horizontalRange.getTo() - 1);
 		if (!rightLines.contains(verticalRange)) {
 			return false;
 		}
@@ -86,6 +96,12 @@ public class IntervalSlice implements Slice {
 		addColumn(this.rights, this.lefts, horizontalRange.getFrom(), verticalRange);
 		destroyColumns(verticalRange, horizontalRange, this.lefts, 0);
 		destroyColumns(verticalRange, horizontalRange, this.rights, 1);
+
+		addColumn(this.ups, this.downs, verticalRange.getTo(), horizontalRange);
+		addColumn(this.downs, this.ups, verticalRange.getFrom(), horizontalRange);
+		destroyColumns(horizontalRange, verticalRange, this.ups, 0);
+		destroyColumns(horizontalRange, verticalRange, this.downs, 1);
+
 	}
 
 	private void destroyColumns(Interval verticalRange, Interval horizontalRange, TreeMap<Integer, SliceColumn> columns,
@@ -113,7 +129,7 @@ public class IntervalSlice implements Slice {
 			if (otherColumn != null) {
 				treeIntervalSet.removeAllRanges(otherColumn.getSides());
 			}
-			IntervalSet lines = buildLinesForIntervalSet(treeIntervalSet, insertionPoint);
+			IntervalSet lines = buildLinesForIntervalSet(this.lefts, this.rights, treeIntervalSet, insertionPoint);
 			sliceColumn = new SliceColumn(new Interval(0, this.height));
 			sliceColumn.getLines().addAllRanges(lines);
 			sliceColumn.addInterval(verticalRange);
@@ -127,18 +143,20 @@ public class IntervalSlice implements Slice {
 			IntervalSet treeIntervalSet = buildIntervalSet(this.height);
 			treeIntervalSet.addInterval(verticalRange);
 			treeIntervalSet.removeAllRanges(sliceColumn.getLines());
-			IntervalSet buildLinesForIntervalSet = this.buildLinesForIntervalSet(treeIntervalSet, insertionPoint);
+			IntervalSet buildLinesForIntervalSet = this.buildLinesForIntervalSet(this.lefts, this.rights, treeIntervalSet,
+					insertionPoint);
 			sliceColumn.getLines().addAllRanges(buildLinesForIntervalSet);
 		}
 		sliceColumn.addInterval(verticalRange);
 	}
 
-	private IntervalSet buildLinesForIntervalSet(IntervalSet toAccount, int insertionPoint) {
+	private IntervalSet buildLinesForIntervalSet(TreeMap<Integer, SliceColumn> lefts3,
+			TreeMap<Integer, SliceColumn> rights3, IntervalSet toAccount, int insertionPoint) {
 		IntervalSet lines = buildIntervalSet(this.height);
 		// should remove lines already accounted for?
 
-		Entry<Integer, SliceColumn> leftColumn = this.lefts.floorEntry(insertionPoint);
-		Entry<Integer, SliceColumn> rightColumn = this.rights.floorEntry(insertionPoint);
+		Entry<Integer, SliceColumn> leftColumn = lefts3.floorEntry(insertionPoint);
+		Entry<Integer, SliceColumn> rightColumn = rights3.floorEntry(insertionPoint);
 		while (!rightIsEmpty(toAccount) && (leftColumn != null || rightColumn != null)) {
 			if ((leftColumn != null) && (rightColumn == null || leftColumn.getKey() >= rightColumn.getKey())) {
 				SliceColumn leftColumnValue = leftColumn.getValue();
@@ -150,7 +168,7 @@ public class IntervalSlice implements Slice {
 				}
 				toAccount.removeAllRanges(boundedLines);
 				lines.addAllRanges(boundedLines);
-				leftColumn = this.lefts.lowerEntry(leftColumn.getKey());
+				leftColumn = lefts3.lowerEntry(leftColumn.getKey());
 			} else {
 				SliceColumn rightColumnValue = rightColumn.getValue();
 				List<Interval> rangesToAccount = toAccount.getIntervals();
@@ -168,7 +186,7 @@ public class IntervalSlice implements Slice {
 					deltaAccount.addAllRanges(lineRanges);
 				}
 				toAccount.removeAllRanges(deltaAccount);
-				rightColumn = this.rights.lowerEntry(rightColumn.getKey());
+				rightColumn = rights3.lowerEntry(rightColumn.getKey());
 			}
 		}
 		return lines;
@@ -209,7 +227,9 @@ public class IntervalSlice implements Slice {
 			while (index < rightIndexes.length) {
 				SliceColumn rightColumn = rightColumns[index];
 				if (rightIsNotEmpty(rightColumn, line)) {
-					maximumRectangles.add(new MaximumRectangle(Rectangle.of(left, line.getFrom(), rightIndexes[index] - left, line.length()),null));
+					Rectangle rectangle = Rectangle.of(left, line.getFrom(), rightIndexes[index] - left, line.length());
+
+					maximumRectangles.add(new MaximumRectangle(rectangle, null));
 					List<Interval> emptyPaths = emptyPaths(rightColumn.getSides(), line);
 					Iterator<Interval> emptyPathsIterator = emptyPaths.iterator();
 					if (emptyPathsIterator.hasNext()) {
@@ -305,13 +325,29 @@ public class IntervalSlice implements Slice {
 
 	public static IntervalSlice empty(int width, int height) {
 		IntervalSlice intervalSlice = new IntervalSlice(width, height);
+
 		SliceColumn leftSleighColumn = intervalSlice.lefts.lastEntry().getValue();
 		leftSleighColumn.addLine(new Interval(0, height));
 		leftSleighColumn.getSides().addInterval(new Interval(0, height));
+
 		SliceColumn rightSleighColumn = intervalSlice.rights.lastEntry().getValue();
 		rightSleighColumn.addLine(new Interval(0, height));
 		rightSleighColumn.getSides().addInterval(new Interval(0, height));
+
 		return intervalSlice;
+	}
+
+	public Perimeter getPerimeter(Point2d point2d, Box2d box2d, IntervalSlice perimeterSlice) {
+		Interval line = Interval.of(point2d.y, point2d.y + box2d.dy);
+		Interval hori = Interval.of(point2d.x, point2d.x + box2d.dx);
+
+		IntervalSet perimeterLeft = this.lefts.get(hori.getFrom()).getSides().getSubIntervals(line);
+		IntervalSet perimeterRight = this.rights.get(hori.getTo()).getSides().getSubIntervals(line);
+		IntervalSet perimeterUp = perimeterSlice.lefts.get(line.getFrom()).getSides().getSubIntervals(hori);
+		IntervalSet perimeterDown = perimeterSlice.rights.get(line.getTo()).getSides().getSubIntervals(hori);
+
+		Perimeter perimeter = new Perimeter(perimeterLeft, perimeterRight, perimeterUp, perimeterDown);
+		return perimeter;
 	}
 
 }

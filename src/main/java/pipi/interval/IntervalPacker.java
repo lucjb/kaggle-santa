@@ -6,6 +6,7 @@ import java.util.List;
 import pipi.Box2d;
 import pipi.Dimension2d;
 import pipi.OutputPresent;
+import pipi.Point2d;
 
 import com.google.common.base.Predicate;
 import com.google.common.collect.Collections2;
@@ -15,6 +16,7 @@ import com.google.common.primitives.Ints;
 
 public class IntervalPacker {
 	private IntervalSlice currentSlice = IntervalSlice.empty(1000, 1000);
+	private IntervalSlice perimeterSlice = IntervalSlice.empty(1000, 1000);
 
 	private int currentZ;
 	private int lastZ = 0;
@@ -46,6 +48,7 @@ public class IntervalPacker {
 				assert this.currentSlice.isFree(bestRectangle.point2d.x, bestRectangle.point2d.y, orientation.dx,
 						orientation.dy);
 				this.currentSlice.fill(bestRectangle.point2d.x, bestRectangle.point2d.y, orientation.dx, orientation.dy);
+				this.perimeterSlice.fill(bestRectangle.point2d.y, bestRectangle.point2d.x, orientation.dy, orientation.dx);
 				result.add(new Rectangle(bestRectangle.point2d, orientation));
 			} else {
 				return result;
@@ -93,5 +96,9 @@ public class IntervalPacker {
 
 	public List<OutputPresent> getOutputPresents() {
 		return this.outputPresents;
+	}
+	
+	public Perimeter getPerimeter(Point2d point2d, Box2d box2d){
+		return this.currentSlice.getPerimeter(point2d, box2d, this.perimeterSlice);
 	}
 }

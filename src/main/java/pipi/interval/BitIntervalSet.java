@@ -415,6 +415,39 @@ public class BitIntervalSet implements IntervalSet {
 	public PiolaBitset getTos() {
 		return this.tos;
 	}
+
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((this.froms == null) ? 0 : this.froms.hashCode());
+		result = prime * result + ((this.tos == null) ? 0 : this.tos.hashCode());
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		BitIntervalSet other = (BitIntervalSet) obj;
+		if (this.froms == null) {
+			if (other.froms != null)
+				return false;
+		} else if (!this.froms.equals(other.froms))
+			return false;
+		if (this.tos == null) {
+			if (other.tos != null)
+				return false;
+		} else if (!this.tos.equals(other.tos))
+			return false;
+		return true;
+	}
+
+	
 	
 	
 }
