@@ -1,5 +1,6 @@
 package pipi.interval;
 
+import java.sql.BatchUpdateException;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
@@ -9,6 +10,7 @@ import pipi.Box3d;
 import pipi.Dimension2d;
 import pipi.Dimension3d;
 import pipi.OutputPresent;
+import pipi.PresentBatch;
 import pipi.SuperPresent;
 
 import com.google.common.base.Predicate;
@@ -33,8 +35,9 @@ public class IntervalSleigh {
 		this.currentZ = 0;
 	}
 
-	public void emitPresents(List<Rectangle> putPesent, Multimap<Dimension2d, SuperPresent> presentsWithDimension) {
+	public PresentBatch emitPresents(List<Rectangle> putPesent, Multimap<Dimension2d, SuperPresent> presentsWithDimension) {
 		int nextZ = this.currentZ;
+		PresentBatch presentBatch = new PresentBatch();
 		for (Rectangle rectangle : putPesent) {
 			Dimension2d dimension = rectangle.getBox2d().dimension();
 			SuperPresent present = presentsWithDimension.get(dimension).iterator().next();
@@ -44,8 +47,10 @@ public class IntervalSleigh {
 			this.outputPresents.add(new OutputPresent(present.getOrder(), new Point(min.point2d.x, min.point2d.y,
 					this.currentZ), box3d));
 			nextZ = Math.max(nextZ, this.currentZ + box3d.dz);
+			presentBatch.pushPresent(present.getDimension(), 0);
 		}
 		this.currentZ = nextZ;
+		return presentBatch;
 	}
 
 	public int getLastZ() {

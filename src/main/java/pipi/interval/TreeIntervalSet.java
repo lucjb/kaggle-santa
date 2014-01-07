@@ -164,5 +164,9 @@ public class TreeIntervalSet implements IntervalSet {
 	public boolean isAnythingInside(Interval bound) {
 		return this.getSubIntervals(bound).isEmpty();
 	}
+	@Override
+	public int count(Interval interval) {
+		throw new UnsupportedOperationException();
+	}
 
 }

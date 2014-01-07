@@ -26,4 +26,5 @@ public interface IntervalSet {
 
 	public abstract boolean isAnythingInside(Interval bound);
 
+	public int count(Interval interval);
 }

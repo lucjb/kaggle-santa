@@ -9,4 +9,13 @@ public class OrientedDimension3d {
 		this.base = base;
 		this.height = height;
 	}
+
+	public int volume() {
+		return this.base.area() * this.height;
+	}
+	
+	@Override
+	public String toString() {
+		return this.base + "|"  + this.height;
+	}
 }

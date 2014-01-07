@@ -25,17 +25,11 @@ public class IntervalSlice implements Slice {
 	private final TreeMap<Integer, SliceColumn> lefts = Maps.newTreeMap();
 	private final TreeMap<Integer, SliceColumn> rights = Maps.newTreeMap();
 
-	private final TreeMap<Integer, SliceColumn> ups = Maps.newTreeMap();
-	private final TreeMap<Integer, SliceColumn> downs = Maps.newTreeMap();
-
 	private IntervalSlice(int width, int height) {
 		this.width = width;
 		this.height = height;
 		this.lefts.put(0, new SliceColumn(new Interval(0, height)));
 		this.rights.put(width, new SliceColumn(new Interval(0, height)));
-
-		this.ups.put(0, new SliceColumn(new Interval(0, height)));
-		this.downs.put(width, new SliceColumn(new Interval(0, height)));
 	}
 
 	@Override
@@ -84,8 +78,7 @@ public class IntervalSlice implements Slice {
 
 	@Override
 	public void free(int x, int y, int dx, int dy) {
-		// TODO Auto-generated method stub
-
+		throw new RuntimeException("ojo: si se usa esto, perimeterSlice queda inconsistente");
 	}
 
 	@Override
@@ -97,12 +90,6 @@ public class IntervalSlice implements Slice {
 		addColumn(this.rights, this.lefts, horizontalRange.getFrom(), verticalRange);
 		destroyColumns(verticalRange, horizontalRange, this.lefts, 0);
 		destroyColumns(verticalRange, horizontalRange, this.rights, 1);
-
-		addColumn(this.ups, this.downs, verticalRange.getTo(), horizontalRange);
-		addColumn(this.downs, this.ups, verticalRange.getFrom(), horizontalRange);
-		destroyColumns(horizontalRange, verticalRange, this.ups, 0);
-		destroyColumns(horizontalRange, verticalRange, this.downs, 1);
-
 	}
 
 	private void destroyColumns(Interval verticalRange, Interval horizontalRange, TreeMap<Integer, SliceColumn> columns,
@@ -198,7 +185,7 @@ public class IntervalSlice implements Slice {
 		return new BitIntervalSet(height2);
 	}
 
-	public Collection<MaximumRectangle> getMaximumRectangles() {
+	public Collection<MaximumRectangle> getMaximumRectangles(PerimeterSlice perimeterSlice) {
 		Collection<MaximumRectangle> maximumRectangles = Lists.newArrayList();
 		Deque<StartLine> leftDeque = Queues.newArrayDeque();
 
@@ -227,7 +214,7 @@ public class IntervalSlice implements Slice {
 			int index = nextIndex(rightIndexes, start);
 			while (index < rightIndexes.length) {
 				SliceColumn rightColumn = rightColumns[index];
-				if (rightIsNotEmpty(rightColumn, line)) {
+				if (rightIsNotEmpty(rightColumn, line, perimeterSlice,rightIndexes[index])) {
 					Rectangle rectangle = Rectangle.of(left, line.getFrom(), rightIndexes[index] - left, line.length());
 
 					maximumRectangles.add(new MaximumRectangle(rectangle, null));
@@ -237,7 +224,7 @@ public class IntervalSlice implements Slice {
 						Interval path = emptyPathsIterator.next();
 						while (emptyPathsIterator.hasNext()) {
 							Interval next = emptyPathsIterator.next();
-							if (isLeftEmpty(leftColumn, next)) {
+							if (isLeftEmpty(leftColumn, next, perimeterSlice, left)) {
 								break;
 							}
 							leftDeque.addLast(new StartLine(leftColumn, left, rightIndexes[index], next));
@@ -245,7 +232,7 @@ public class IntervalSlice implements Slice {
 						line = path;
 						start = rightIndexes[index];
 						index++;
-						if (isLeftEmpty(leftColumn, line)) {
+						if (isLeftEmpty(leftColumn, line, perimeterSlice, left)) {
 							break;
 						}
 					} else {
@@ -261,8 +248,14 @@ public class IntervalSlice implements Slice {
 		return maximumRectangles;
 	}
 
-	private boolean rightIsNotEmpty(SliceColumn rightColumn, Interval bounderLine) {
+	private boolean rightIsNotEmpty(SliceColumn rightColumn, Interval bounderLine, PerimeterSlice perimeterSlice, int rightIndexes) {
+//		return perimeterSlice.getRightPerimeter(rightIndexes, bounderLine) != 0;
 		return rightColumn.getSides().isAnythingInside(bounderLine);
+	}
+	private boolean isLeftEmpty(SliceColumn sleighColumn, Interval bound, PerimeterSlice perimeterSlice, int left) {
+//		return perimeterSlice.getLeftPerimeter(left, bound) != 0;
+		IntervalSet sides = sleighColumn.getSides();
+		return !sides.isAnythingInside(bound);
 	}
 
 	private int nextIndex(int[] rightIndexes, int start) {
@@ -275,10 +268,6 @@ public class IntervalSlice implements Slice {
 		return binarySearch;
 	}
 
-	private boolean isLeftEmpty(SliceColumn sleighColumn, Interval bound) {
-		IntervalSet sides = sleighColumn.getSides();
-		return !sides.isAnythingInside(bound);
-	}
 
 	private List<Interval> emptyPaths(IntervalSet rightSides, Interval bound) {
 		// List<Interval> safeGetEmptyIntervals =
@@ -363,20 +352,19 @@ public class IntervalSlice implements Slice {
 		Interval line = Interval.of(point2d.y, point2d.y + box2d.dy);
 		Interval hori = Interval.of(point2d.x, point2d.x + box2d.dx);
 
-		List<Interval> perimeterLeft = getSideIntervalInt(this.lefts, hori.getFrom(), line);
-		List<Interval> perimeterRight = getSideIntervalInt(this.rights, hori.getTo(), line);
-		List<Interval> perimeterUp = getSideIntervalInt(perimeterSlice.lefts, line.getFrom(), hori);
-		List<Interval> perimeterDown = getSideIntervalInt(perimeterSlice.rights, line.getTo(), hori);
-		return Perimeter.sumIntervals(perimeterLeft) + Perimeter.sumIntervals(perimeterRight)
-				+ Perimeter.sumIntervals(perimeterUp) + Perimeter.sumIntervals(perimeterDown);
+		int perimeterLeft = getSideIntervalInt(this.lefts, hori.getFrom(), line);
+		int perimeterRight = getSideIntervalInt(this.rights, hori.getTo(), line);
+		int perimeterUp = getSideIntervalInt(perimeterSlice.lefts, line.getFrom(), hori);
+		int perimeterDown = getSideIntervalInt(perimeterSlice.rights, line.getTo(), hori);
+		return perimeterLeft + perimeterRight + perimeterUp + perimeterDown;
 	}
 
-	private List<Interval> getSideIntervalInt(TreeMap<Integer, SliceColumn> tree, int point, Interval line) {
+	private int getSideIntervalInt(TreeMap<Integer, SliceColumn> tree, int point, Interval line) {
 		SliceColumn sliceColumn = tree.get(point);
-		if(sliceColumn == null){
-			return Collections.emptyList();
+		if (sliceColumn == null) {
+			return 0;
 		}
-		return ((BitIntervalSet)sliceColumn.getSides()).fastIntervals(line);
+		return ((BitIntervalSet) sliceColumn.getSides()).count(line);
 	}
 
 }

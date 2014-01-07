@@ -447,6 +447,51 @@ public class BitIntervalSet implements IntervalSet {
 		return true;
 	}
 
+	@Override
+	public int count(Interval verticalRange) {
+		int from = verticalRange.getFrom();
+		int to = verticalRange.getTo();
+
+		int count = 0;
+		
+		int fromWordIndex = from >>> PiolaBitset.ADDRESS_BITS_PER_WORD;
+		int toWordIndex = to >>> PiolaBitset.ADDRESS_BITS_PER_WORD;
+		long startFromWord = this.froms.words[fromWordIndex];
+		long endTosWord = this.tos.words[toWordIndex];
+
+		int nextSetBitFrom = this.tos.nextSetBit(from + 1);
+		if (nextSetBitFrom != -1) {
+			int previousSetBitFrom = this.froms.nextSetBitWord(fromWordIndex, from, nextSetBitFrom);
+			if (previousSetBitFrom >= nextSetBitFrom) {
+				this.froms.setWord(fromWordIndex, from);
+			} else {
+				from = previousSetBitFrom;
+			}
+		} else {
+			return 0;
+		}
+
+		int nextSetBitTo = this.tos.nextSetBitWord(toWordIndex, to);
+		{
+			if (nextSetBitTo != -1) {
+				int wordIndex = PiolaBitset.wordIndex(nextSetBitTo);
+				int previousSetBitTo = this.froms.previousSetBitWord(wordIndex, nextSetBitTo);
+				if (previousSetBitTo >= 0 && previousSetBitTo < to) {
+					this.tos.words[toWordIndex] |= 1L << to; // Restores
+																// invariants
+				}
+			}
+		}
+		for (int from1 = from; from1 >= 0 && from1 < to; from1 = this.froms.nextSetBit(from1 + 1)) {
+			int to1 = this.tos.nextSetBit(from1);
+			count += to1 - from1;
+		}
+		this.froms.words[fromWordIndex] = startFromWord;
+		this.tos.words[toWordIndex] = endTosWord;
+
+		return count;
+	}
+
 	
 	
 	

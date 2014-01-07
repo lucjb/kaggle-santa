@@ -66,8 +66,11 @@ public class Perimeter {
 	}
 
 	public int perimeter() {
-		return sumIntervals(this.perimeterLeft.getIntervals()) + sumIntervals(this.perimeterRight.getIntervals())
-				+ sumIntervals(this.perimeterUp.getIntervals()) + sumIntervals(this.perimeterDown.getIntervals());
+		int left = sumIntervals(this.perimeterLeft.getIntervals());
+		int right = sumIntervals(this.perimeterRight.getIntervals());
+		int up = sumIntervals(this.perimeterUp.getIntervals());
+		int down = sumIntervals(this.perimeterDown.getIntervals());
+		return left + right + up + down;
 	}
 
 	public static int sumIntervals(List<Interval> intervals) {
@@ -77,6 +80,5 @@ public class Perimeter {
 		}
 		return sum;
 	}
-
 
 }
