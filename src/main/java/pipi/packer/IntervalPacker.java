@@ -1,4 +1,4 @@
-package pipi.interval;
+package pipi.packer;
 
 import java.util.Collection;
 import java.util.List;
@@ -7,6 +7,12 @@ import pipi.Box2d;
 import pipi.Dimension2d;
 import pipi.OutputPresent;
 import pipi.Point2d;
+import pipi.interval.Positioning;
+import pipi.interval.IntervalSlice;
+import pipi.interval.MaximumRectangle;
+import pipi.interval.PerimeterSlice;
+import pipi.interval.PerimeterSnapshot;
+import pipi.interval.Rectangle;
 import pipi.main.BruteForce;
 
 import com.google.common.base.Predicate;
@@ -15,7 +21,23 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Ordering;
 import com.google.common.primitives.Ints;
 
-public class IntervalPacker {
+public class IntervalPacker implements Packer {
+	private static final class MaximumDimensionOrdering extends Ordering<Dimension2d> {
+		@Override
+		public int compare(Dimension2d left, Dimension2d right) {
+			return Ints.compare(left.large, right.large);
+		}
+	}
+
+	private static final class AreaOrdering extends Ordering<Dimension2d> {
+		@Override
+		public int compare(Dimension2d left, Dimension2d right) {
+			return Ints.compare(left.area(), right.area());
+		}
+	}
+	public static final Ordering<Dimension2d> AREA_ORDERING = new AreaOrdering();
+	public static final Ordering<Dimension2d> MAXIMUM_DIMENSION_ORDERING = new MaximumDimensionOrdering();
+	
 	private IntervalSlice currentSlice = IntervalSlice.empty(1000, 1000);
 	private PerimeterSlice perimeterSlice = new PerimeterSlice(1000, 1000);
 
@@ -27,6 +49,10 @@ public class IntervalPacker {
 		this.currentZ = 0;
 	}
 
+	/* (non-Javadoc)
+	 * @see pipi.packer.Packer#packPesents(java.util.Collection)
+	 */
+	@Override
 	public List<Rectangle> packPesents(Collection<Dimension2d> dimensions) {
 		List<Dimension2d> sortedDimensions = orderDimensions(dimensions);
 		List<Rectangle> result = Lists.newArrayList();
@@ -37,7 +63,7 @@ public class IntervalPacker {
 			Collection<MaximumRectangle> fittingRectangles = fittingRectangles(maximumRectangles, base);
 
 			if (!fittingRectangles.isEmpty()) {
-				InsertionPoint bestInsertionPoint = bestInsertionPoint(base, fittingRectangles);
+				Positioning bestInsertionPoint = bestPositioning(base, fittingRectangles);
 
 				Box2d orientation = bestInsertionPoint.orientation;
 
@@ -50,68 +76,67 @@ public class IntervalPacker {
 		return result;
 	}
 
-	private InsertionPoint bestInsertionPoint(final Dimension2d base, Collection<MaximumRectangle> fittingRectangles) {
+	private Positioning bestPositioning(final Dimension2d base, Collection<MaximumRectangle> fittingRectangles) {
 //		PerimeterSnapshot perimeterSnapshot = this.perimeterSlice.perimeterSnapshot();
 		PerimeterSnapshot perimeterSnapshot = null;
-		List<InsertionPoint> insertionPoints = Lists.newArrayList();
+		List<Positioning> positionings = Lists.newArrayList();
 		for (MaximumRectangle maximumRectangle : fittingRectangles) {
 			Box2d vertical = base.vertical();
 			Rectangle rectangle = maximumRectangle.rectangle;
 			if (rectangle.getBox2d().contains(vertical)) {
-				addOrientedInsertionPoints(insertionPoints, rectangle, vertical, perimeterSnapshot);
+				addOrientedInsertionPoints(positionings, rectangle, vertical, perimeterSnapshot);
 			}
 			Box2d horizontal = base.horizontal();
 			if (maximumRectangle.rectangle.getBox2d().contains(horizontal) && !vertical.contains(horizontal)) {
-				addOrientedInsertionPoints(insertionPoints, rectangle, horizontal, perimeterSnapshot);
+				addOrientedInsertionPoints(positionings, rectangle, horizontal, perimeterSnapshot);
 
 			}
 		}
-		InsertionPoint bestInsertionPoint = new Ordering<InsertionPoint>() {
+		Positioning bestInsertionPoint = new Ordering<Positioning>() {
 
 			@Override
-			public int compare(InsertionPoint left, InsertionPoint right) {
+			public int compare(Positioning left, Positioning right) {
 				return Ints.compare(left.perimeter, right.perimeter);
 			}
-		}.max(insertionPoints);
+		}.max(positionings);
 		return bestInsertionPoint;
 	}
 
 	public List<Dimension2d> orderDimensions(Collection<Dimension2d> dimensions) {
-		Ordering<Dimension2d> dimensionsOrdering = getDimensionsOrdering();
-		List<Dimension2d> sortedDimensions = dimensionsOrdering.reverse().sortedCopy(dimensions);
+		List<Dimension2d> sortedDimensions = this.getDimensionsOrdering().reverse().sortedCopy(dimensions);
 		return sortedDimensions;
 	}
 
-	public void fillSlices(InsertionPoint bestInsertionPoint, Box2d orientation) {
+	public void fillSlices(Positioning bestInsertionPoint, Box2d orientation) {
 		assert this.currentSlice.isFree(bestInsertionPoint.point2d.x, bestInsertionPoint.point2d.y, orientation.dx,
 				orientation.dy);
 		fillMainSlice(bestInsertionPoint, orientation);
 		fillPerimeterSlice(bestInsertionPoint, orientation);
 	}
 
-	public void fillPerimeterSlice(InsertionPoint bestInsertionPoint, Box2d orientation) {
+	public void fillPerimeterSlice(Positioning bestInsertionPoint, Box2d orientation) {
 		this.perimeterSlice.fill(bestInsertionPoint.point2d.x, bestInsertionPoint.point2d.y, orientation.dx, orientation.dy);
 	}
 
-	public void fillMainSlice(InsertionPoint bestInsertionPoint, Box2d orientation) {
+	public void fillMainSlice(Positioning bestInsertionPoint, Box2d orientation) {
 		this.currentSlice.fill(bestInsertionPoint.point2d.x, bestInsertionPoint.point2d.y, orientation.dx, orientation.dy);
 	}
 
-	private void addOrientedInsertionPoints(List<InsertionPoint> insertionPoints, Rectangle rectangle, Box2d vertical, PerimeterSnapshot perimeterSnapshot) {
-		addInsertionPoint(insertionPoints, rectangle.upperLeft(), vertical, perimeterSnapshot);
+	private void addOrientedInsertionPoints(List<Positioning> positionings, Rectangle rectangle, Box2d vertical, PerimeterSnapshot perimeterSnapshot) {
+		addInsertionPoint(positionings, rectangle.upperLeft(), vertical, perimeterSnapshot);
 		if (rectangle.getBox2d().dx != vertical.dx) {
-			addInsertionPoint(insertionPoints, rectangle.upperRight(vertical), vertical, perimeterSnapshot);
+			addInsertionPoint(positionings, rectangle.upperRight(vertical), vertical, perimeterSnapshot);
 		}
 		if (rectangle.getBox2d().dy != vertical.dy) {
-			addInsertionPoint(insertionPoints, rectangle.bottomLeft(vertical), vertical, perimeterSnapshot);
+			addInsertionPoint(positionings, rectangle.bottomLeft(vertical), vertical, perimeterSnapshot);
 			if (rectangle.getBox2d().dx != vertical.dx) {
-				addInsertionPoint(insertionPoints, rectangle.bottomRight(vertical), vertical, perimeterSnapshot);
+				addInsertionPoint(positionings, rectangle.bottomRight(vertical), vertical, perimeterSnapshot);
 			}
 		}
 	}
 
-	private boolean addInsertionPoint(List<InsertionPoint> insertionPoints, Point2d point2d, Box2d vertical, PerimeterSnapshot perimeterSnapshot) {
-		return insertionPoints.add(new InsertionPoint(point2d, vertical, getPerimeter(point2d, vertical)));
+	private boolean addInsertionPoint(List<Positioning> positionings, Point2d point2d, Box2d vertical, PerimeterSnapshot perimeterSnapshot) {
+		return positionings.add(new Positioning(point2d, vertical, getPerimeter(point2d, vertical)));
 	}
 
 	private Rectangle bestRectangle(Collection<MaximumRectangle> fittingRectangles) {
@@ -134,21 +159,9 @@ public class IntervalPacker {
 		});
 	}
 
-	private Ordering<Dimension2d> getDimensionsOrdering() {
-		return new Ordering<Dimension2d>() {
-
-			@Override
-			public int compare(Dimension2d left, Dimension2d right) {
-				return Ints.compare(left.area(), right.area());
-			}
-		};
-//		return new Ordering<Dimension2d>() {
-//
-//			@Override
-//			public int compare(Dimension2d left, Dimension2d right) {
-//				return Ints.compare(left.large, right.large);
-//			}
-//		};
+	protected Ordering<Dimension2d> getDimensionsOrdering() {
+		return new AreaOrdering();
+//		return new MaximumDimensionOrdering();
 	}
 
 	public int getLastZ() {

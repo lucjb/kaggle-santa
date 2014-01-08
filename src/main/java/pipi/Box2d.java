@@ -52,5 +52,8 @@ public class Box2d {
 		return true;
 	}
 
+	public int perimeter(){
+		return this.dx + this.dx + this.dy + this.dy;
+	}
 	
 }

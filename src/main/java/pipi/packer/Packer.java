@@ -1,0 +1,13 @@
+package pipi.packer;
+
+import java.util.Collection;
+import java.util.List;
+
+import pipi.Dimension2d;
+import pipi.interval.Rectangle;
+
+public interface Packer {
+
+	public abstract List<Rectangle> packPesents(Collection<Dimension2d> dimensions);
+
+}

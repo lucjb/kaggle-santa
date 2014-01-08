@@ -13,12 +13,16 @@ import pipi.OutputPresent;
 import pipi.PresentBatch;
 import pipi.SuperPresent;
 import pipi.SuperPresentsParser;
-import pipi.interval.IntervalPacker;
 import pipi.interval.IntervalSleigh;
 import pipi.interval.Rectangle;
+import pipi.packer.BrunoPacker;
+import pipi.packer.CompositePacker;
+import pipi.packer.IntervalPacker;
+import pipi.packer.Packer;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
+import com.google.common.collect.Ordering;
 
 public class Main {
 
@@ -108,7 +112,7 @@ public class Main {
 		int searchStart = endIndex;
 		for (;;) {
 			subPresents = presents.subList(startIndex, searchStart);
-			IntervalPacker packer = new IntervalPacker();
+			Packer packer = buildPacker();
 			presentsWithDimension = presentsWithDimension(subPresents);
 			packedPresents = packer.packPesents(presentsWithDimension.keys());
 			if (packedPresents.size() == subPresents.size()) {
@@ -125,7 +129,7 @@ public class Main {
 			int searchMid = searchStart + (searchEnd - searchStart) / 2;
 
 			List<SuperPresent> subsubPresents = presents.subList(startIndex, searchMid);
-			IntervalPacker packer = new IntervalPacker();
+			Packer packer = buildPacker();
 			Multimap<Dimension2d, SuperPresent> subpresentsWithDimension = presentsWithDimension(subsubPresents);
 			List<Rectangle> subpackedPresents = packer.packPesents(subpresentsWithDimension.keys());
 			if (packedPresents.size() == subsubPresents.size()) {
@@ -147,6 +151,15 @@ public class Main {
 		 packedPresents.size(), endIndex - startIndex - packedPresents.size(),
 		 (double) packedPresents.size() / (maximumEndIndex - startIndex));
 		return pair;
+	}
+
+	public static Packer buildPacker() {
+		return new IntervalPacker();
+//		return new CompositePacker(new IntervalPacker(), new IntervalPacker(){@Override
+//		protected Ordering<Dimension2d> getDimensionsOrdering() {
+//			return IntervalPacker.MAXIMUM_DIMENSION_ORDERING;
+//		}});
+//		return new BrunoPacker();
 	}
 
 	private static Multimap<Dimension2d, SuperPresent> presentsWithDimension(List<SuperPresent> subPresents) {
