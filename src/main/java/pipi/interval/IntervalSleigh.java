@@ -1,27 +1,15 @@
 package pipi.interval;
 
-import java.sql.BatchUpdateException;
-import java.util.Collection;
 import java.util.List;
-import java.util.Set;
 
-import pipi.Box2d;
 import pipi.Box3d;
 import pipi.Dimension2d;
-import pipi.Dimension3d;
 import pipi.OutputPresent;
 import pipi.PresentBatch;
 import pipi.SuperPresent;
 
-import com.google.common.base.Predicate;
-import com.google.common.collect.Collections2;
-import com.google.common.collect.HashMultiset;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
-import com.google.common.collect.Multiset;
-import com.google.common.collect.Multiset.Entry;
-import com.google.common.collect.Ordering;
-import com.google.common.primitives.Ints;
 
 import first.Point;
 

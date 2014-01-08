@@ -57,22 +57,29 @@ public class Main {
 					break;
 				}
 			}
-			for (;;) {
-				if (!presentBatch.canChangeMaximumZ()) {
-					break;
-				}
-				while(presentBatch.canChangeMaximumZ() && presentBatch.rotateMaximumZ()){
-					;
-				}
-				
-				System.out.println(presentBatch.size() + "->" + presentBatch);
-				if (!presentBatch.canChangeMaximumZ()) {
-					break;
-				}
-				presentBatch.popPresent();
-			}
+			int bestBatchSize=presentBatch.size();
+//			double bestBatchUsage = presentBatch.usage();;
+//			for (;;) {
+//				if (!presentBatch.canChangeMaximumZ()) {
+//					break;
+//				}
+//				while(presentBatch.canChangeMaximumZ() && presentBatch.rotateMaximumZ()){
+//					;
+//				}
+//				
+//				System.out.println(presentBatch.size() + "->" + presentBatch);
+//				if(presentBatch.usage() > bestBatchUsage){
+//					bestBatchUsage = presentBatch.usage();
+//					bestBatchSize=presentBatch.size();
+//				}
+//				if (!presentBatch.canChangeMaximumZ()) {
+//					break;
+//				}
+//				presentBatch.popPresent();
+//			}
+//			System.out.println("Best size: " + bestBatchSize + " usage: " + bestBatchUsage);
 
-			int batchEndIndex = currentPresentIndex + presentBatch.size();
+			int batchEndIndex = currentPresentIndex + bestBatchSize;
 
 			Pair<List<Rectangle>, Multimap<Dimension2d, SuperPresent>> pair = packNextBatch(presents, currentPresentIndex,
 					batchEndIndex);
@@ -85,13 +92,10 @@ public class Main {
 
 		int maximumZ = sleigh.getCurrentZ();
 		OutputPresent.outputPresents(sleigh.getOutputPresents(), maximumZ, "intervals.csv");
-		System.out.printf("%%waste: %2.2f\n", (double) totalVolume / maximumZ * 1000000);
+		System.out.printf("Total volume: %d\n", totalVolume);
+		System.out.printf("%%waste: %2.2f\n", (double) totalVolume / (maximumZ * 1000000L));
 		System.out.println("Final score: " + maximumZ * 2);
 		System.out.println("Total minutes: " + Duration.between(start, Instant.now()).toMinutes());
-	}
-
-	private static int estimateNextBatchEndIndex(List<SuperPresent> presents, int currentPresentIndex, double efficiency) {
-		return saturateAreaSmall(presents, currentPresentIndex, (int) ((1000 * 1000) * efficiency));
 	}
 
 	private static Pair<List<Rectangle>, Multimap<Dimension2d, SuperPresent>> packNextBatch(List<SuperPresent> presents,
@@ -138,10 +142,10 @@ public class Main {
 		Pair<List<Rectangle>, Multimap<Dimension2d, SuperPresent>> pair = Pair.of(packedPresents, presentsWithDimension);
 
 		int maximumEndIndex = saturateAreaSmall(presents, startIndex, 1000 * 1000);
-		// System.out.printf("Original: %d Real: %d Diff: %d n%%: %2.2f\n",
-		// maximumEndIndex - startIndex,
-		// packedPresents.size(), endIndex - startIndex - packedPresents.size(),
-		// (double) packedPresents.size() / (maximumEndIndex - startIndex));
+		 System.out.printf("Original: %d Real: %d Diff: %d n%%: %2.2f\n",
+		 maximumEndIndex - startIndex,
+		 packedPresents.size(), endIndex - startIndex - packedPresents.size(),
+		 (double) packedPresents.size() / (maximumEndIndex - startIndex));
 		return pair;
 	}
 

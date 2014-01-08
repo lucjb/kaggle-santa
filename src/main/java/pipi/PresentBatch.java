@@ -95,9 +95,10 @@ public class PresentBatch {
 
 	public boolean rotateMaximumZ() {
 		QueuedPresent queuedPresent = this.heightsHeap.peek();
-		QueuedPresent createQueuedPresent = createQueuedPresent(queuedPresent.dimension, queuedPresent.orientation+1);
-		int newArea = this.area - queuedPresent.orientedDimension3d.base.area() + createQueuedPresent.orientedDimension3d.base.area();
-		if(newArea > this.maxArea()){
+		QueuedPresent createQueuedPresent = createQueuedPresent(queuedPresent.dimension, queuedPresent.orientation + 1);
+		int newArea = this.area - queuedPresent.orientedDimension3d.base.area()
+				+ createQueuedPresent.orientedDimension3d.base.area();
+		if (newArea > this.maxArea()) {
 			return false;
 		}
 		this.area = newArea;
@@ -120,6 +121,10 @@ public class PresentBatch {
 			return queuedPresent;
 		}
 		throw new RuntimeException();
+	}
+
+	public double usage() {
+		return (double)this.getVolume() / this.maxVolume();
 	}
 
 }

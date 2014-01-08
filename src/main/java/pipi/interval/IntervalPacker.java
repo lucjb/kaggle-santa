@@ -142,6 +142,13 @@ public class IntervalPacker {
 				return Ints.compare(left.area(), right.area());
 			}
 		};
+//		return new Ordering<Dimension2d>() {
+//
+//			@Override
+//			public int compare(Dimension2d left, Dimension2d right) {
+//				return Ints.compare(left.large, right.large);
+//			}
+//		};
 	}
 
 	public int getLastZ() {
