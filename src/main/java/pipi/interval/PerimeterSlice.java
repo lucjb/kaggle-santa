@@ -176,4 +176,23 @@ public class PerimeterSlice {
 		int from = interval.getFrom();
 		System.arraycopy(NATURAL, start, columnSnapshot, from, length + 1);
 	}
+
+	public static PerimeterSlice filled(int width, int height) {
+		PerimeterSlice perimeterSlice = new PerimeterSlice(width, height);
+		perimeterSlice.lefts[0] = null;
+		perimeterSlice.rights[width] = null;
+		perimeterSlice.ups[0] = null;
+		perimeterSlice.downs[height] = null;
+
+		perimeterSlice.leftSnapshot = perimeterSlice.getSideSnapshot(perimeterSlice.lefts, perimeterSlice.height);
+		perimeterSlice.rightSnapshot = perimeterSlice.getSideSnapshot(perimeterSlice.rights, perimeterSlice.height);
+		perimeterSlice.upSnapshot = perimeterSlice.getSideSnapshot(perimeterSlice.ups, perimeterSlice.width);
+		perimeterSlice.downSnapshot = perimeterSlice.getSideSnapshot(perimeterSlice.downs, perimeterSlice.width);
+
+		return perimeterSlice;
+	}
+
+	public void free(int x, int y, int dx, int dy) {
+		throw new RuntimeException("implement!!!");
+	}
 }

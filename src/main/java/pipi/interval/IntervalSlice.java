@@ -78,7 +78,7 @@ public class IntervalSlice implements Slice {
 
 	@Override
 	public void free(int x, int y, int dx, int dy) {
-		throw new RuntimeException("ojo: si se usa esto, perimeterSlice queda inconsistente");
+//		throw new RuntimeException("ojo: si se usa esto, perimeterSlice queda inconsistente");
 	}
 
 	@Override

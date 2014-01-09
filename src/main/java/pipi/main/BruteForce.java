@@ -104,24 +104,35 @@ public class BruteForce {
 			Collection<MaximumRectangle> maximumRectangles = intervalSlice.getMaximumRectangles(perimeterSlice);
 			BitsetSlice actualSlice = BitsetSlice.filled(1000);
 			IntervalSlice actualIntervalSlice = IntervalSlice.filled(1000, 1000);
+			PerimeterSlice actualPerimeterSlice = PerimeterSlice.filled(1000,1000);
 			for (MaximumRectangle maximumRectangle : maximumRectangles) {
-				actualSlice.free(maximumRectangle.rectangle.point2d.x, maximumRectangle.rectangle.point2d.y,
-						maximumRectangle.rectangle.getBox2d().dx, maximumRectangle.rectangle.getBox2d().dy);
-				actualIntervalSlice.free(maximumRectangle.rectangle.point2d.x, maximumRectangle.rectangle.point2d.y,
-						maximumRectangle.rectangle.getBox2d().dx, maximumRectangle.rectangle.getBox2d().dy);
-				Assert.assertTrue(intervalSlice.isFree(maximumRectangle.rectangle.point2d.x,
-						maximumRectangle.rectangle.point2d.y, maximumRectangle.rectangle.getBox2d().dx,
-						maximumRectangle.rectangle.getBox2d().dy));
-				Assert.assertTrue(actualIntervalSlice.isFree(maximumRectangle.rectangle.point2d.x,
-						maximumRectangle.rectangle.point2d.y, maximumRectangle.rectangle.getBox2d().dx,
-						maximumRectangle.rectangle.getBox2d().dy));
-				int perimeter = perimeterSlice.getPerimeterInt(maximumRectangle.rectangle.point2d, maximumRectangle.rectangle.box2d);
-				Perimeter expectedPerimeter = expectedPerimeter(maximumRectangle, expectedSlice);
-				Assert.assertEquals(expectedPerimeter.perimeter(), perimeter);
-				PerimeterSnapshot perimeterSnapshot = perimeterSlice.perimeterSnapshot();
-				int perimeterInt = perimeterSnapshot.getPerimeterInt(maximumRectangle.rectangle.point2d, maximumRectangle.rectangle.box2d);
-				Assert.assertEquals(perimeter, perimeterInt);
-				
+
+				Rectangle argRectangle = maximumRectangle.rectangle;
+				actualSlice.free(argRectangle.point2d.x, argRectangle.point2d.y,
+						argRectangle.getBox2d().dx, argRectangle.getBox2d().dy);
+				actualIntervalSlice.free(argRectangle.point2d.x, argRectangle.point2d.y,
+						argRectangle.getBox2d().dx, argRectangle.getBox2d().dy);
+
+				Assert.assertTrue(intervalSlice.isFree(argRectangle.point2d.x,
+						argRectangle.point2d.y, argRectangle.getBox2d().dx,
+						argRectangle.getBox2d().dy));
+				Assert.assertTrue(actualIntervalSlice.isFree(argRectangle.point2d.x,
+						argRectangle.point2d.y, argRectangle.getBox2d().dx,
+						argRectangle.getBox2d().dy));
+
+				BitsetSlice argSlice = expectedSlice;
+				PerimeterSlice argPerimeterSlice = perimeterSlice;
+
+				assertRectanglePerimeter(argSlice, argPerimeterSlice, argRectangle);
+			}
+			Assert.assertEquals(expectedSlice, actualSlice);
+
+			actualSlice = BitsetSlice.filled(1000);
+					Collection<MaximumRectangle> maximumRectangles2 = actualIntervalSlice.getMaximumRectangles(null);
+			for (MaximumRectangle maximumRectangle : maximumRectangles2) {
+				Rectangle argRectangle = maximumRectangle.rectangle;
+				actualSlice.free(argRectangle.point2d.x, argRectangle.point2d.y,
+						argRectangle.getBox2d().dx, argRectangle.getBox2d().dy);
 			}
 			Assert.assertEquals(expectedSlice, actualSlice);
 		}
@@ -136,9 +147,20 @@ public class BruteForce {
 		}
 	}
 
-	public static Perimeter expectedPerimeter(MaximumRectangle maximumRectangle, BitsetSlice expectedSlice) {
-		Point2d point2d = maximumRectangle.rectangle.point2d;
-		Box2d box2d = maximumRectangle.rectangle.box2d;
+	private static void assertRectanglePerimeter(BitsetSlice argSlice, PerimeterSlice argPerimeterSlice,
+			Rectangle argRectangle) {
+		int perimeter = argPerimeterSlice.getPerimeterInt(argRectangle.point2d, argRectangle.box2d);
+		Perimeter expectedPerimeter = expectedPerimeter(argSlice, argRectangle);
+		Assert.assertEquals(expectedPerimeter.perimeter(), perimeter);
+		PerimeterSnapshot perimeterSnapshot = argPerimeterSlice.perimeterSnapshot();
+		int perimeterInt = perimeterSnapshot.getPerimeterInt(argRectangle.point2d, argRectangle.box2d);
+		Assert.assertEquals(perimeter, perimeterInt);
+	}
+
+	public static Perimeter expectedPerimeter(BitsetSlice expectedSlice, Rectangle rectangle2) {
+		Rectangle rectangle = rectangle2;
+		Point2d point2d = rectangle.point2d;
+		Box2d box2d = rectangle.box2d;
 
 		IntervalSet perimeterLeft = new BitIntervalSet(1000);
 		IntervalSet perimiterRight = new BitIntervalSet(1000);
