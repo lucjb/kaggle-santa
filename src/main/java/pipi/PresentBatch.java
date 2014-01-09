@@ -22,10 +22,14 @@ public class PresentBatch {
 	});
 	private int area;
 	private int volume;
-	private final int maxArea = 1000 * 1000;
+	private final int maxArea;
 
 	public PresentBatch() {
+		this(1000 * 1000);
+	}
 
+	public PresentBatch(int initialArea) {
+		this.maxArea = initialArea;
 	}
 
 	public void popPresent() {

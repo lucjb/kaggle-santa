@@ -65,10 +65,8 @@ public class IntervalPacker implements Packer {
 			if (!fittingRectangles.isEmpty()) {
 				Positioning bestInsertionPoint = bestPositioning(base, fittingRectangles);
 
-				Box2d orientation = bestInsertionPoint.orientation;
-
-				this.fillSlices(bestInsertionPoint, orientation);
-				result.add(new Rectangle(bestInsertionPoint.point2d, orientation));
+				this.fillSlices(bestInsertionPoint.point2d, bestInsertionPoint.orientation);
+				result.add(new Rectangle(bestInsertionPoint.point2d, bestInsertionPoint.orientation));
 			} else {
 				return result;
 			}
@@ -107,19 +105,19 @@ public class IntervalPacker implements Packer {
 		return sortedDimensions;
 	}
 
-	public void fillSlices(Positioning bestInsertionPoint, Box2d orientation) {
-		assert this.currentSlice.isFree(bestInsertionPoint.point2d.x, bestInsertionPoint.point2d.y, orientation.dx,
+	public void fillSlices(Point2d point2d, Box2d orientation) {
+		assert this.currentSlice.isFree(point2d.x, point2d.y, orientation.dx,
 				orientation.dy);
-		fillMainSlice(bestInsertionPoint, orientation);
-		fillPerimeterSlice(bestInsertionPoint, orientation);
+		fillMainSlice(point2d, orientation);
+		fillPerimeterSlice(point2d, orientation);
 	}
 
-	public void fillPerimeterSlice(Positioning bestInsertionPoint, Box2d orientation) {
-		this.perimeterSlice.fill(bestInsertionPoint.point2d.x, bestInsertionPoint.point2d.y, orientation.dx, orientation.dy);
+	public void fillPerimeterSlice(Point2d point2d, Box2d orientation) {
+		this.perimeterSlice.fill(point2d.x, point2d.y, orientation.dx, orientation.dy);
 	}
 
-	public void fillMainSlice(Positioning bestInsertionPoint, Box2d orientation) {
-		this.currentSlice.fill(bestInsertionPoint.point2d.x, bestInsertionPoint.point2d.y, orientation.dx, orientation.dy);
+	public void fillMainSlice(Point2d point2d, Box2d orientation) {
+		this.currentSlice.fill(point2d.x, point2d.y, orientation.dx, orientation.dy);
 	}
 
 	private void addOrientedInsertionPoints(List<Positioning> positionings, Rectangle rectangle, Box2d vertical, PerimeterSnapshot perimeterSnapshot) {
@@ -180,5 +178,12 @@ public class IntervalPacker implements Packer {
 		int perimeterInt = this.perimeterSlice.getPerimeterInt(point2d, box2d);
 		// assert perimeterInt == BruteForce.
 		return perimeterInt;
+	}
+
+	@Override
+	public void preFill(Collection<Rectangle> prefill) {
+			for (Rectangle rectangle : prefill) {
+				fillSlices(rectangle.point2d, rectangle.box2d);
+			}
 	}
 }

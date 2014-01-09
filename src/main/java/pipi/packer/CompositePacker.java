@@ -16,15 +16,21 @@ public class CompositePacker implements Packer {
 	
 	@Override
 	public List<Rectangle> packPesents(Collection<Dimension2d> dimensions) {
-		Packer[] a = this.packers;
 		List<Rectangle> bestPackedPesents = null;
-		for (Packer packer : a) {
+		for (Packer packer : this.packers) {
 			List<Rectangle> packedPesents = packer.packPesents(dimensions);
 			if(bestPackedPesents == null || packedPesents.size() > bestPackedPesents.size()){
 				bestPackedPesents = packedPesents;
 			}
 		}
 		return bestPackedPesents;
+	}
+
+	@Override
+	public void preFill(Collection<Rectangle> prefill) {
+		for (Packer packer : this.packers) {
+			packer.preFill(prefill);
+		}
 	}
 
 }

@@ -10,4 +10,6 @@ public interface Packer {
 
 	public abstract List<Rectangle> packPesents(Collection<Dimension2d> dimensions);
 
+	public abstract void preFill(Collection<Rectangle> prefill);
+
 }

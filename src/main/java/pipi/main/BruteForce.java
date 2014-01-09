@@ -103,10 +103,16 @@ public class BruteForce {
 
 			Collection<MaximumRectangle> maximumRectangles = intervalSlice.getMaximumRectangles(perimeterSlice);
 			BitsetSlice actualSlice = BitsetSlice.filled(1000);
+			IntervalSlice actualIntervalSlice = IntervalSlice.filled(1000, 1000);
 			for (MaximumRectangle maximumRectangle : maximumRectangles) {
 				actualSlice.free(maximumRectangle.rectangle.point2d.x, maximumRectangle.rectangle.point2d.y,
 						maximumRectangle.rectangle.getBox2d().dx, maximumRectangle.rectangle.getBox2d().dy);
+				actualIntervalSlice.free(maximumRectangle.rectangle.point2d.x, maximumRectangle.rectangle.point2d.y,
+						maximumRectangle.rectangle.getBox2d().dx, maximumRectangle.rectangle.getBox2d().dy);
 				Assert.assertTrue(intervalSlice.isFree(maximumRectangle.rectangle.point2d.x,
+						maximumRectangle.rectangle.point2d.y, maximumRectangle.rectangle.getBox2d().dx,
+						maximumRectangle.rectangle.getBox2d().dy));
+				Assert.assertTrue(actualIntervalSlice.isFree(maximumRectangle.rectangle.point2d.x,
 						maximumRectangle.rectangle.point2d.y, maximumRectangle.rectangle.getBox2d().dx,
 						maximumRectangle.rectangle.getBox2d().dy));
 				int perimeter = perimeterSlice.getPerimeterInt(maximumRectangle.rectangle.point2d, maximumRectangle.rectangle.box2d);

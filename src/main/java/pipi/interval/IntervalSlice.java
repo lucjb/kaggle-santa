@@ -313,20 +313,6 @@ public class IntervalSlice implements Slice {
 		return rightSides.isEmpty();
 	}
 
-	public static IntervalSlice empty(int width, int height) {
-		IntervalSlice intervalSlice = new IntervalSlice(width, height);
-
-		SliceColumn leftSleighColumn = intervalSlice.lefts.lastEntry().getValue();
-		leftSleighColumn.addLine(new Interval(0, height));
-		leftSleighColumn.getSides().addInterval(new Interval(0, height));
-
-		SliceColumn rightSleighColumn = intervalSlice.rights.lastEntry().getValue();
-		rightSleighColumn.addLine(new Interval(0, height));
-		rightSleighColumn.getSides().addInterval(new Interval(0, height));
-
-		return intervalSlice;
-	}
-
 	public Perimeter getPerimeter(Point2d point2d, Box2d box2d, IntervalSlice perimeterSlice) {
 		Interval line = Interval.of(point2d.y, point2d.y + box2d.dy);
 		Interval hori = Interval.of(point2d.x, point2d.x + box2d.dx);
@@ -365,6 +351,28 @@ public class IntervalSlice implements Slice {
 			return 0;
 		}
 		return ((BitIntervalSet) sliceColumn.getSides()).count(line);
+	}
+
+	public static IntervalSlice empty(int width, int height) {
+		IntervalSlice intervalSlice = new IntervalSlice(width, height);
+
+		SliceColumn leftSleighColumn = intervalSlice.lefts.lastEntry().getValue();
+		leftSleighColumn.addLine(new Interval(0, height));
+		leftSleighColumn.getSides().addInterval(new Interval(0, height));
+
+		SliceColumn rightSleighColumn = intervalSlice.rights.lastEntry().getValue();
+		rightSleighColumn.addLine(new Interval(0, height));
+		rightSleighColumn.getSides().addInterval(new Interval(0, height));
+
+		return intervalSlice;
+	}
+
+	
+	public static IntervalSlice filled(int width, int height) {
+		IntervalSlice intervalSlice = new IntervalSlice(width, height);
+		intervalSlice.lefts.clear();
+		intervalSlice.rights.clear();
+		return intervalSlice;
 	}
 
 }

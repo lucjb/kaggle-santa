@@ -1,7 +1,9 @@
 package pipi.main;
 
 import java.io.IOException;
+import java.util.Collection;
 import java.util.List;
+import java.util.PriorityQueue;
 
 import org.apache.commons.lang3.tuple.Pair;
 import org.threeten.bp.Duration;
@@ -13,16 +15,16 @@ import pipi.OutputPresent;
 import pipi.PresentBatch;
 import pipi.SuperPresent;
 import pipi.SuperPresentsParser;
+import pipi.interval.ExtendedRectangle;
 import pipi.interval.IntervalSleigh;
 import pipi.interval.Rectangle;
-import pipi.packer.BrunoPacker;
-import pipi.packer.CompositePacker;
 import pipi.packer.IntervalPacker;
 import pipi.packer.Packer;
 
 import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
-import com.google.common.collect.Ordering;
+import com.google.common.util.concurrent.RateLimiter;
 
 public class Main {
 
@@ -51,9 +53,15 @@ public class Main {
 
 		IntervalSleigh sleigh = new IntervalSleigh();
 		long totalVolume = 0;
+		PriorityQueue<ExtendedRectangle> carryRectangles = new PriorityQueue<>();
+		RateLimiter rateLimiter = RateLimiter.create(0.1);
 		for (int currentPresentIndex = 0; currentPresentIndex < presents.size();) {
-			System.out.println("---BATCH START---");
-			PresentBatch presentBatch = new PresentBatch();
+			// System.out.println("---BATCH START---");
+			int initialArea = 1000 * 1000;
+			for (ExtendedRectangle extendedRectangle : carryRectangles) {
+				initialArea -= extendedRectangle.rectangle.box2d.area();
+			}
+			PresentBatch presentBatch = new PresentBatch(initialArea);
 
 			for (int j = currentPresentIndex; j < presents.size(); j++) {
 				Dimension3d dimension = presents.get(j).getDimension();
@@ -61,36 +69,42 @@ public class Main {
 					break;
 				}
 			}
-			int bestBatchSize=presentBatch.size();
-//			double bestBatchUsage = presentBatch.usage();;
-//			for (;;) {
-//				if (!presentBatch.canChangeMaximumZ()) {
-//					break;
-//				}
-//				while(presentBatch.canChangeMaximumZ() && presentBatch.rotateMaximumZ()){
-//					;
-//				}
-//				
-//				System.out.println(presentBatch.size() + "->" + presentBatch);
-//				if(presentBatch.usage() > bestBatchUsage){
-//					bestBatchUsage = presentBatch.usage();
-//					bestBatchSize=presentBatch.size();
-//				}
-//				if (!presentBatch.canChangeMaximumZ()) {
-//					break;
-//				}
-//				presentBatch.popPresent();
-//			}
-//			System.out.println("Best size: " + bestBatchSize + " usage: " + bestBatchUsage);
+			int bestBatchSize = presentBatch.size();
+			// double bestBatchUsage = presentBatch.usage();;
+			// for (;;) {
+			// if (!presentBatch.canChangeMaximumZ()) {
+			// break;
+			// }
+			// while(presentBatch.canChangeMaximumZ() &&
+			// presentBatch.rotateMaximumZ()){
+			// ;
+			// }
+			//
+			// System.out.println(presentBatch.size() + "->" + presentBatch);
+			// if(presentBatch.usage() > bestBatchUsage){
+			// bestBatchUsage = presentBatch.usage();
+			// bestBatchSize=presentBatch.size();
+			// }
+			// if (!presentBatch.canChangeMaximumZ()) {
+			// break;
+			// }
+			// presentBatch.popPresent();
+			// }
+			// System.out.println("Best size: " + bestBatchSize + " usage: " +
+			// bestBatchUsage);
 
 			int batchEndIndex = currentPresentIndex + bestBatchSize;
 
 			Pair<List<Rectangle>, Multimap<Dimension2d, SuperPresent>> pair = packNextBatch(presents, currentPresentIndex,
-					batchEndIndex);
+					batchEndIndex, carryRectangles, bestBatchSize);
 
-			PresentBatch emitPresents = sleigh.emitPresents(pair.getLeft(), pair.getRight());
-			totalVolume += emitPresents.getVolume();
-			System.out.println("After-->" + emitPresents);
+			sleigh.emitPresents(pair.getLeft(), pair.getRight(), carryRectangles);
+			if (rateLimiter.tryAcquire()) {
+				System.out.printf("Z: %d\n", sleigh.getCurrentZ());
+				System.out.printf("Progress: %d\n", currentPresentIndex);
+			}
+
+			// totalVolume += emitPresents.getVolume();
 			currentPresentIndex += pair.getLeft().size();
 		}
 
@@ -103,7 +117,7 @@ public class Main {
 	}
 
 	private static Pair<List<Rectangle>, Multimap<Dimension2d, SuperPresent>> packNextBatch(List<SuperPresent> presents,
-			int startIndex, int endIndex) {
+			int startIndex, int endIndex, Collection<ExtendedRectangle> carryRectangles, int bestBatchSize) {
 		List<Rectangle> packedPresents;
 		List<SuperPresent> subPresents;
 		Multimap<Dimension2d, SuperPresent> presentsWithDimension;
@@ -114,6 +128,8 @@ public class Main {
 			subPresents = presents.subList(startIndex, searchStart);
 			Packer packer = buildPacker();
 			presentsWithDimension = presentsWithDimension(subPresents);
+			Collection<Rectangle> prefill = prefill(carryRectangles);
+			packer.preFill(prefill);
 			packedPresents = packer.packPesents(presentsWithDimension.keys());
 			if (packedPresents.size() == subPresents.size()) {
 				break;
@@ -125,6 +141,9 @@ public class Main {
 		for (;;) {
 			if (searchEnd - searchStart <= 1) {
 				break;
+			}
+			if (searchEnd == searchEnd) {
+				throw new RuntimeException("Todo mal");
 			}
 			int searchMid = searchStart + (searchEnd - searchStart) / 2;
 
@@ -145,21 +164,30 @@ public class Main {
 
 		Pair<List<Rectangle>, Multimap<Dimension2d, SuperPresent>> pair = Pair.of(packedPresents, presentsWithDimension);
 
-		int maximumEndIndex = saturateAreaSmall(presents, startIndex, 1000 * 1000);
-		 System.out.printf("Original: %d Real: %d Diff: %d n%%: %2.2f\n",
-		 maximumEndIndex - startIndex,
-		 packedPresents.size(), endIndex - startIndex - packedPresents.size(),
-		 (double) packedPresents.size() / (maximumEndIndex - startIndex));
+		// int maximumEndIndex = startIndex + bestBatchSize;
+		// System.out.printf("Original: %d Real: %d Diff: %d n%%: %2.2f\n",
+		// maximumEndIndex - startIndex,
+		// packedPresents.size(), endIndex - startIndex - packedPresents.size(),
+		// (double) packedPresents.size() / (maximumEndIndex - startIndex));
 		return pair;
+	}
+
+	private static Collection<Rectangle> prefill(Collection<ExtendedRectangle> carryRectangles) {
+		List<Rectangle> rectangles = Lists.newArrayList();
+		for (ExtendedRectangle extendedRectangle : carryRectangles) {
+			rectangles.add(extendedRectangle.rectangle);
+		}
+		return rectangles;
 	}
 
 	public static Packer buildPacker() {
 		return new IntervalPacker();
-//		return new CompositePacker(new IntervalPacker(), new IntervalPacker(){@Override
-//		protected Ordering<Dimension2d> getDimensionsOrdering() {
-//			return IntervalPacker.MAXIMUM_DIMENSION_ORDERING;
-//		}});
-//		return new BrunoPacker();
+		// return new CompositePacker(new IntervalPacker(), new
+		// IntervalPacker(){@Override
+		// protected Ordering<Dimension2d> getDimensionsOrdering() {
+		// return IntervalPacker.MAXIMUM_DIMENSION_ORDERING;
+		// }});
+		// return new BrunoPacker();
 	}
 
 	private static Multimap<Dimension2d, SuperPresent> presentsWithDimension(List<SuperPresent> subPresents) {
