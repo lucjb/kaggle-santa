@@ -22,6 +22,10 @@ public class SliceColumn {
 		//FIXME optimize
 		this.lines.removeInterval(verticalRange);
 		this.sides.removeInterval(verticalRange);
+		removeEmptyLines();
+	}
+
+	public void removeEmptyLines() {
 		List<Interval> ranges = this.lines.getIntervals();
 		for (Interval interval : ranges) {
 			List<Interval> ranges2 = this.sides.getContainedIntervals(interval).getIntervals();
@@ -52,11 +56,15 @@ public class SliceColumn {
 		return this.lines;
 	}
 	
-	public void addInterval(Interval interval){
+	public void addSide(Interval interval){
 		//FIXME optimize
 		this.getSides().addInterval(interval);
+		removeEmptyLines(interval);
+	}
+
+	private void removeEmptyLines(Interval interval) {
 		IntervalSet emptyRanges = this.lines.getComplement().getContainedIntervals(interval);
-		this.getSides().removeAllRanges(emptyRanges);
+		this.sides.removeAllRanges(emptyRanges);
 	}
 
 	public void removeLines(Collection<Interval> intervals){
