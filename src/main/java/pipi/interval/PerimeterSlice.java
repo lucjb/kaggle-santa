@@ -70,12 +70,22 @@ public class PerimeterSlice {
 
 		addColumn(this.lefts, this.leftSnapshot, horizontalRange.getTo(), verticalRange, this.height);
 		addColumn(this.rights, this.rightSnapshot, horizontalRange.getFrom(), verticalRange, this.height);
-
 		addColumn(this.ups, this.upSnapshot, verticalRange.getTo(), horizontalRange, this.width);
 		addColumn(this.downs, this.downSnapshot, verticalRange.getFrom(), horizontalRange, this.width);
 
 	}
 
+	public void free(int x, int y, int dx, int dy) {
+		Interval verticalRange = new Interval(y, y + dy);
+		Interval horizontalRange = new Interval(x, x + dx);
+
+		removeColumn(this.lefts, this.leftSnapshot, horizontalRange.getTo(), verticalRange, this.height);
+		removeColumn(this.rights, this.rightSnapshot, horizontalRange.getFrom(), verticalRange, this.height);
+		removeColumn(this.ups, this.upSnapshot, verticalRange.getTo(), horizontalRange, this.width);
+		removeColumn(this.downs, this.downSnapshot, verticalRange.getFrom(), horizontalRange, this.width);
+	}
+
+	
 	private void addColumn(BitIntervalSet[] side, int[][] snapshot, int insertionPoint, Interval verticalRange, int extension) {
 		BitIntervalSet sliceColumn = side[insertionPoint];
 		if (sliceColumn == null) {
@@ -84,6 +94,15 @@ public class PerimeterSlice {
 		}
 		snapshot[insertionPoint] = null;
 		sliceColumn.addInterval(verticalRange);
+	}
+
+	private void removeColumn(BitIntervalSet[] side, int[][] snapshot, int insertionPoint, Interval verticalRange, int extension) {
+		BitIntervalSet sliceColumn = side[insertionPoint];
+		if (sliceColumn == null) {
+			return;
+		}
+		sliceColumn.removeInterval(verticalRange);
+		snapshot[insertionPoint] = null;
 	}
 
 	public int getPerimeterInt(Point2d point2d, Box2d box2d) {
@@ -192,7 +211,4 @@ public class PerimeterSlice {
 		return perimeterSlice;
 	}
 
-	public void free(int x, int y, int dx, int dy) {
-		throw new RuntimeException("implement!!!");
-	}
 }

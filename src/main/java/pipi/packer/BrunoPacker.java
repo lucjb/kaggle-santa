@@ -201,4 +201,9 @@ public class BrunoPacker implements Packer {
 			fillSlices(rectangle.point2d, rectangle.box2d);
 		}
 	}
+
+	@Override
+	public void freeAll(Collection<Rectangle> prefill) {
+		throw new RuntimeException();
+	}
 }

@@ -55,6 +55,9 @@ public class Main {
 		long totalVolume = 0;
 		PriorityQueue<ExtendedRectangle> carryRectangles = new PriorityQueue<>();
 		RateLimiter rateLimiter = RateLimiter.create(0.1);
+
+		Packer buildPacker = buildPacker();
+
 		for (int currentPresentIndex = 0; currentPresentIndex < presents.size();) {
 			// System.out.println("---BATCH START---");
 			int initialArea = 1000 * 1000;
@@ -96,9 +99,10 @@ public class Main {
 			int batchEndIndex = currentPresentIndex + bestBatchSize;
 
 			Pair<List<Rectangle>, Multimap<Dimension2d, SuperPresent>> pair = packNextBatch(presents, currentPresentIndex,
-					batchEndIndex, carryRectangles, bestBatchSize);
+					batchEndIndex, carryRectangles, bestBatchSize, buildPacker);
 
-			sleigh.emitPresents(pair.getLeft(), pair.getRight(), carryRectangles);
+			List<ExtendedRectangle> emitPresents = sleigh.emitPresents(pair.getLeft(), pair.getRight(), carryRectangles);
+			buildPacker.freeAll(prefill(emitPresents));
 			if (rateLimiter.tryAcquire()) {
 				System.out.printf("Z: %d\n", sleigh.getCurrentZ());
 				System.out.printf("Progress: %d\n", currentPresentIndex);
@@ -117,7 +121,7 @@ public class Main {
 	}
 
 	private static Pair<List<Rectangle>, Multimap<Dimension2d, SuperPresent>> packNextBatch(List<SuperPresent> presents,
-			int startIndex, int endIndex, Collection<ExtendedRectangle> carryRectangles, int bestBatchSize) {
+			int startIndex, int endIndex, Collection<ExtendedRectangle> carryRectangles, int bestBatchSize, Packer buildPacker) {
 		List<Rectangle> packedPresents;
 		List<SuperPresent> subPresents;
 		Multimap<Dimension2d, SuperPresent> presentsWithDimension;
@@ -126,19 +130,22 @@ public class Main {
 		int searchStart = endIndex;
 		for (;;) {
 			subPresents = presents.subList(startIndex, searchStart);
-			Packer packer = buildPacker();
+			Packer packer = buildPacker;
 			presentsWithDimension = presentsWithDimension(subPresents);
-			Collection<Rectangle> prefill = prefill(carryRectangles);
-			packer.preFill(prefill);
+
+//			Collection<Rectangle> prefill = prefill(carryRectangles);
+//			packer.preFill(prefill);
+
 			packedPresents = packer.packPesents(presentsWithDimension.keys());
 			if (packedPresents.size() == subPresents.size()) {
 				break;
 			}
+			packer.freeAll(packedPresents);
 			searchEnd = searchStart;
 			searchStart = searchStart - 1;
 			// searchStart = (int) (searchStart * 0.9);
 		}
-		for (;;) {
+/*		for (;;) {
 			if (searchEnd - searchStart <= 1) {
 				break;
 			}
@@ -160,7 +167,7 @@ public class Main {
 			} else {
 				searchEnd = searchMid;
 			}
-		}
+		}*/
 
 		Pair<List<Rectangle>, Multimap<Dimension2d, SuperPresent>> pair = Pair.of(packedPresents, presentsWithDimension);
 

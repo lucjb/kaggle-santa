@@ -33,4 +33,11 @@ public class CompositePacker implements Packer {
 		}
 	}
 
+	@Override
+	public void freeAll(Collection<Rectangle> prefill) {
+		for (Packer packer : this.packers) {
+			packer.freeAll(prefill);
+		}
+	}
+
 }

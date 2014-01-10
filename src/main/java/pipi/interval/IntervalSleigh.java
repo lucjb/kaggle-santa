@@ -29,7 +29,7 @@ public class IntervalSleigh {
 		this.currentZ = 0;
 	}
 
-	public void emitPresents(List<Rectangle> putPesent, Multimap<Dimension2d, SuperPresent> presentsWithDimension,
+	public List<ExtendedRectangle> emitPresents(List<Rectangle> putPesent, Multimap<Dimension2d, SuperPresent> presentsWithDimension,
 			PriorityQueue<ExtendedRectangle> carryRectangles2) {
 		int maxZ = this.currentZ;
 //		PresentBatch presentBatch = new PresentBatch();
@@ -69,12 +69,15 @@ public class IntervalSleigh {
 			carryRectangles2.add(new ExtendedRectangle(newRectangle, height));
 		}
 
+		List<ExtendedRectangle> extendedRectangles = Lists.newArrayList(); 
+
 		this.currentZ = carryRectangles2.peek().height;
 		while(carryRectangles2.peek().height == this.currentZ){
-			carryRectangles2.remove();
+			ExtendedRectangle remove = carryRectangles2.remove();
+			extendedRectangles.add(remove);
 		}
 
-		
+		return extendedRectangles;
 //		System.out.println("After-->" + presentBatch);
 	}
 

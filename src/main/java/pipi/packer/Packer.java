@@ -12,4 +12,6 @@ public interface Packer {
 
 	public abstract void preFill(Collection<Rectangle> prefill);
 
+	public abstract void freeAll(Collection<Rectangle> prefill);
+
 }

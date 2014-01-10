@@ -111,6 +111,12 @@ public class IntervalPacker implements Packer {
 		fillMainSlice(point2d, orientation);
 		fillPerimeterSlice(point2d, orientation);
 	}
+	
+	private void freeSlices(Point2d point2d, Box2d box2d) {
+		freeMainSlice(point2d, box2d);
+		freePerimeterSlice(point2d, box2d);
+	}
+
 
 	public void fillPerimeterSlice(Point2d point2d, Box2d orientation) {
 		this.perimeterSlice.fill(point2d.x, point2d.y, orientation.dx, orientation.dy);
@@ -120,6 +126,15 @@ public class IntervalPacker implements Packer {
 		this.currentSlice.fill(point2d.x, point2d.y, orientation.dx, orientation.dy);
 	}
 
+	public void freePerimeterSlice(Point2d point2d, Box2d orientation) {
+		this.perimeterSlice.free(point2d.x, point2d.y, orientation.dx, orientation.dy);
+	}
+
+	public void freeMainSlice(Point2d point2d, Box2d orientation) {
+		this.currentSlice.free(point2d.x, point2d.y, orientation.dx, orientation.dy);
+	}
+
+	
 	private void addOrientedInsertionPoints(List<Positioning> positionings, Rectangle rectangle, Box2d vertical, PerimeterSnapshot perimeterSnapshot) {
 		addInsertionPoint(positionings, rectangle.upperLeft(), vertical, perimeterSnapshot);
 		if (rectangle.getBox2d().dx != vertical.dx) {
@@ -186,4 +201,12 @@ public class IntervalPacker implements Packer {
 				fillSlices(rectangle.point2d, rectangle.box2d);
 			}
 	}
+
+	@Override
+	public void freeAll(Collection<Rectangle> prefill) {
+		for (Rectangle rectangle : prefill) {
+			freeSlices(rectangle.point2d, rectangle.box2d);
+		}
+	}
+
 }
