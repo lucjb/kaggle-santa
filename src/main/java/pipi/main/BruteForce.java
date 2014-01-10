@@ -145,6 +145,11 @@ public class BruteForce {
 				}
 			}
 		}
+		for (Rectangle rectangle : rectangles) {
+			intervalSlice.free(rectangle.point2d.x, rectangle.point2d.y, rectangle.getBox2d().dx, rectangle.getBox2d().dy);
+		}
+		Assert.assertTrue(intervalSlice.isEmpty());
+	
 	}
 
 	private static void assertRectanglePerimeter(BitsetSlice argSlice, PerimeterSlice argPerimeterSlice,

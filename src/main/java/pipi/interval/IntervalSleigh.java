@@ -71,10 +71,16 @@ public class IntervalSleigh {
 
 		List<ExtendedRectangle> extendedRectangles = Lists.newArrayList(); 
 
-		this.currentZ = carryRectangles2.peek().height;
+		
+		ExtendedRectangle peek = carryRectangles2.peek();
+		this.currentZ = peek.height;
 		while(carryRectangles2.peek().height == this.currentZ){
 			ExtendedRectangle remove = carryRectangles2.remove();
 			extendedRectangles.add(remove);
+			if(carryRectangles2.isEmpty()){
+				System.out.println("Empty");
+				break;
+			}
 		}
 
 		return extendedRectangles;

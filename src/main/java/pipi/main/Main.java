@@ -26,6 +26,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 import com.google.common.util.concurrent.RateLimiter;
 
+//FAKETIME_STOP_AFTER_SECONDS=10 faketime '2012-12-15 00:00:00' ./yjp.sh
 public class Main {
 
 	public static void main(String[] args) throws Exception {

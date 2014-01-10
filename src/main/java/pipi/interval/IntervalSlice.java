@@ -82,11 +82,17 @@ public class IntervalSlice implements Slice {
 		Interval horizontalRange = new Interval(x, x + dx);
 
 		int insertionPoint = horizontalRange.getFrom();
+
+		SliceColumn otherColumn = this.lefts.get(horizontalRange.getTo());
+		IntervalSet sides = buildIntervalSet(this.height);
+		if (otherColumn != null) {
+			sides.addAllRanges(otherColumn.getSides());
+		}
 		BitIntervalSet freeSpace = removeColumn(this.lefts, this.rights, insertionPoint, verticalRange);
 
 		Entry<Integer, SliceColumn> leftColumn = this.lefts.higherEntry(insertionPoint);
 		Entry<Integer, SliceColumn> rightColumn = this.rights.ceilingEntry(insertionPoint);
-		
+
 		SliceColumn lastColumn = null;
 		if (leftColumn != null) {
 			if (leftColumn.getKey() > horizontalRange.getTo()) {
@@ -103,15 +109,17 @@ public class IntervalSlice implements Slice {
 			}
 		}
 
-		
 		while ((leftColumn != null || rightColumn != null)) {
 			boolean leftAdvance = false;
 			boolean rightAdvance = false;
 			if ((leftColumn != null) && (rightColumn == null || leftColumn.getKey() <= rightColumn.getKey())) {
 				SliceColumn left = leftColumn.getValue();
-				left.getSides().removeInterval(verticalRange);
 				left.getLines().addInterval(verticalRange);
 				freeSpace.addAllRanges(left.getSides()); // capaz solo los sides
+				left.getSides().removeInterval(verticalRange);
+				if (left.getSides().isEmpty()) {
+					this.lefts.remove(leftColumn.getKey());
+				}
 				leftAdvance = true;
 
 			}
@@ -120,6 +128,9 @@ public class IntervalSlice implements Slice {
 				right.getLines().addInterval(verticalRange);
 				freeSpace.removeAllRanges(right.getSides());
 				right.getSides().removeInterval(verticalRange);
+				if (right.getSides().isEmpty()) {
+					this.rights.remove(rightColumn.getKey());
+				}
 				rightAdvance = true;
 			}
 
@@ -151,25 +162,25 @@ public class IntervalSlice implements Slice {
 			}
 
 		}
-		// if(freeSpace.contains(verticalRange)){
-		// return;
-		// }
-
-		if (lastColumn == null) {
-			lastColumn = new SliceColumn(new Interval(0, this.height));
-			this.rights.put(horizontalRange.getTo(), lastColumn);
+		if (freeSpace.contains(verticalRange)) {
+			return;
 		}
+
 
 		IntervalSet toadd = buildIntervalSet(this.height);
 		toadd.addInterval(verticalRange);
 		toadd.removeAllRanges(freeSpace);
 		freeSpace.addInterval(verticalRange);
-		lastColumn.getLines().addAllRanges(freeSpace);
-		SliceColumn otherColumn = this.lefts.get(horizontalRange.getTo());
-		if (otherColumn != null) {
-			toadd.removeAllRanges(otherColumn.getSides());
+		toadd.removeAllRanges(sides);
+		if(toadd.isEmpty()){
+			return;
+		}
+		if (lastColumn == null) {
+			lastColumn = new SliceColumn(new Interval(0, this.height));
+			this.rights.put(horizontalRange.getTo(), lastColumn);
 		}
 		lastColumn.getSides().addAllRanges(toadd);
+		lastColumn.getLines().addAllRanges(freeSpace);
 		lastColumn.removeEmptyLines();
 
 		assert !lastColumn.isEmpty();
@@ -229,21 +240,24 @@ public class IntervalSlice implements Slice {
 			return freeSpace;
 		}
 
+		IntervalSet toadd = buildIntervalSet(this.height);
+		toadd.addInterval(verticalRange);
+		toadd.removeAllRanges(freeSpace);
+		SliceColumn otherColumn = otherSide.get(insertionPoint);
+		if (otherColumn != null) {
+			toadd.removeAllRanges(otherColumn.getSides());
+		}
+		// freeSpace.addInterval(verticalRange);
+		if (toadd.isEmpty()) {
+			return freeSpace;
+		}
 		SliceColumn sliceColumn = side.get(insertionPoint);
 		if (sliceColumn == null) {
 			sliceColumn = new SliceColumn(new Interval(0, this.height));
 			side.put(insertionPoint, sliceColumn);
 		}
-		IntervalSet toadd = buildIntervalSet(this.height);
-		toadd.addInterval(verticalRange);
-		toadd.removeAllRanges(freeSpace);
-		// freeSpace.addInterval(verticalRange);
 		sliceColumn.getLines().addAllRanges(freeSpace);
 		sliceColumn.getLines().addInterval(verticalRange);
-		SliceColumn otherColumn = otherSide.get(insertionPoint);
-		if (otherColumn != null) {
-			toadd.removeAllRanges(otherColumn.getSides());
-		}
 		sliceColumn.getSides().addAllRanges(toadd);
 		sliceColumn.removeEmptyLines();
 
@@ -518,6 +532,49 @@ public class IntervalSlice implements Slice {
 		intervalSlice.lefts.clear();
 		intervalSlice.rights.clear();
 		return intervalSlice;
+	}
+
+	public boolean isEmpty() {
+		if (this.lefts.size() != 1) {
+			return false;
+		}
+		if (this.rights.size() != 1) {
+			return false;
+		}
+		if (!checkColumn(this.lefts.get(0))) {
+			return false;
+		}
+
+		if (!checkColumn(this.rights.get(this.width))) {
+			return false;
+		}
+
+		return true;
+	}
+
+	private boolean checkColumn(SliceColumn sliceColumn) {
+		if (sliceColumn == null) {
+			return false;
+		}
+		if (!checkFullIntervalSet(sliceColumn.getLines())) {
+			return false;
+		}
+		if (!checkFullIntervalSet(sliceColumn.getSides())) {
+			return false;
+		}
+		return true;
+	}
+
+	private boolean checkFullIntervalSet(IntervalSet lines) {
+		List<Interval> intervals = lines.getIntervals();
+		if (intervals.size() != 1) {
+			return false;
+		}
+		Interval interval = intervals.get(0);
+		if (!interval.equals(Interval.of(0, this.height))) {
+			return false;
+		}
+		return true;
 	}
 
 }
