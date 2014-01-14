@@ -99,22 +99,12 @@ public class SliceTest {
 
 		
 		List<pipi.interval.Rectangle> rectangles = Arrays.asList(
-				of(24, 353, 23, 54), of(21, 411, 3, 8), of(26, 407, 3, 4), of(24, 410, 2, 7)
+				of(8, 325, 8, 15), of(13, 270, 8, 28), of(13, 298, 4, 4), of(17, 260, 5, 8)
 				);
 
 
 		
-		 JPanelExtension marvinImagePanel = new JPanelExtension(rectangles);
-		 JFrame frame = new JFrame();
-		 frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		 marvinImagePanel.setSize(1000, 1000);
-		 marvinImagePanel.setPreferredSize(new Dimension(1000, 1000));
-//		 contentPane.setLayout(new BorderLayout());
-		 frame.add(marvinImagePanel);
-		 marvinImagePanel.setVisible(true);
-		 frame.pack();
-		 frame.setVisible(true);
-		 frame.repaint();
+		 show(rectangles);
 
 		
 		int i = 0;
@@ -146,5 +136,19 @@ public class SliceTest {
 //			
 //		}
 
+	}
+
+	public static void show(List<pipi.interval.Rectangle> rectangles) {
+		JPanelExtension marvinImagePanel = new JPanelExtension(rectangles, Lists.reverse(rectangles).subList(0, 0));
+		 JFrame frame = new JFrame();
+		 frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		 marvinImagePanel.setSize(1000, 1000);
+		 marvinImagePanel.setPreferredSize(new Dimension(1000, 1000));
+//		 contentPane.setLayout(new BorderLayout());
+		 frame.add(marvinImagePanel);
+		 marvinImagePanel.setVisible(true);
+		 frame.pack();
+		 frame.setVisible(true);
+		 frame.repaint();
 	}
 }

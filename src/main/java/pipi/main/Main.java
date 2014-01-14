@@ -18,6 +18,7 @@ import pipi.SuperPresentsParser;
 import pipi.interval.ExtendedRectangle;
 import pipi.interval.IntervalSleigh;
 import pipi.interval.Rectangle;
+import pipi.interval.SliceTest;
 import pipi.packer.IntervalPacker;
 import pipi.packer.Packer;
 
@@ -60,11 +61,11 @@ public class Main {
 		Packer buildPacker = buildPacker();
 
 		for (int currentPresentIndex = 0; currentPresentIndex < presents.size();) {
-			// System.out.println("---BATCH START---");
+			 System.out.println("---BATCH START---");
 			int initialArea = 1000 * 1000;
-			for (ExtendedRectangle extendedRectangle : carryRectangles) {
-				initialArea -= extendedRectangle.rectangle.box2d.area();
-			}
+//			for (ExtendedRectangle extendedRectangle : carryRectangles) {
+//				initialArea -= extendedRectangle.rectangle.box2d.area();
+//			}
 			PresentBatch presentBatch = new PresentBatch(initialArea);
 
 			for (int j = currentPresentIndex; j < presents.size(); j++) {
@@ -103,14 +104,18 @@ public class Main {
 					batchEndIndex, carryRectangles, bestBatchSize, buildPacker);
 
 			List<ExtendedRectangle> emitPresents = sleigh.emitPresents(pair.getLeft(), pair.getRight(), carryRectangles);
-			buildPacker.freeAll(prefill(emitPresents));
-			if (rateLimiter.tryAcquire()) {
-				System.out.printf("Z: %d\n", sleigh.getCurrentZ());
-				System.out.printf("Progress: %d\n", currentPresentIndex);
-			}
+//			buildPacker.freeAll(prefill(emitPresents));
+//			if (rateLimiter.tryAcquire()) {
+//				System.out.printf("Z: %d\n", sleigh.getCurrentZ());
+//				System.out.printf("Progress: %d\n", currentPresentIndex);
+//			}
 
 			// totalVolume += emitPresents.getVolume();
 			currentPresentIndex += pair.getLeft().size();
+			List<Rectangle> left = pair.getLeft();
+			SliceTest.show(left);
+			buildPacker.freeAll((left));
+			assert buildPacker.isEmpty();
 		}
 
 		int maximumZ = sleigh.getCurrentZ();
@@ -172,11 +177,11 @@ public class Main {
 
 		Pair<List<Rectangle>, Multimap<Dimension2d, SuperPresent>> pair = Pair.of(packedPresents, presentsWithDimension);
 
-		// int maximumEndIndex = startIndex + bestBatchSize;
-		// System.out.printf("Original: %d Real: %d Diff: %d n%%: %2.2f\n",
-		// maximumEndIndex - startIndex,
-		// packedPresents.size(), endIndex - startIndex - packedPresents.size(),
-		// (double) packedPresents.size() / (maximumEndIndex - startIndex));
+		 int maximumEndIndex = startIndex + bestBatchSize;
+		 System.out.printf("Original: %d Real: %d Diff: %d n%%: %2.2f\n",
+		 maximumEndIndex - startIndex,
+		 packedPresents.size(), endIndex - startIndex - packedPresents.size(),
+		 (double) packedPresents.size() / (maximumEndIndex - startIndex));
 		return pair;
 	}
 

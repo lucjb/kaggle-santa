@@ -32,7 +32,7 @@ public class IntervalSleigh {
 	public List<ExtendedRectangle> emitPresents(List<Rectangle> putPesent, Multimap<Dimension2d, SuperPresent> presentsWithDimension,
 			PriorityQueue<ExtendedRectangle> carryRectangles2) {
 		int maxZ = this.currentZ;
-//		PresentBatch presentBatch = new PresentBatch();
+		PresentBatch presentBatch = new PresentBatch();
 		// PriorityQueue<Box3d> carryRectangles = new
 		// PriorityQueue<>(putPesent.size(), new Comparator<Box3d>() {
 		//
@@ -59,7 +59,7 @@ public class IntervalSleigh {
 
 			maxZ = Math.max(maxZ, topZ);
 			// minZ = Math.min(minZ, topZ);
-//			presentBatch.pushPresent(present.getDimension(), 0);
+			presentBatch.pushPresent(present.getDimension(), 0);
 		}
 		this.outputPresents.addAll(newOutputPresents);
 		for (OutputPresent outputPresent : newOutputPresents) {
@@ -74,7 +74,7 @@ public class IntervalSleigh {
 		
 		ExtendedRectangle peek = carryRectangles2.peek();
 		this.currentZ = peek.height;
-		while(carryRectangles2.peek().height == this.currentZ){
+		while(carryRectangles2.peek().height == this.currentZ){	
 			ExtendedRectangle remove = carryRectangles2.remove();
 			extendedRectangles.add(remove);
 			if(carryRectangles2.isEmpty()){
@@ -83,8 +83,8 @@ public class IntervalSleigh {
 			}
 		}
 
+		System.out.println("After-->" + presentBatch);
 		return extendedRectangles;
-//		System.out.println("After-->" + presentBatch);
 	}
 
 	public int getLastZ() {

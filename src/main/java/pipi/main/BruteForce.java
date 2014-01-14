@@ -2,6 +2,7 @@ package pipi.main;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
 import org.junit.Assert;
@@ -19,6 +20,7 @@ import pipi.interval.PerimeterSnapshot;
 import pipi.interval.Rectangle;
 import pipi.sandbox.BitsetSlice;
 
+import com.google.common.collect.Collections2;
 import com.google.common.collect.Lists;
 
 public class BruteForce {
@@ -29,7 +31,8 @@ public class BruteForce {
 		// new Box2d(2, 1));
 		// List<Box2d> boxes = Arrays.asList(new Box2d(20, 5), new Box2d(10,
 		// 10), new Box2d(5, 20));
-		List<Box2d> boxes = Arrays.asList(new Box2d(998, 996), new Box2d(996, 998), new Box2d(997, 997));
+//		List<Box2d> boxes = Arrays.asList(new Box2d(998, 996), new Box2d(996, 998), new Box2d(997, 997));
+		List<Box2d> boxes = Arrays.asList(new Box2d(450, 450), new Box2d(450, 450), new Box2d(450, 450));
 		int[] xs = new int[boxes.size()];
 		int[] ys = new int[boxes.size()];
 		long count = 0;
@@ -95,7 +98,7 @@ public class BruteForce {
 			Assert.assertEquals(free, actualFree);
 			expectedSlice.fill(rectangle.point2d.x, rectangle.point2d.y, rectangle.getBox2d().dx, rectangle.getBox2d().dy);
 
-			intervalSlice.fill(rectangle.point2d.x, rectangle.point2d.y, rectangle.getBox2d().dx, rectangle.getBox2d().dy);
+			intervalSlice.fill(rectangle.point2d.x, rectangle.point2d.y, rectangle.box2d.dx, rectangle.box2d.dy);
 			perimeterSlice.fill(rectangle.point2d.x, rectangle.point2d.y, rectangle.getBox2d().dx, rectangle.getBox2d().dy);
 
 			Assert.assertFalse(intervalSlice.isFree(rectangle.point2d.x, rectangle.point2d.y, rectangle.getBox2d().dx,
@@ -145,10 +148,17 @@ public class BruteForce {
 				}
 			}
 		}
-		for (Rectangle rectangle : rectangles) {
-			intervalSlice.free(rectangle.point2d.x, rectangle.point2d.y, rectangle.getBox2d().dx, rectangle.getBox2d().dy);
+		Collection<List<Rectangle>> permutations = Collections2.permutations(rectangles);
+		for (List<Rectangle> list : permutations) {
+			intervalSlice = IntervalSlice.empty(1000, 1000);
+			for (Rectangle rectangle : list) {
+				intervalSlice.fill(rectangle.point2d.x, rectangle.point2d.y, rectangle.box2d.dx, rectangle.box2d.dy);
+			}
+			for (Rectangle rectangle : Lists.reverse(list)) {
+				intervalSlice.free(rectangle.point2d.x, rectangle.point2d.y, rectangle.box2d.dx, rectangle.box2d.dy);
+			}
+			Assert.assertTrue(intervalSlice.isEmpty());
 		}
-		Assert.assertTrue(intervalSlice.isEmpty());
 	
 	}
 

@@ -209,4 +209,9 @@ public class IntervalPacker implements Packer {
 		}
 	}
 
+	@Override
+	public boolean isEmpty() {
+		return this.currentSlice.isEmpty();
+	}
+
 }

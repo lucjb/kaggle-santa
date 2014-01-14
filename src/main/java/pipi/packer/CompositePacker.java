@@ -40,4 +40,9 @@ public class CompositePacker implements Packer {
 		}
 	}
 
+	@Override
+	public boolean isEmpty() {
+		throw new RuntimeException();
+	}
+
 }

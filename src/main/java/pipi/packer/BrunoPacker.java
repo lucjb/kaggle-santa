@@ -206,4 +206,9 @@ public class BrunoPacker implements Packer {
 	public void freeAll(Collection<Rectangle> prefill) {
 		throw new RuntimeException();
 	}
+
+	@Override
+	public boolean isEmpty() {
+		throw new RuntimeException();
+	}
 }
