@@ -103,8 +103,11 @@ public class IntervalSlice implements Slice {
 		Interval verticalRange = new Interval(y, y + dy);
 		Interval horizontalRange = new Interval(x, x + dx);
 
-		SliceColumn leftColumn = getOrAddColumn(horizontalRange.getFrom());
-		SliceColumn rightColumn = getOrAddColumn(horizontalRange.getTo());
+		int leftInsertionPoint = horizontalRange.getFrom();
+		int rightInsertionPoint = horizontalRange.getTo();
+
+		SliceColumn leftColumn = getOrAddColumn(leftInsertionPoint);
+		SliceColumn rightColumn = getOrAddColumn(rightInsertionPoint);
 
 		IntervalSet prevLeft = null;
 		IntervalSet prevRight = null;
@@ -112,16 +115,8 @@ public class IntervalSlice implements Slice {
 		assert nothing(prevLeft = leftColumn.getRight().copy());
 		assert nothing(prevRight = rightColumn.getLeft().copy());
 
-		addSide(verticalRange, leftColumn.getLeft(), leftColumn.getRight());
-		addSide(verticalRange, rightColumn.getRight(), rightColumn.getLeft());
-
-		if(leftColumn.isEmpty()){
-			this.columns.remove(horizontalRange.getFrom());
-		}
-
-		if(rightColumn.isEmpty()){
-			this.columns.remove(horizontalRange.getTo());
-		}
+		updateColumns(verticalRange, leftColumn, rightColumn);
+		removeColumnsIfEmpty(leftInsertionPoint, rightInsertionPoint, leftColumn, rightColumn);
 
 		assert leftColumn.isClean();
 		assert rightColumn.isClean();
@@ -130,13 +125,32 @@ public class IntervalSlice implements Slice {
 
 	}
 
+	public void removeColumnsIfEmpty(int leftInsertionPoint, int rightInsertionPoint, SliceColumn leftColumn,
+			SliceColumn rightColumn) {
+		if(leftColumn.isEmpty()){
+			this.columns.remove(leftInsertionPoint);
+		}
+
+		if(rightColumn.isEmpty()){
+			this.columns.remove(rightInsertionPoint);
+		}
+	}
+
+	public void updateColumns(Interval verticalRange, SliceColumn leftColumn, SliceColumn rightColumn) {
+		addSide(verticalRange, leftColumn.getLeft(), leftColumn.getRight());
+		addSide(verticalRange, rightColumn.getRight(), rightColumn.getLeft());
+	}
+
 	@Override
 	public void fill(int x, int y, int dx, int dy) {
 		assert isFree(x, y, dx, dy);
 		Interval verticalRange = new Interval(y, y + dy);
 		Interval horizontalRange = new Interval(x, x + dx);
-		SliceColumn leftColumn = getOrAddColumn(horizontalRange.getTo());
-		SliceColumn rightColumn = getOrAddColumn(horizontalRange.getFrom());
+
+		int leftInsertionPoint = horizontalRange.getTo();
+		int rightInsertionPoint = horizontalRange.getFrom();
+		SliceColumn leftColumn = getOrAddColumn(leftInsertionPoint);
+		SliceColumn rightColumn = getOrAddColumn(rightInsertionPoint);
 
 		IntervalSet prevLeft = null;
 		IntervalSet prevRight = null;
@@ -144,15 +158,8 @@ public class IntervalSlice implements Slice {
 		assert nothing(prevLeft = leftColumn.getRight().copy());
 		assert nothing(prevRight = rightColumn.getLeft().copy());
 		
-		addSide(verticalRange, leftColumn.getLeft(), leftColumn.getRight());
-		addSide(verticalRange, rightColumn.getRight(), rightColumn.getLeft());
-		if(leftColumn.isEmpty()){
-			this.columns.remove(horizontalRange.getTo());
-		}
-
-		if(rightColumn.isEmpty()){
-			this.columns.remove(horizontalRange.getFrom());
-		}
+		updateColumns(verticalRange, leftColumn, rightColumn);
+		removeColumnsIfEmpty(leftInsertionPoint, rightInsertionPoint, leftColumn, rightColumn);
 		
 		assert leftColumn.isClean();
 		assert rightColumn.isClean();
