@@ -4,9 +4,9 @@ public class StartLine {
 	private int left;
 	private int start;
 	private Interval interval;
-	private SliceColumn sliceColumn;
+	private IntervalSet sliceColumn;
 
-	public StartLine(SliceColumn sliceColumn, int left, int start, Interval bounderLine) {
+	public StartLine(IntervalSet sliceColumn, int left, int start, Interval bounderLine) {
 		this.sliceColumn = sliceColumn;
 		this.left = left;
 		this.start = start;
@@ -25,7 +25,7 @@ public class StartLine {
 		return this.start;
 	}
 	
-	public SliceColumn getSleighColumn() {
+	public IntervalSet getSleighColumn() {
 		return this.sliceColumn;
 	}
 	@Override

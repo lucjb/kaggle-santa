@@ -82,6 +82,7 @@ public class IntervalSleigh {
 				break;
 			}
 		}
+		this.currentZ = maxZ;
 
 		System.out.println("After-->" + presentBatch);
 		return extendedRectangles;

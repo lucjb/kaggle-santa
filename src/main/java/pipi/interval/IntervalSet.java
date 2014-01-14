@@ -14,17 +14,20 @@ public interface IntervalSet {
 
 	public abstract List<Interval> getIntervals();
 
-	public abstract IntervalSet getContainedIntervals(Interval verticalRange);
+	public abstract IntervalSet getContainedIntervals(Interval interval);
 
-	public abstract IntervalSet getSubIntervals(Interval verticalRange);
+	public abstract IntervalSet getSubIntervals(Interval interval);
 
 	public abstract boolean isEmpty();
 
-	public abstract boolean contains(Interval verticalRange);
+	public abstract boolean contains(Interval interval);
 
 	public abstract IntervalSet getComplement();
 
-	public abstract boolean isAnythingInside(Interval bound);
+	public abstract boolean isAnythingInside(Interval interval);
 
 	public int count(Interval interval);
+	
+	public IntervalSet copy();
+	
 }

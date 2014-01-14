@@ -105,15 +105,15 @@ public class Main {
 
 			List<ExtendedRectangle> emitPresents = sleigh.emitPresents(pair.getLeft(), pair.getRight(), carryRectangles);
 //			buildPacker.freeAll(prefill(emitPresents));
-//			if (rateLimiter.tryAcquire()) {
-//				System.out.printf("Z: %d\n", sleigh.getCurrentZ());
-//				System.out.printf("Progress: %d\n", currentPresentIndex);
-//			}
+			if (rateLimiter.tryAcquire()) {
+				System.out.printf("Z: %d\n", sleigh.getCurrentZ());
+				System.out.printf("Progress: %d\n", currentPresentIndex);
+			}
 
 			// totalVolume += emitPresents.getVolume();
 			currentPresentIndex += pair.getLeft().size();
 			List<Rectangle> left = pair.getLeft();
-			SliceTest.show(left);
+//			SliceTest.show(left);
 			buildPacker.freeAll((left));
 			assert buildPacker.isEmpty();
 		}

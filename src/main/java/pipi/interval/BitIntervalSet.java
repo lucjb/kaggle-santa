@@ -492,7 +492,9 @@ public class BitIntervalSet implements IntervalSet {
 		return count;
 	}
 
-	
-	
+	@Override
+	public IntervalSet copy() {
+		return new BitIntervalSet(this.froms.copy(), this.tos.copy());
+	}
 	
 }

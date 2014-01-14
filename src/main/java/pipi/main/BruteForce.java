@@ -2,7 +2,6 @@ package pipi.main;
 
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 
 import org.junit.Assert;
@@ -31,7 +30,8 @@ public class BruteForce {
 		// new Box2d(2, 1));
 		// List<Box2d> boxes = Arrays.asList(new Box2d(20, 5), new Box2d(10,
 		// 10), new Box2d(5, 20));
-//		List<Box2d> boxes = Arrays.asList(new Box2d(998, 996), new Box2d(996, 998), new Box2d(997, 997));
+		// List<Box2d> boxes = Arrays.asList(new Box2d(998, 996), new Box2d(996,
+		// 998), new Box2d(997, 997));
 		List<Box2d> boxes = Arrays.asList(new Box2d(450, 450), new Box2d(450, 450), new Box2d(450, 450));
 		int[] xs = new int[boxes.size()];
 		int[] ys = new int[boxes.size()];
@@ -88,78 +88,97 @@ public class BruteForce {
 	public static void assertRectangles(List<Rectangle> rectangles) {
 		BitsetSlice expectedSlice = BitsetSlice.freed(1000);
 		IntervalSlice intervalSlice = IntervalSlice.empty(1000, 1000);
-		PerimeterSlice perimeterSlice = new PerimeterSlice(1000,1000);
+		PerimeterSlice perimeterSlice = new PerimeterSlice(1000, 1000);
+		boolean overlapped = false;
+		BitsetSlice overlapSlice = BitsetSlice.freed(1000);
 		for (Rectangle rectangle : rectangles) {
-			boolean free = expectedSlice.isFree(rectangle.point2d.x, rectangle.point2d.y, rectangle.getBox2d().dx,
-					rectangle.getBox2d().dy);
-			boolean actualFree = intervalSlice.isFree(rectangle.point2d.x, rectangle.point2d.y, rectangle.getBox2d().dx,
-					rectangle.getBox2d().dy);
-
-			Assert.assertEquals(free, actualFree);
-			expectedSlice.fill(rectangle.point2d.x, rectangle.point2d.y, rectangle.getBox2d().dx, rectangle.getBox2d().dy);
-
-			intervalSlice.fill(rectangle.point2d.x, rectangle.point2d.y, rectangle.box2d.dx, rectangle.box2d.dy);
-			perimeterSlice.fill(rectangle.point2d.x, rectangle.point2d.y, rectangle.getBox2d().dx, rectangle.getBox2d().dy);
-
-			Assert.assertFalse(intervalSlice.isFree(rectangle.point2d.x, rectangle.point2d.y, rectangle.getBox2d().dx,
-					rectangle.getBox2d().dy));
-
-			Collection<MaximumRectangle> maximumRectangles = intervalSlice.getMaximumRectangles(perimeterSlice);
-			BitsetSlice actualSlice = BitsetSlice.filled(1000);
-			IntervalSlice actualIntervalSlice = IntervalSlice.filled(1000, 1000);
-			PerimeterSlice actualPerimeterSlice = PerimeterSlice.filled(1000,1000);
-			for (MaximumRectangle maximumRectangle : maximumRectangles) {
-
-				Rectangle argRectangle = maximumRectangle.rectangle;
-				actualSlice.free(argRectangle.point2d.x, argRectangle.point2d.y,
-						argRectangle.getBox2d().dx, argRectangle.getBox2d().dy);
-				actualIntervalSlice.free(argRectangle.point2d.x, argRectangle.point2d.y,
-						argRectangle.getBox2d().dx, argRectangle.getBox2d().dy);
-
-				Assert.assertTrue(intervalSlice.isFree(argRectangle.point2d.x,
-						argRectangle.point2d.y, argRectangle.getBox2d().dx,
-						argRectangle.getBox2d().dy));
-				Assert.assertTrue(actualIntervalSlice.isFree(argRectangle.point2d.x,
-						argRectangle.point2d.y, argRectangle.getBox2d().dx,
-						argRectangle.getBox2d().dy));
-
-				BitsetSlice argSlice = expectedSlice;
-				PerimeterSlice argPerimeterSlice = perimeterSlice;
-
-				assertRectanglePerimeter(argSlice, argPerimeterSlice, argRectangle);
+			if (!overlapSlice.isFree(rectangle.point2d.x, rectangle.point2d.y, rectangle.getBox2d().dx,
+					rectangle.getBox2d().dy)) {
+				overlapped = true;
+				System.out.println("OVERLAP!!!");
+				break;
 			}
-			Assert.assertEquals(expectedSlice, actualSlice);
-
-			actualSlice = BitsetSlice.filled(1000);
-					Collection<MaximumRectangle> maximumRectangles2 = actualIntervalSlice.getMaximumRectangles(null);
-			for (MaximumRectangle maximumRectangle : maximumRectangles2) {
-				Rectangle argRectangle = maximumRectangle.rectangle;
-				actualSlice.free(argRectangle.point2d.x, argRectangle.point2d.y,
-						argRectangle.getBox2d().dx, argRectangle.getBox2d().dy);
-			}
-			Assert.assertEquals(expectedSlice, actualSlice);
+			overlapSlice.fill(rectangle.point2d.x, rectangle.point2d.y, rectangle.getBox2d().dx, rectangle.getBox2d().dy);
 		}
-		Collection<MaximumRectangle> maximumRectangles = intervalSlice.getMaximumRectangles(perimeterSlice);
-		for (MaximumRectangle rectangle : maximumRectangles) {
-			for (MaximumRectangle other : maximumRectangles) {
-				if (!rectangle.equals(other)) {
-					Rectangle intersection = rectangle.rectangle.intersection(other.rectangle);
-					Assert.assertNotEquals(intersection, rectangle);
+		if (!overlapped) {
+			for (Rectangle rectangle : rectangles) {
+				boolean free = expectedSlice.isFree(rectangle.point2d.x, rectangle.point2d.y, rectangle.getBox2d().dx,
+						rectangle.getBox2d().dy);
+				boolean actualFree = intervalSlice.isFree(rectangle.point2d.x, rectangle.point2d.y, rectangle.getBox2d().dx,
+						rectangle.getBox2d().dy);
+
+				Assert.assertEquals(free, actualFree);
+				expectedSlice.fill(rectangle.point2d.x, rectangle.point2d.y, rectangle.getBox2d().dx,
+						rectangle.getBox2d().dy);
+
+				intervalSlice.fill(rectangle.point2d.x, rectangle.point2d.y, rectangle.box2d.dx, rectangle.box2d.dy);
+				perimeterSlice.fill(rectangle.point2d.x, rectangle.point2d.y, rectangle.getBox2d().dx,
+						rectangle.getBox2d().dy);
+
+				Assert.assertFalse(intervalSlice.isFree(rectangle.point2d.x, rectangle.point2d.y, rectangle.getBox2d().dx,
+						rectangle.getBox2d().dy));
+
+				Collection<MaximumRectangle> maximumRectangles = intervalSlice.getMaximumRectangles(perimeterSlice);
+				BitsetSlice actualSlice = BitsetSlice.filled(1000);
+				// IntervalSlice actualIntervalSlice =
+				// IntervalSlice.filled(1000, 1000);
+				PerimeterSlice actualPerimeterSlice = PerimeterSlice.filled(1000, 1000);
+				for (MaximumRectangle maximumRectangle : maximumRectangles) {
+
+					Rectangle argRectangle = maximumRectangle.rectangle;
+					actualSlice.free(argRectangle.point2d.x, argRectangle.point2d.y, argRectangle.getBox2d().dx,
+							argRectangle.getBox2d().dy);
+					// actualIntervalSlice.free(argRectangle.point2d.x,
+					// argRectangle.point2d.y,
+					// argRectangle.getBox2d().dx, argRectangle.getBox2d().dy);
+
+					Assert.assertTrue(intervalSlice.isFree(argRectangle.point2d.x, argRectangle.point2d.y,
+							argRectangle.getBox2d().dx, argRectangle.getBox2d().dy));
+					// Assert.assertTrue(actualIntervalSlice.isFree(argRectangle.point2d.x,
+					// argRectangle.point2d.y, argRectangle.getBox2d().dx,
+					// argRectangle.getBox2d().dy));
+
+					BitsetSlice argSlice = expectedSlice;
+					PerimeterSlice argPerimeterSlice = perimeterSlice;
+
+					assertRectanglePerimeter(argSlice, argPerimeterSlice, argRectangle);
+				}
+				Assert.assertEquals(expectedSlice, actualSlice);
+
+				actualSlice = BitsetSlice.filled(1000);
+				// Collection<MaximumRectangle> maximumRectangles2 =
+				// actualIntervalSlice.getMaximumRectangles(null);
+				// for (MaximumRectangle maximumRectangle : maximumRectangles2)
+				// {
+				// Rectangle argRectangle = maximumRectangle.rectangle;
+				// actualSlice.free(argRectangle.point2d.x,
+				// argRectangle.point2d.y,
+				// argRectangle.getBox2d().dx, argRectangle.getBox2d().dy);
+				// }
+				// Assert.assertEquals(expectedSlice, actualSlice);
+			}
+			Collection<MaximumRectangle> maximumRectangles = intervalSlice.getMaximumRectangles(perimeterSlice);
+			for (MaximumRectangle rectangle : maximumRectangles) {
+				for (MaximumRectangle other : maximumRectangles) {
+					if (!rectangle.equals(other)) {
+						Rectangle intersection = rectangle.rectangle.intersection(other.rectangle);
+						Assert.assertNotEquals(intersection, rectangle);
+					}
 				}
 			}
-		}
-		Collection<List<Rectangle>> permutations = Collections2.permutations(rectangles);
-		for (List<Rectangle> list : permutations) {
-			intervalSlice = IntervalSlice.empty(1000, 1000);
-			for (Rectangle rectangle : list) {
-				intervalSlice.fill(rectangle.point2d.x, rectangle.point2d.y, rectangle.box2d.dx, rectangle.box2d.dy);
+			Collection<List<Rectangle>> permutations = Collections2.permutations(rectangles);
+			for (List<Rectangle> list : permutations) {
+				intervalSlice = IntervalSlice.empty(1000, 1000);
+				for (Rectangle rectangle : list) {
+					intervalSlice.fill(rectangle.point2d.x, rectangle.point2d.y, rectangle.box2d.dx, rectangle.box2d.dy);
+				}
+				for (Rectangle rectangle : Lists.reverse(list)) {
+					intervalSlice.free(rectangle.point2d.x, rectangle.point2d.y, rectangle.box2d.dx, rectangle.box2d.dy);
+				}
+				Assert.assertTrue(intervalSlice.isEmpty());
 			}
-			for (Rectangle rectangle : Lists.reverse(list)) {
-				intervalSlice.free(rectangle.point2d.x, rectangle.point2d.y, rectangle.box2d.dx, rectangle.box2d.dy);
-			}
-			Assert.assertTrue(intervalSlice.isEmpty());
 		}
-	
+
 	}
 
 	private static void assertRectanglePerimeter(BitsetSlice argSlice, PerimeterSlice argPerimeterSlice,
@@ -201,7 +220,6 @@ public class BruteForce {
 			}
 		}
 
-		
 		if (point2d.x + box2d.dx == 1000) {
 			perimiterRight.addInterval(new Interval(point2d.y, point2d.y + box2d.dy));
 		} else {

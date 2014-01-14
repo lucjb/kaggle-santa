@@ -99,7 +99,7 @@ public class SliceTest {
 
 		
 		List<pipi.interval.Rectangle> rectangles = Arrays.asList(
-				of(8, 325, 8, 15), of(13, 270, 8, 28), of(13, 298, 4, 4), of(17, 260, 5, 8)
+				of(24, 353, 23, 54), of(24, 410, 2, 7), of(21, 411, 3, 8), of(26, 407, 3, 4)
 				);
 
 
