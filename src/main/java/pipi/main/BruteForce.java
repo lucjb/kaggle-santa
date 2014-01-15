@@ -118,7 +118,7 @@ public class BruteForce {
 				Assert.assertFalse(intervalSlice.isFree(rectangle.point2d.x, rectangle.point2d.y, rectangle.getBox2d().dx,
 						rectangle.getBox2d().dy));
 
-				Collection<MaximumRectangle> maximumRectangles = intervalSlice.getMaximumRectangles(perimeterSlice);
+				Collection<MaximumRectangle> maximumRectangles = intervalSlice.getMaximumRectangles();
 				BitsetSlice actualSlice = BitsetSlice.filled(1000);
 				// IntervalSlice actualIntervalSlice =
 				// IntervalSlice.filled(1000, 1000);
@@ -157,7 +157,7 @@ public class BruteForce {
 				// }
 				// Assert.assertEquals(expectedSlice, actualSlice);
 			}
-			Collection<MaximumRectangle> maximumRectangles = intervalSlice.getMaximumRectangles(perimeterSlice);
+			Collection<MaximumRectangle> maximumRectangles = intervalSlice.getMaximumRectangles();
 			for (MaximumRectangle rectangle : maximumRectangles) {
 				for (MaximumRectangle other : maximumRectangles) {
 					if (!rectangle.equals(other)) {

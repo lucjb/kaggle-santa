@@ -59,7 +59,7 @@ public class BrunoPacker implements Packer {
 		List<Rectangle> result = Lists.newArrayList();
 		
 		while(!leftDimension2ds.isEmpty()){
-			Collection<MaximumRectangle> maximumRectangles = this.currentSlice.getMaximumRectangles(this.perimeterSlice);
+			Collection<MaximumRectangle> maximumRectangles = this.currentSlice.getMaximumRectangles();
 			double bestRatio = 0.0;
 			Positioning bestInsertionPoint = null;
 			Dimension2d bestDimension2d = null;

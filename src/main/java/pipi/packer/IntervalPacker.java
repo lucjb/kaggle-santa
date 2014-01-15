@@ -59,7 +59,7 @@ public class IntervalPacker implements Packer {
 
 		for (Dimension2d dimension2d : sortedDimensions) {
 			final Dimension2d base = dimension2d;
-			Collection<MaximumRectangle> maximumRectangles = this.currentSlice.getMaximumRectangles(this.perimeterSlice);
+			Collection<MaximumRectangle> maximumRectangles = this.currentSlice.getMaximumRectangles();
 			Collection<MaximumRectangle> fittingRectangles = fittingRectangles(maximumRectangles, base);
 
 			if (!fittingRectangles.isEmpty()) {
