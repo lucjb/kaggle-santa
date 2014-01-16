@@ -219,7 +219,7 @@ public class IntervalSlice implements Slice {
 			if(!left.isEmpty()){
 				List<Interval> intervals = freeSpace.getIntervals();
 				for (Interval interval : intervals) {
-					startLinesDeque.addLast(new StartLine(left,  entry.getKey(), entry.getKey(), interval));
+					startLinesDeque.addLast(new StartLine(entry.getKey(), entry.getKey(), interval));
 				}
 			}
 		}
@@ -229,7 +229,6 @@ public class IntervalSlice implements Slice {
 		
 		StartLine startLine = startLinesDeque.pollFirst();
 		while (startLine != null) {
-//			IntervalSet leftColumn = startLine.getSleighColumn();
 			int left = startLine.getLeft();
 			Interval line = startLine.getLine();
 			int start = startLine.getStart();
@@ -249,7 +248,7 @@ public class IntervalSlice implements Slice {
 							if (line.bound(next).isEmpty()) {
 								break;
 							}
-							startLinesDeque.addLast(new StartLine(null, left, rightIndexes[index], next));
+							startLinesDeque.addLast(new StartLine(left, rightIndexes[index], next));
 						}
 						if (line.bound(path).isEmpty()) {
 							break;
@@ -274,11 +273,6 @@ public class IntervalSlice implements Slice {
 		// return perimeterSlice.getRightPerimeter(rightIndexes, bounderLine) !=
 		// 0;
 		return rightColumn.isAnythingInside(bounderLine);
-	}
-
-	private boolean isLeftEmpty(IntervalSet leftColumn, Interval bound) {
-		// return perimeterSlice.getLeftPerimeter(left, bound) != 0;
-		return !leftColumn.isAnythingInside(bound);
 	}
 
 	private int nextIndex(int[] rightIndexes, int start) {

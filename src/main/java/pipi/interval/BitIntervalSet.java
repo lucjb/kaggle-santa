@@ -387,7 +387,15 @@ public class BitIntervalSet implements IntervalSet {
 
 	@Override
 	public boolean isAnythingInside(Interval bound) {
-		int toSetBit = this.tos.nextSetBit(bound.getFrom() + 1);
+		
+		int fromIndex = bound.getFrom() + 1;
+		int fromWordIndex = PiolaBitset.wordIndex(fromIndex);
+		int endIndex = bound.getTo();
+		int endWordIndex = PiolaBitset.wordIndex(endIndex+1) + 1;
+
+		int toSetBit = this.tos.nextSetBitWord(fromWordIndex, fromIndex, this.tos.words.length, -1);
+
+		
 		if (toSetBit == -1) {
 			return false;
 		}
@@ -395,7 +403,11 @@ public class BitIntervalSet implements IntervalSet {
 			return true;
 		}
 
-		int fromSetBit = this.froms.nextSetBit(bound.getFrom());
+		int fromIndex1 = bound.getFrom();
+		int wordIndex = PiolaBitset.wordIndex(fromIndex1);
+
+		int fromSetBit = this.froms.nextSetBitWord(wordIndex, fromIndex1, -1);
+
 		if (fromSetBit == -1) {
 			return true;
 		}
