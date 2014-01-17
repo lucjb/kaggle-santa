@@ -20,7 +20,7 @@ public class Box2d {
 	}
 
 	public Dimension2d dimension() {
-		return Dimension2d.create(this.dx, this.dy);
+		return Dimension2d.of(this.dx, this.dy);
 	}
 
 	public boolean contains(Box2d vertical) {

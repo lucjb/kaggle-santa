@@ -3,7 +3,8 @@ package pipi.packer;
 import java.util.Collection;
 import java.util.List;
 
-import pipi.Dimension2d;
+import pipi.OrientedDimension3d;
+import pipi.interval.PutRectangle;
 import pipi.interval.Rectangle;
 
 public class CompositePacker implements Packer {
@@ -15,22 +16,15 @@ public class CompositePacker implements Packer {
 	}
 	
 	@Override
-	public List<Rectangle> packPesents(Collection<Dimension2d> dimensions) {
-		List<Rectangle> bestPackedPesents = null;
+	public List<PutRectangle> packPesents(Collection<OrientedDimension3d> dimensions) {
+		List<PutRectangle> bestPackedPesents = null;
 		for (Packer packer : this.packers) {
-			List<Rectangle> packedPesents = packer.packPesents(dimensions);
+			List<PutRectangle> packedPesents = packer.packPesents(dimensions);
 			if(bestPackedPesents == null || packedPesents.size() > bestPackedPesents.size()){
 				bestPackedPesents = packedPesents;
 			}
 		}
 		return bestPackedPesents;
-	}
-
-	@Override
-	public void preFill(Collection<Rectangle> prefill) {
-		for (Packer packer : this.packers) {
-			packer.preFill(prefill);
-		}
 	}
 
 	@Override

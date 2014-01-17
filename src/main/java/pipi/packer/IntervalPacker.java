@@ -5,6 +5,7 @@ import java.util.List;
 
 import pipi.Box2d;
 import pipi.Dimension2d;
+import pipi.OrientedDimension3d;
 import pipi.OutputPresent;
 import pipi.Point2d;
 import pipi.interval.Positioning;
@@ -12,6 +13,7 @@ import pipi.interval.IntervalSlice;
 import pipi.interval.MaximumRectangle;
 import pipi.interval.PerimeterSlice;
 import pipi.interval.PerimeterSnapshot;
+import pipi.interval.PutRectangle;
 import pipi.interval.Rectangle;
 import pipi.main.BruteForce;
 
@@ -29,36 +31,31 @@ public class IntervalPacker implements Packer {
 		}
 	}
 
-	private static final class AreaOrdering extends Ordering<Dimension2d> {
+	private static final class AreaOrdering extends Ordering<OrientedDimension3d> {
 		@Override
-		public int compare(Dimension2d left, Dimension2d right) {
-			return Ints.compare(left.area(), right.area());
+		public int compare(OrientedDimension3d left, OrientedDimension3d right) {
+			return Ints.compare(left.base.area(), right.base.area());
 		}
 	}
-	public static final Ordering<Dimension2d> AREA_ORDERING = new AreaOrdering();
+
+	public static final Ordering<OrientedDimension3d> AREA_ORDERING = new AreaOrdering();
 	public static final Ordering<Dimension2d> MAXIMUM_DIMENSION_ORDERING = new MaximumDimensionOrdering();
-	
+
 	private IntervalSlice currentSlice = IntervalSlice.empty(1000, 1000);
 	private PerimeterSlice perimeterSlice = new PerimeterSlice(1000, 1000);
 
-	private int currentZ;
-	private int lastZ = 0;
 	private List<OutputPresent> outputPresents = Lists.newArrayList();
 
 	public IntervalPacker() {
-		this.currentZ = 0;
 	}
 
-	/* (non-Javadoc)
-	 * @see pipi.packer.Packer#packPesents(java.util.Collection)
-	 */
 	@Override
-	public List<Rectangle> packPesents(Collection<Dimension2d> dimensions) {
-		List<Dimension2d> sortedDimensions = orderDimensions(dimensions);
-		List<Rectangle> result = Lists.newArrayList();
+	public List<PutRectangle> packPesents(Collection<OrientedDimension3d> dimensions) {
+		List<OrientedDimension3d> sortedDimensions = orderDimensions(dimensions);
+		List<PutRectangle> result = Lists.newArrayList();
 
-		for (Dimension2d dimension2d : sortedDimensions) {
-			final Dimension2d base = dimension2d;
+		for (OrientedDimension3d orientedDimension3d : sortedDimensions) {
+			final Dimension2d base = orientedDimension3d.base;
 			Collection<MaximumRectangle> maximumRectangles = this.currentSlice.getMaximumRectangles();
 			Collection<MaximumRectangle> fittingRectangles = fittingRectangles(maximumRectangles, base);
 
@@ -66,7 +63,8 @@ public class IntervalPacker implements Packer {
 				Positioning bestInsertionPoint = bestPositioning(base, fittingRectangles);
 
 				this.fillSlices(bestInsertionPoint.point2d, bestInsertionPoint.orientation);
-				result.add(new Rectangle(bestInsertionPoint.point2d, bestInsertionPoint.orientation));
+				result.add(new PutRectangle(new Rectangle(bestInsertionPoint.point2d, bestInsertionPoint.orientation),
+						orientedDimension3d.height));
 			} else {
 				return result;
 			}
@@ -75,7 +73,8 @@ public class IntervalPacker implements Packer {
 	}
 
 	private Positioning bestPositioning(final Dimension2d base, Collection<MaximumRectangle> fittingRectangles) {
-//		PerimeterSnapshot perimeterSnapshot = this.perimeterSlice.perimeterSnapshot();
+		// PerimeterSnapshot perimeterSnapshot =
+		// this.perimeterSlice.perimeterSnapshot();
 		PerimeterSnapshot perimeterSnapshot = null;
 		List<Positioning> positionings = Lists.newArrayList();
 		for (MaximumRectangle maximumRectangle : fittingRectangles) {
@@ -100,23 +99,21 @@ public class IntervalPacker implements Packer {
 		return bestInsertionPoint;
 	}
 
-	public List<Dimension2d> orderDimensions(Collection<Dimension2d> dimensions) {
-		List<Dimension2d> sortedDimensions = this.getDimensionsOrdering().reverse().sortedCopy(dimensions);
+	public List<OrientedDimension3d> orderDimensions(Collection<OrientedDimension3d> dimensions) {
+		List<OrientedDimension3d> sortedDimensions = this.getDimensionsOrdering().reverse().sortedCopy(dimensions);
 		return sortedDimensions;
 	}
 
 	public void fillSlices(Point2d point2d, Box2d orientation) {
-		assert this.currentSlice.isFree(point2d.x, point2d.y, orientation.dx,
-				orientation.dy);
+		assert this.currentSlice.isFree(point2d.x, point2d.y, orientation.dx, orientation.dy);
 		fillMainSlice(point2d, orientation);
 		fillPerimeterSlice(point2d, orientation);
 	}
-	
+
 	private void freeSlices(Point2d point2d, Box2d box2d) {
 		freeMainSlice(point2d, box2d);
 		freePerimeterSlice(point2d, box2d);
 	}
-
 
 	public void fillPerimeterSlice(Point2d point2d, Box2d orientation) {
 		this.perimeterSlice.fill(point2d.x, point2d.y, orientation.dx, orientation.dy);
@@ -134,8 +131,8 @@ public class IntervalPacker implements Packer {
 		this.currentSlice.free(point2d.x, point2d.y, orientation.dx, orientation.dy);
 	}
 
-	
-	private void addOrientedInsertionPoints(List<Positioning> positionings, Rectangle rectangle, Box2d vertical, PerimeterSnapshot perimeterSnapshot) {
+	private void addOrientedInsertionPoints(List<Positioning> positionings, Rectangle rectangle, Box2d vertical,
+			PerimeterSnapshot perimeterSnapshot) {
 		addInsertionPoint(positionings, rectangle.upperLeft(), vertical, perimeterSnapshot);
 		if (rectangle.getBox2d().dx != vertical.dx) {
 			addInsertionPoint(positionings, rectangle.upperRight(vertical), vertical, perimeterSnapshot);
@@ -148,7 +145,8 @@ public class IntervalPacker implements Packer {
 		}
 	}
 
-	private boolean addInsertionPoint(List<Positioning> positionings, Point2d point2d, Box2d vertical, PerimeterSnapshot perimeterSnapshot) {
+	private boolean addInsertionPoint(List<Positioning> positionings, Point2d point2d, Box2d vertical,
+			PerimeterSnapshot perimeterSnapshot) {
 		return positionings.add(new Positioning(point2d, vertical, getPerimeter(point2d, vertical)));
 	}
 
@@ -172,17 +170,9 @@ public class IntervalPacker implements Packer {
 		});
 	}
 
-	protected Ordering<Dimension2d> getDimensionsOrdering() {
+	protected Ordering<OrientedDimension3d> getDimensionsOrdering() {
 		return new AreaOrdering();
-//		return new MaximumDimensionOrdering();
-	}
-
-	public int getLastZ() {
-		return this.lastZ;
-	}
-
-	public int getCurrentZ() {
-		return this.currentZ;
+		// return new MaximumDimensionOrdering();
 	}
 
 	public List<OutputPresent> getOutputPresents() {
@@ -193,13 +183,6 @@ public class IntervalPacker implements Packer {
 		int perimeterInt = this.perimeterSlice.getPerimeterInt(point2d, box2d);
 		// assert perimeterInt == BruteForce.
 		return perimeterInt;
-	}
-
-	@Override
-	public void preFill(Collection<Rectangle> prefill) {
-			for (Rectangle rectangle : prefill) {
-				fillSlices(rectangle.point2d, rectangle.box2d);
-			}
 	}
 
 	@Override

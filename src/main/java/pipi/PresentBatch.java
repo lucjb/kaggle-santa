@@ -1,9 +1,12 @@
 package pipi;
 
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.Deque;
+import java.util.List;
 import java.util.PriorityQueue;
 
+import com.google.common.collect.Lists;
 import com.google.common.collect.Queues;
 import com.google.common.primitives.Ints;
 
@@ -59,15 +62,7 @@ public class PresentBatch {
 	}
 
 	private QueuedPresent createQueuedPresent(Dimension3d dimension, int orientation) {
-		switch (orientation) {
-		case 0:
-			return new QueuedPresent(dimension, dimension.smallOriented(), orientation);
-		case 1:
-			return new QueuedPresent(dimension, dimension.mediumOriented(), orientation);
-		case 2:
-			return new QueuedPresent(dimension, dimension.largeOriented(), orientation);
-		}
-		throw new RuntimeException();
+		return new QueuedPresent(dimension, dimension.getRotation(orientation), orientation);
 	}
 
 	public int getArea() {
@@ -114,21 +109,26 @@ public class PresentBatch {
 	}
 
 	private QueuedPresent rotate(QueuedPresent queuedPresent) {
-		switch (queuedPresent.orientation) {
-		case 0:
-			queuedPresent.orientation++;
-			queuedPresent.orientedDimension3d = queuedPresent.dimension.mediumOriented();
-			return queuedPresent;
-		case 1:
-			queuedPresent.orientation++;
-			queuedPresent.orientedDimension3d = queuedPresent.dimension.largeOriented();
-			return queuedPresent;
-		}
-		throw new RuntimeException();
+		
+		OrientedDimension3d orientedDimension3d = queuedPresent.orientedDimension3d;
+		Dimension2d base = orientedDimension3d.base;
+		Dimension3d dimension3d = Dimension3d.create(base.small, base.large, orientedDimension3d.height);
+		
+		queuedPresent.orientation++;
+		OrientedDimension3d rotation = dimension3d.getRotation(queuedPresent.orientation);
+		queuedPresent.orientedDimension3d = rotation;
+		return queuedPresent;
 	}
 
 	public double usage() {
 		return (double)this.getVolume() / this.maxVolume();
 	}
 
+	public List<OrientedDimension3d> getPresents(){
+		List<OrientedDimension3d> orientedDimension3ds = Lists.newArrayList();
+		for (QueuedPresent queuedPresent : this.presentsStack) {
+			orientedDimension3ds.add(queuedPresent.orientedDimension3d);
+		}
+		return orientedDimension3ds;
+	}
 }

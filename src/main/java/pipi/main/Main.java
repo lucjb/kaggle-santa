@@ -1,29 +1,24 @@
 package pipi.main;
 
 import java.awt.Color;
-import java.awt.Dimension;
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.Collection;
+import java.sql.BatchUpdateException;
 import java.util.List;
-import java.util.PriorityQueue;
-
-import javax.swing.JFrame;
 
 import org.apache.commons.lang3.tuple.Pair;
 import org.threeten.bp.Duration;
 import org.threeten.bp.Instant;
 
-import pipi.Dimension2d;
 import pipi.Dimension3d;
+import pipi.OrientedDimension3d;
 import pipi.OutputPresent;
 import pipi.PresentBatch;
 import pipi.SuperPresent;
 import pipi.SuperPresentsParser;
 import pipi.gui.RectangleSet;
 import pipi.gui.RectangleView;
-import pipi.interval.ExtendedRectangle;
 import pipi.interval.IntervalSleigh;
+import pipi.interval.PutRectangle;
 import pipi.interval.Rectangle;
 import pipi.packer.IntervalPacker;
 import pipi.packer.Packer;
@@ -48,7 +43,6 @@ public class Main {
 
 		IntervalSleigh sleigh = new IntervalSleigh();
 		long totalVolume = 0;
-		PriorityQueue<ExtendedRectangle> carryRectangles = new PriorityQueue<>();
 		FloorStructure floorStructure = new FloorStructure();
 
 		RateLimiter rateLimiter = RateLimiter.create(0.1);
@@ -65,7 +59,7 @@ public class Main {
 
 			for (int j = currentPresentIndex; j < presents.size(); j++) {
 				Dimension3d dimension = presents.get(j).getDimension();
-				if (!presentBatch.pushPresent(dimension, 0)) {
+				if (!presentBatch.pushPresent(dimension, 2)) {
 					break;
 				}
 			}
@@ -90,13 +84,13 @@ public class Main {
 			// }
 			// presentBatch.popPresent();
 			// }
-			// System.out.println("Best size: " + bestBatchSize + " usage: " +
-			// bestBatchUsage);
+//			 System.out.println("Best size: " + bestBatchSize + " usage: " +
+//			 bestBatchUsage);
 
 			int batchEndIndex = currentPresentIndex + bestBatchSize;
 
-			Pair<List<Rectangle>, Multimap<Dimension2d, SuperPresent>> pair = packNextBatch(presents, currentPresentIndex,
-					batchEndIndex, carryRectangles, bestBatchSize, buildPacker);
+			Pair<List<PutRectangle>, Multimap<OrientedDimension3d, SuperPresent>> pair = packNextBatch(presents, presentBatch, currentPresentIndex,
+					batchEndIndex, bestBatchSize, buildPacker);
 
 			sleigh.emitPresents(pair.getLeft(), pair.getRight(), floorStructure);
 
@@ -107,7 +101,7 @@ public class Main {
 			// }
 
 			// totalVolume += emitPresents.getVolume();
-			List<Rectangle> left = pair.getLeft();
+			List<Rectangle> left = prefree(pair.getLeft());
 			currentPresentIndex += left.size();
 			// List<Rectangle> left = pair.getLeft();
 			initialArea = 1000 * 1000;
@@ -132,7 +126,9 @@ public class Main {
 				float rgb = (float) (rectangleFloor.getHeight() - min) / span;
 				rectangleSets.add(new RectangleSet(colorForHeight(rgb), rectangleFloor.getRectangles()));
 			}
-			RectangleView.show(rectangleSets);
+//			if(presents.get(currentPresentIndex).getOrder() > 700000) {
+				RectangleView.show(rectangleSets);
+//			}
 
 			buildPacker.freeAll((left));
 			assert buildPacker.isEmpty();
@@ -166,19 +162,18 @@ public class Main {
 		return color;
 	}
 
-	private static Pair<List<Rectangle>, Multimap<Dimension2d, SuperPresent>> packNextBatch(List<SuperPresent> presents,
-			int startIndex, int endIndex, Collection<ExtendedRectangle> carryRectangles, int bestBatchSize,
-			Packer buildPacker) {
-		List<Rectangle> packedPresents;
+	private static Pair<List<PutRectangle>, Multimap<OrientedDimension3d, SuperPresent>> packNextBatch(List<SuperPresent> presents, PresentBatch presentBatch,
+			int startIndex, int endIndex, int bestBatchSize, Packer buildPacker) {
+		List<PutRectangle> packedPresents;
 		List<SuperPresent> subPresents;
-		Multimap<Dimension2d, SuperPresent> presentsWithDimension;
+		Multimap<OrientedDimension3d, SuperPresent> presentsWithDimension;
 
 		int searchEnd = endIndex;
 		int searchStart = endIndex;
 		for (;;) {
 			subPresents = presents.subList(startIndex, searchStart);
 			Packer packer = buildPacker;
-			presentsWithDimension = presentsWithDimension(subPresents);
+			presentsWithDimension = presentsWithDimension(subPresents, presentBatch.getPresents());
 
 			// Collection<Rectangle> prefill = prefill(carryRectangles);
 			// packer.preFill(prefill);
@@ -187,9 +182,10 @@ public class Main {
 			if (packedPresents.size() == subPresents.size()) {
 				break;
 			}
-			packer.freeAll(packedPresents);
+			packer.freeAll(prefree(packedPresents));
 			searchEnd = searchStart;
 			searchStart = searchStart - 1;
+			presentBatch.popPresent();
 			// searchStart = (int) (searchStart * 0.9);
 		}
 		/*
@@ -209,18 +205,21 @@ public class Main {
 		 * searchStart = searchMid; } else { searchEnd = searchMid; } }
 		 */
 
-		Pair<List<Rectangle>, Multimap<Dimension2d, SuperPresent>> pair = Pair.of(packedPresents, presentsWithDimension);
+		Pair<List<PutRectangle>, Multimap<OrientedDimension3d, SuperPresent>> pair = Pair.of(packedPresents, presentsWithDimension);
 
 		int maximumEndIndex = startIndex + bestBatchSize;
 		System.out.printf("Original: %d Real: %d Diff: %d n%%: %2.2f\n", maximumEndIndex - startIndex,
 				packedPresents.size(), endIndex - startIndex - packedPresents.size(), (double) packedPresents.size()
 						/ (maximumEndIndex - startIndex));
+		System.out.println(presentBatch);
 		return pair;
 	}
 
-	private static Collection<Rectangle> prefill(Collection<ExtendedRectangle> carryRectangles) {
+
+
+	private static List<Rectangle> prefree(List<PutRectangle> packedPresents) {
 		List<Rectangle> rectangles = Lists.newArrayList();
-		for (ExtendedRectangle extendedRectangle : carryRectangles) {
+		for (PutRectangle extendedRectangle : packedPresents) {
 			rectangles.add(extendedRectangle.rectangle);
 		}
 		return rectangles;
@@ -236,13 +235,12 @@ public class Main {
 		// return new BrunoPacker();
 	}
 
-	private static Multimap<Dimension2d, SuperPresent> presentsWithDimension(List<SuperPresent> subPresents) {
-		Multimap<Dimension2d, SuperPresent> presentsWithDimension;
-		presentsWithDimension = HashMultimap.create();
-		for (SuperPresent superPresent : subPresents) {
-			Dimension3d dimension = superPresent.getDimension();
-			Dimension2d smallFace = dimension.smallFace();
-			presentsWithDimension.put(smallFace, superPresent);
+	private static Multimap<OrientedDimension3d, SuperPresent> presentsWithDimension(List<SuperPresent> presents, List<OrientedDimension3d> orientedPresents) {
+		Multimap<OrientedDimension3d, SuperPresent> presentsWithDimension = HashMultimap.create();
+		for(int i=0; i< presents.size(); i++){
+			SuperPresent superPresent = presents.get(i);
+			OrientedDimension3d orientedDimension3d = orientedPresents.get(i);
+			presentsWithDimension.put(orientedDimension3d, superPresent);
 		}
 		return presentsWithDimension;
 	}

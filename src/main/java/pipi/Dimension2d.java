@@ -13,7 +13,7 @@ public class Dimension2d {
 		this.large = large;
 	}
 
-	public static Dimension2d create(int i, int j) {
+	public static Dimension2d of(int i, int j) {
 		int[] array = new int[] { i, j };
 		Arrays.sort(array);
 		return new Dimension2d(array[0], array[1]);

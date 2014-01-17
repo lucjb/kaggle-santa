@@ -4,7 +4,9 @@ import java.util.List;
 
 import pipi.Box3d;
 import pipi.Dimension2d;
+import pipi.OrientedDimension3d;
 import pipi.OutputPresent;
+import pipi.PresentBatch;
 import pipi.SuperPresent;
 import pipi.sleigh.FloorStructure;
 
@@ -20,18 +22,20 @@ public class IntervalSleigh {
 	public IntervalSleigh() {
 	}
 
-	public void emitPresents(List<Rectangle> putPesent, Multimap<Dimension2d, SuperPresent> presentsWithDimension,
+	public void emitPresents(List<PutRectangle> list, Multimap<OrientedDimension3d, SuperPresent> multimap,
 			FloorStructure floorStructure) {
 		List<OutputPresent> newOutputPresents = Lists.newArrayList();
 
-		for (Rectangle rectangle : putPesent) {
-			Dimension2d dimension = rectangle.getBox2d().dimension();
-			SuperPresent present = presentsWithDimension.get(dimension).iterator().next();
-			presentsWithDimension.remove(dimension, present);
-			Rectangle min = rectangle;
-			Box3d box3d = new Box3d(rectangle.box2d.dx, rectangle.box2d.dy, present.getDimension().large);
+		PresentBatch presentBatch = new PresentBatch(Integer.MAX_VALUE);
+		for (PutRectangle putRectangle : list) {
+			Rectangle rectangle = putRectangle.rectangle;
+			OrientedDimension3d orientedDimension3d = new OrientedDimension3d(rectangle.box2d.dimension(),
+					putRectangle.height);
+			SuperPresent present = multimap.get(orientedDimension3d).iterator().next();
+			multimap.remove(orientedDimension3d, present);
+			Box3d box3d = new Box3d(rectangle.box2d.dx, rectangle.box2d.dy, putRectangle.height);
 
-			newOutputPresents.add(new OutputPresent(present.getOrder(), new Point(min.point2d.x, min.point2d.y,
+			newOutputPresents.add(new OutputPresent(present.getOrder(), new Point(rectangle.point2d.x, rectangle.point2d.y,
 					floorStructure.getCurrentZ()), box3d));
 		}
 		this.outputPresents.addAll(newOutputPresents);
