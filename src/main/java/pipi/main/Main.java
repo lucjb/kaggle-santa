@@ -59,7 +59,7 @@ public class Main {
 
 			for (int j = currentPresentIndex; j < presents.size(); j++) {
 				Dimension3d dimension = presents.get(j).getDimension();
-				if (!presentBatch.pushPresent(dimension, 2)) {
+				if (!presentBatch.pushPresent(dimension, 0)) {
 					break;
 				}
 			}
@@ -95,12 +95,14 @@ public class Main {
 			sleigh.emitPresents(pair.getLeft(), pair.getRight(), floorStructure);
 
 			// buildPacker.freeAll(prefill(emitPresents));
-			// if (rateLimiter.tryAcquire()) {
-			// System.out.printf("Z: %d\n", sleigh.getCurrentZ());
-			// System.out.printf("Progress: %d\n", currentPresentIndex);
-			// }
+			 if (rateLimiter.tryAcquire()) {
+			 System.out.printf("Z: %d\n", floorStructure.getCurrentZ());
+			 System.out.printf("Progress: %d\n", currentPresentIndex);
+				System.out.printf("%%: %1.8f\n", (double) totalVolume / (floorStructure.getCurrentZ() * 1000000L));
 
-			// totalVolume += emitPresents.getVolume();
+			 }
+
+			 totalVolume += presentBatch.getVolume();
 			List<Rectangle> left = prefree(pair.getLeft());
 			currentPresentIndex += left.size();
 			// List<Rectangle> left = pair.getLeft();
@@ -127,7 +129,7 @@ public class Main {
 				rectangleSets.add(new RectangleSet(colorForHeight(rgb), rectangleFloor.getRectangles()));
 			}
 //			if(presents.get(currentPresentIndex).getOrder() > 700000) {
-				RectangleView.show(rectangleSets);
+//				RectangleView.show(rectangleSets);
 //			}
 
 			buildPacker.freeAll((left));
@@ -137,7 +139,7 @@ public class Main {
 		int maximumZ = floorStructure.getCurrentZ();
 		OutputPresent.outputPresents(sleigh.getOutputPresents(), maximumZ, "intervals.csv");
 		System.out.printf("Total volume: %d\n", totalVolume);
-		System.out.printf("%%waste: %2.2f\n", (double) totalVolume / (maximumZ * 1000000L));
+		System.out.printf("%%: %1.8f\n", (double) totalVolume / (maximumZ * 1000000L));
 		System.out.println("Final score: " + maximumZ * 2);
 		System.out.println("Total minutes: " + Duration.between(start, Instant.now()).toMinutes());
 	}
