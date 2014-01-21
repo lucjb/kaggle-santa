@@ -8,14 +8,9 @@ public class Point2d {
 		this.x = x;
 		this.y = y;
 	}
-
-	public int getX() {
-		return this.x;
+	@Override
+	public String toString() {
+		return String.format("(%d,%d)", this.x, this.y);
 	}
-
-	public int getY() {
-		return this.y;
-	}
-	
 	
 }

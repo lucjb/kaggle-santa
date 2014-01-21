@@ -12,9 +12,11 @@ import pipi.interval.Rectangle;
 public class JPanelExtension extends JPanel {
 	private final List<pipi.interval.Rectangle> rectangles;
 	volatile public int index = 0;
+	private List<Rectangle> toRemove;
 
-	public JPanelExtension(List<Rectangle> rectangles2) {
+	public JPanelExtension(List<Rectangle> rectangles2, List<Rectangle> list) {
 		this.rectangles = rectangles2;
+		this.toRemove = list;
 	}
 
 	@Override
@@ -24,9 +26,16 @@ public class JPanelExtension extends JPanel {
 		graphics2d.setColor(Color.BLACK);
 		for (int i = 0; i < this.rectangles.size(); i++) {
 			Rectangle rectangle = this.rectangles.get(i);
-			graphics2d.fillRect(rectangle.getPoint2d().getX(), rectangle.getPoint2d().getY(), rectangle.getBox2d().dx,
+			graphics2d.fillRect(rectangle.point2d.x, rectangle.point2d.y, rectangle.getBox2d().dx,
 					rectangle.getBox2d().dy);
 		}
+		graphics2d.setColor(Color.WHITE);
+		for (int i = 0; i < this.toRemove.size(); i++) {
+			Rectangle rectangle = this.toRemove.get(i);
+			graphics2d.fillRect(rectangle.point2d.x, rectangle.point2d.y, rectangle.getBox2d().dx,
+					rectangle.getBox2d().dy);
+		}
+
 	}
 	
 	// final AtomicReferenceArray<Rectangle> rectangles = new

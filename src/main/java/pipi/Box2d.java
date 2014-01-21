@@ -20,7 +20,7 @@ public class Box2d {
 	}
 
 	public Dimension2d dimension() {
-		return Dimension2d.create(this.dx, this.dy);
+		return Dimension2d.of(this.dx, this.dy);
 	}
 
 	public boolean contains(Box2d vertical) {
@@ -52,5 +52,8 @@ public class Box2d {
 		return true;
 	}
 
+	public int perimeter(){
+		return this.dx + this.dx + this.dy + this.dy;
+	}
 	
 }

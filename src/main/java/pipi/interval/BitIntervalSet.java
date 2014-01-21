@@ -387,7 +387,15 @@ public class BitIntervalSet implements IntervalSet {
 
 	@Override
 	public boolean isAnythingInside(Interval bound) {
-		int toSetBit = this.tos.nextSetBit(bound.getFrom() + 1);
+		
+		int fromIndex = bound.getFrom() + 1;
+		int fromWordIndex = PiolaBitset.wordIndex(fromIndex);
+		int endIndex = bound.getTo();
+		int endWordIndex = PiolaBitset.wordIndex(endIndex+1) + 1;
+
+		int toSetBit = this.tos.nextSetBitWord(fromWordIndex, fromIndex, this.tos.words.length, -1);
+
+		
 		if (toSetBit == -1) {
 			return false;
 		}
@@ -395,7 +403,11 @@ public class BitIntervalSet implements IntervalSet {
 			return true;
 		}
 
-		int fromSetBit = this.froms.nextSetBit(bound.getFrom());
+		int fromIndex1 = bound.getFrom();
+		int wordIndex = PiolaBitset.wordIndex(fromIndex1);
+
+		int fromSetBit = this.froms.nextSetBitWord(wordIndex, fromIndex1, -1);
+
 		if (fromSetBit == -1) {
 			return true;
 		}
@@ -406,6 +418,95 @@ public class BitIntervalSet implements IntervalSet {
 			return false;
 		}
 		return true;
-
 	}
+
+	public PiolaBitset getFroms() {
+		return this.froms;
+	}
+
+	public PiolaBitset getTos() {
+		return this.tos;
+	}
+
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((this.froms == null) ? 0 : this.froms.hashCode());
+		result = prime * result + ((this.tos == null) ? 0 : this.tos.hashCode());
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		BitIntervalSet other = (BitIntervalSet) obj;
+		if (this.froms == null) {
+			if (other.froms != null)
+				return false;
+		} else if (!this.froms.equals(other.froms))
+			return false;
+		if (this.tos == null) {
+			if (other.tos != null)
+				return false;
+		} else if (!this.tos.equals(other.tos))
+			return false;
+		return true;
+	}
+
+	@Override
+	public int count(Interval verticalRange) {
+		int from = verticalRange.getFrom();
+		int to = verticalRange.getTo();
+
+		int count = 0;
+		
+		int fromWordIndex = from >>> PiolaBitset.ADDRESS_BITS_PER_WORD;
+		int toWordIndex = to >>> PiolaBitset.ADDRESS_BITS_PER_WORD;
+		long startFromWord = this.froms.words[fromWordIndex];
+		long endTosWord = this.tos.words[toWordIndex];
+
+		int nextSetBitFrom = this.tos.nextSetBit(from + 1);
+		if (nextSetBitFrom != -1) {
+			int previousSetBitFrom = this.froms.nextSetBitWord(fromWordIndex, from, nextSetBitFrom);
+			if (previousSetBitFrom >= nextSetBitFrom) {
+				this.froms.setWord(fromWordIndex, from);
+			} else {
+				from = previousSetBitFrom;
+			}
+		} else {
+			return 0;
+		}
+
+		int nextSetBitTo = this.tos.nextSetBitWord(toWordIndex, to);
+		{
+			if (nextSetBitTo != -1) {
+				int wordIndex = PiolaBitset.wordIndex(nextSetBitTo);
+				int previousSetBitTo = this.froms.previousSetBitWord(wordIndex, nextSetBitTo);
+				if (previousSetBitTo >= 0 && previousSetBitTo < to) {
+					this.tos.words[toWordIndex] |= 1L << to; // Restores
+																// invariants
+				}
+			}
+		}
+		for (int from1 = from; from1 >= 0 && from1 < to; from1 = this.froms.nextSetBit(from1 + 1)) {
+			int to1 = this.tos.nextSetBit(from1);
+			count += to1 - from1;
+		}
+		this.froms.words[fromWordIndex] = startFromWord;
+		this.tos.words[toWordIndex] = endTosWord;
+
+		return count;
+	}
+
+	@Override
+	public IntervalSet copy() {
+		return new BitIntervalSet(this.froms.copy(), this.tos.copy());
+	}
+	
 }

@@ -20,10 +20,6 @@ public class Rectangle {
 		return this.box2d;
 	}
 
-	public Point2d getPoint2d() {
-		return this.point2d;
-	}
-
 	public Rectangle intersection(Rectangle other) {
 		int x = Math.max(this.point2d.x, other.point2d.x);
 		int y = Math.max(this.point2d.y, other.point2d.y);
@@ -61,8 +57,38 @@ public class Rectangle {
 			return false;
 		return true;
 	}
-	
-	
 
-	
+	@Override
+	public String toString() {
+		return this.point2d + "|" + this.box2d;
+	}
+
+	public Point2d upperLeft() {
+		return this.point2d;
+	}
+
+	public Point2d upperRight() {
+		return new Point2d(this.point2d.x + this.box2d.dx, this.point2d.y);
+	}
+
+	public Point2d upperRight(Box2d box2d) {
+		return new Point2d(this.point2d.x + this.box2d.dx - box2d.dx, this.point2d.y);
+	}
+
+	public Point2d bottomRight() {
+		return new Point2d(this.point2d.x + this.box2d.dx, this.point2d.y + this.box2d.dy);
+	}
+
+	public Point2d bottomRight(Box2d box2d) {
+		return new Point2d(this.point2d.x + this.box2d.dx - box2d.dx, this.point2d.y + this.box2d.dy - box2d.dy);
+	}
+
+	public Point2d bottomLeft() {
+		return new Point2d(this.point2d.x, this.point2d.y + this.box2d.dy);
+	}
+
+	public Point2d bottomLeft(Box2d box2d) {
+		return new Point2d(this.point2d.x, this.point2d.y + this.box2d.dy - box2d.dy);
+	}
+
 }

@@ -4,8 +4,8 @@ import java.util.Arrays;
 
 public class Dimension2d {
 
-	public int small;
-	public int large;
+	public final int small;
+	public final int large;
 
 	public Dimension2d(int small, int large) {
 		assert small <= large;
@@ -13,7 +13,7 @@ public class Dimension2d {
 		this.large = large;
 	}
 
-	public static Dimension2d create(int i, int j) {
+	public static Dimension2d of(int i, int j) {
 		int[] array = new int[] { i, j };
 		Arrays.sort(array);
 		return new Dimension2d(array[0], array[1]);
@@ -21,7 +21,7 @@ public class Dimension2d {
 
 	@Override
 	public String toString() {
-		return String.format("%dx%dx", this.small, this.large);
+		return String.format("%dx%d", this.small, this.large);
 	}
 
 	public boolean contains(Dimension2d base) {
@@ -39,4 +39,22 @@ public class Dimension2d {
 	public int area() {
 		return this.small * this.large;
 	}
+
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + this.large;
+		result = prime * result + this.small;
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		Dimension2d other = (Dimension2d) obj;
+		return this.large == other.large & this.small == other.small;
+	}
+	
+	
+	
 }
