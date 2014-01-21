@@ -38,6 +38,7 @@ public class XYZCompactSleigh {
 	int i = 0;
 	private int[][] topBackup = cloneTop(top);
 
+	
 	private void addPresentsOrdering(List<Present> presents) {
 		List<Present> layer = Lists.newArrayList();
 		Iterator<Present> iterator = presents.iterator();
@@ -55,8 +56,8 @@ public class XYZCompactSleigh {
 					if (!reinsert(layer)) {
 						System.err.println("Wrong!");
 					}
-					present = stuff(present, iterator);
-					pushDown(layer);
+					// present = stuff(present, iterator);
+					// pushDown(layer);
 					if (present != null) {
 						System.out.println("current z: " + (space.currentZ + 1) + ", presents: " + layer.size());
 						startLayer();
@@ -186,7 +187,6 @@ public class XYZCompactSleigh {
 
 	private void pushDown(List<Present> layer) {
 		List<Present> sortNatural = sortNatural(layer);
-		List<Present> pushed = Lists.newArrayList();
 		int lastPushDown = Integer.MAX_VALUE;
 		for (Present p : sortNatural) {
 			Point insertPoint = p.location();
@@ -197,18 +197,16 @@ public class XYZCompactSleigh {
 				break;
 			}
 			lastPushDown = floatingSpace;
-			for (Point b : p.boundaries) {
-				b.z -= floatingSpace;
-			}
-			pushed.add(p);
 			space.pushDown(insertPoint.x, insertPoint.y, p.xSize, p.ySize, p.zSize, floatingSpace);
 			for (int xi = insertPoint.x - 1; xi < insertPoint.x - 1 + p.xSize; xi++) {
 				for (int yi = insertPoint.y - 1; yi < insertPoint.y - 1 + p.ySize; yi++) {
 					top[xi][yi] -= floatingSpace;
 				}
 			}
+			for (Point b : p.boundaries) {
+				b.z -= floatingSpace;
+			}
 		}
-		layer.removeAll(pushed);
 		computeMaxZFromTop();
 	}
 
