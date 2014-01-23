@@ -118,9 +118,42 @@ public class BitIntervalSet implements IntervalSet {
 
 	private List<Interval> internalGetIntervals(PiolaBitset froms, PiolaBitset tos, int startFrom, int lastIndex) {
 		List<Interval> intervals = Lists.newArrayList();
-		for (int from = startFrom; from >= 0 && from < lastIndex; from = froms.nextSetBit(from + 1)) {
-			int to = tos.nextSetBit(from);
+		if (startFrom < 0) {
+			return intervals;
+		}
+		int fromWord = PiolaBitset.wordIndex(startFrom);
+
+		for (int from = startFrom; from < lastIndex;) {
+
+			int endWord = fromWord;
+			long word1 = tos.words[endWord] & (PiolaBitset.WORD_MASK << from);
+			int to;
+
+			while (true) {
+				if (word1 != 0) {
+					to = (endWord << PiolaBitset.ADDRESS_BITS_PER_WORD) + Long.numberOfTrailingZeros(word1);
+					break;
+				}
+				++endWord;
+				word1 = tos.words[endWord];
+			}
+
 			intervals.add(Interval.of(from, to));
+
+			int fromIndex = from + 1;
+			fromWord = fromIndex >>> PiolaBitset.ADDRESS_BITS_PER_WORD;
+			long word = froms.words[fromWord] & (PiolaBitset.WORD_MASK << fromIndex);
+
+			while (true) {
+				if (word != 0) {
+					from = (fromWord << PiolaBitset.ADDRESS_BITS_PER_WORD) + Long.numberOfTrailingZeros(word);
+					break;
+				}
+				if (++fromWord == froms.words.length) {
+					return intervals;
+				}
+				word = froms.words[fromWord];
+			}
 		}
 		return intervals;
 	}
@@ -387,15 +420,12 @@ public class BitIntervalSet implements IntervalSet {
 
 	@Override
 	public boolean isAnythingInside(Interval bound) {
-		
+
 		int fromIndex = bound.getFrom() + 1;
 		int fromWordIndex = PiolaBitset.wordIndex(fromIndex);
-		int endIndex = bound.getTo();
-		int endWordIndex = PiolaBitset.wordIndex(endIndex+1) + 1;
 
 		int toSetBit = this.tos.nextSetBitWord(fromWordIndex, fromIndex, this.tos.words.length, -1);
 
-		
 		if (toSetBit == -1) {
 			return false;
 		}
@@ -465,7 +495,7 @@ public class BitIntervalSet implements IntervalSet {
 		int to = verticalRange.getTo();
 
 		int count = 0;
-		
+
 		int fromWordIndex = from >>> PiolaBitset.ADDRESS_BITS_PER_WORD;
 		int toWordIndex = to >>> PiolaBitset.ADDRESS_BITS_PER_WORD;
 		long startFromWord = this.froms.words[fromWordIndex];
@@ -508,5 +538,5 @@ public class BitIntervalSet implements IntervalSet {
 	public BitIntervalSet copy() {
 		return new BitIntervalSet(this.froms.copy(), this.tos.copy());
 	}
-	
+
 }

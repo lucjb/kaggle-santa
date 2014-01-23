@@ -107,7 +107,7 @@ public class IntervalPacker implements Packer {
 
 		for (OrientedDimension3d orientedDimension3d : sortedDimensions) {
 			final Dimension2d base = orientedDimension3d.base;
-			Collection<MaximumRectangle> maximumRectangles = this.currentSlice.getMaximumRectangles();
+			Collection<MaximumRectangle> maximumRectangles = this.currentSlice.getMaximumRectangles(this.perimeterSlice);
 			Collection<MaximumRectangle> fittingRectangles = fittingRectangles(maximumRectangles, base);
 
 			if (!fittingRectangles.isEmpty()) {
@@ -220,8 +220,8 @@ public class IntervalPacker implements Packer {
 
 	private boolean addInsertionPoint(List<Positioning> positionings, Point2d point2d, Box2d vertical, int height) {
 
-		Interval verticalRange = Interval.of(point2d.y, point2d.y + vertical.dy);
-		Interval horizontalRange = Interval.of(point2d.x, point2d.x + vertical.dx);
+//		Interval verticalRange = Interval.of(point2d.y, point2d.y + vertical.dy);
+//		Interval horizontalRange = Interval.of(point2d.x, point2d.x + vertical.dx);
 		//
 		// Multiset<Integer> leftSideInfo =
 		// this.heightSlice.getLeftSides().getSideInfo(horizontalRange.getFrom(),
@@ -261,7 +261,7 @@ public class IntervalPacker implements Packer {
 				point2d.x + vertical.dx == 0 ? vertical.dy : 0, point2d.y == 0 ? vertical.dx : 0,
 				point2d.y + vertical.dy == 0 ? vertical.dx : 0);
 
-		int perimeter = getPerimeter(point2d, vertical);
+		int perimeter = this.perimeterSlice.getPerimeterInt(point2d, vertical);
 		return positionings.add(new Positioning(point2d, vertical, perimeter, null, boundaries));
 		// return positionings.add(new Positioning(point2d, vertical, perimeter,
 		// heightMisfit));

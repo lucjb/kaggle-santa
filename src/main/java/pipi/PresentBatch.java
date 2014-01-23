@@ -87,9 +87,8 @@ public class PresentBatch {
 
 	@Override
 	public String toString() {
-		return String.format("Area: %d Max: %d %%: %2.2f | Volume: %d Max: %d %%: %2.2f", this.getArea(), this.maxArea(),
-				(double) this.getArea() / this.maxArea(), this.getVolume(), this.maxVolume(), (double) this.getVolume()
-						/ this.maxVolume());
+		return String.format("Area: %d Max: %d %%: %2.2f | Volume: %d Max: %d %%: %2.4f", this.getArea(), this.maxArea(),
+				(double) this.getArea() / this.maxArea(), this.getVolume(), this.maxVolume(), this.usage());
 	}
 
 	public boolean canChangeMaximumZ() {
@@ -134,5 +133,15 @@ public class PresentBatch {
 			orientedDimension3ds.add(queuedPresent.orientedDimension3d);
 		}
 		return orientedDimension3ds;
+	}
+
+	public PresentBatch copy(){
+		PresentBatch presentBatch = new PresentBatch(this.maxArea);
+		for (QueuedPresent queuedPresent : this.presentsStack) {
+			presentBatch.pushPresent(queuedPresent.dimension, queuedPresent.orientation);
+		}
+		assert presentBatch.area == this.area;
+		assert presentBatch.volume == this.volume;
+		return presentBatch;
 	}
 }

@@ -719,15 +719,20 @@ public class PiolaBitset implements Cloneable, java.io.Serializable {
 
 	public int nextSetBitWord(int wordIndex, int fromIndex, int toIndex, int failureValue) {
 		long word = this.words[wordIndex] & (WORD_MASK << fromIndex);
+		int ret;
 		
 		while (true) {
-			if (word != 0)
-				return (wordIndex * BITS_PER_WORD) + Long.numberOfTrailingZeros(word);
+			if (word != 0) {
+				ret= (wordIndex * BITS_PER_WORD) + Long.numberOfTrailingZeros(word);
+				break;
+			}
 			if (++wordIndex == toIndex) {
-				return failureValue;
+				ret = failureValue;
+				break;
 			}
 			word = this.words[wordIndex];
 		}
+		return ret;
 	}
 
 	public int nextSetBit(int fromIndex, int toIndex) {

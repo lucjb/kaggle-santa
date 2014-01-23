@@ -212,7 +212,7 @@ public class IntervalSlice implements Slice {
 		return new BitIntervalSet(height2);
 	}
 
-	public Collection<MaximumRectangle> getMaximumRectangles() {
+	public Collection<MaximumRectangle> getMaximumRectangles(PerimeterSlice newParam) {
 		Collection<MaximumRectangle> maximumRectangles = Lists.newArrayList();
 		Deque<StartLine> startLinesDeque = Queues.newArrayDeque();
 
@@ -263,7 +263,7 @@ public class IntervalSlice implements Slice {
 			int index = nextIndex(rightIndexes, start);
 			while (index < rightIndexes.length) {
 				IntervalSet rightColumn = rightColumns[index];
-				if (rightIsNotEmpty(rightColumn, line)) {
+				if (rightIsNotEmpty(rightColumn, line, newParam, rightIndexes[index])) {
 					Rectangle rectangle = Rectangle.of(left, line.getFrom(), rightIndexes[index] - left, line.length());
 
 					maximumRectangles.add(new MaximumRectangle(rectangle, null));
@@ -297,10 +297,12 @@ public class IntervalSlice implements Slice {
 		return maximumRectangles;
 	}
 
-	private boolean rightIsNotEmpty(IntervalSet rightColumn, Interval bounderLine) {
-		// return perimeterSlice.getRightPerimeter(rightIndexes, bounderLine) !=
-		// 0;
-		return rightColumn.isAnythingInside(bounderLine);
+	private boolean rightIsNotEmpty(IntervalSet rightColumn, Interval bounderLine, PerimeterSlice perimeterSlice, int point) {
+//		boolean anythingInside = rightColumn.isAnythingInside(bounderLine);
+//		if(perimeterSlice != null && () != anythingInside){
+//			throw new RuntimeException();
+//		}
+		return perimeterSlice.getPerimeterRight(point, bounderLine.getFrom(), bounderLine.getTo()) != 0;
 	}
 
 	private int nextIndex(int[] rightIndexes, int start) {
@@ -337,10 +339,6 @@ public class IntervalSlice implements Slice {
 		complement.fastSubIntervals(bound);
 		List<Interval> intervals = complement.getIntervals();
 		return intervals;
-	}
-
-	private boolean rightIsEmpty(IntervalSet rightSides) {
-		return rightSides.isEmpty();
 	}
 
 	public static IntervalSlice empty(int width, int height) {

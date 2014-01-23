@@ -28,12 +28,12 @@ public class CompositePacker implements Packer {
 	private final int[] perfects;
 	private ExecutorService executorService;
 
-	public CompositePacker(Packer... packers) {
+	public CompositePacker(ExecutorService newFixedThreadPool, Packer... packers) {
 		this.packers = packers;
 		this.wins = new int[packers.length];
 		this.ties = new int[packers.length];
 		this.perfects = new int[packers.length];
-		this.executorService = Executors.newFixedThreadPool(6);
+		this.executorService = newFixedThreadPool;
 	}
 
 	@Override
@@ -123,7 +123,7 @@ public class CompositePacker implements Packer {
 	public String toString() {
 		List<String> strings = Lists.newArrayList();
 		for (int i = 0; i < this.packers.length; i++) {
-			String.format("%s[p: %d, w: %d, t: %d]", this.packers[i], this.perfects[i], this.wins[i], this.ties[i]);
+			strings.add(String.format("%s[p: %d, w: %d, t: %d]", this.packers[i], this.perfects[i], this.wins[i], this.ties[i]));
 		}
 		return strings.toString();
 
