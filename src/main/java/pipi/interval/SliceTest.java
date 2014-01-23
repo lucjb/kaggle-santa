@@ -10,6 +10,7 @@ import java.util.List;
 import javax.swing.JFrame;
 
 import pipi.gui.JPanelExtension;
+import pipi.interval.slice.IntervalSlice;
 import pipi.main.BruteForce;
 import pipi.sandbox.BitsetSlice;
 

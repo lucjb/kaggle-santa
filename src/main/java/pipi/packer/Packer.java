@@ -15,4 +15,6 @@ public interface Packer {
 
 	public abstract boolean isEmpty();
 
+	public abstract void parasite(Packer packer);
+
 }

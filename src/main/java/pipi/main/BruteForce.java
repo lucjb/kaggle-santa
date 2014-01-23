@@ -11,12 +11,12 @@ import pipi.Point2d;
 import pipi.interval.BitIntervalSet;
 import pipi.interval.Interval;
 import pipi.interval.IntervalSet;
-import pipi.interval.IntervalSlice;
 import pipi.interval.MaximumRectangle;
 import pipi.interval.Perimeter;
-import pipi.interval.PerimeterSlice;
 import pipi.interval.PerimeterSnapshot;
 import pipi.interval.Rectangle;
+import pipi.interval.slice.IntervalSlice;
+import pipi.interval.slice.PerimeterSlice;
 import pipi.sandbox.BitsetSlice;
 
 import com.google.common.collect.Collections2;
@@ -88,7 +88,7 @@ public class BruteForce {
 	public static void assertRectangles(List<Rectangle> rectangles) {
 		BitsetSlice expectedSlice = BitsetSlice.freed(1000);
 		IntervalSlice intervalSlice = IntervalSlice.empty(1000, 1000);
-		PerimeterSlice perimeterSlice = new PerimeterSlice(1000, 1000);
+		PerimeterSlice perimeterSlice = PerimeterSlice.empty(1000, 1000);
 		boolean overlapped = false;
 		BitsetSlice overlapSlice = BitsetSlice.freed(1000);
 		for (Rectangle rectangle : rectangles) {
@@ -122,7 +122,6 @@ public class BruteForce {
 				BitsetSlice actualSlice = BitsetSlice.filled(1000);
 				// IntervalSlice actualIntervalSlice =
 				// IntervalSlice.filled(1000, 1000);
-				PerimeterSlice actualPerimeterSlice = PerimeterSlice.filled(1000, 1000);
 				for (MaximumRectangle maximumRectangle : maximumRectangles) {
 
 					Rectangle argRectangle = maximumRectangle.rectangle;
@@ -186,9 +185,6 @@ public class BruteForce {
 		int perimeter = argPerimeterSlice.getPerimeterInt(argRectangle.point2d, argRectangle.box2d);
 		Perimeter expectedPerimeter = expectedPerimeter(argSlice, argRectangle);
 		Assert.assertEquals(expectedPerimeter.perimeter(), perimeter);
-		PerimeterSnapshot perimeterSnapshot = argPerimeterSlice.perimeterSnapshot();
-		int perimeterInt = perimeterSnapshot.getPerimeterInt(argRectangle.point2d, argRectangle.box2d);
-		Assert.assertEquals(perimeter, perimeterInt);
 	}
 
 	public static Perimeter expectedPerimeter(BitsetSlice expectedSlice, Rectangle rectangle2) {

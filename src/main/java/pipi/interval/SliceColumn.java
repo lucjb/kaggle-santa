@@ -46,4 +46,8 @@ public class SliceColumn {
 		return true;
 	}
 
+	public SliceColumn copy() {
+		return new SliceColumn(this.left.copy(), this.right.copy());
+	}
+
 }

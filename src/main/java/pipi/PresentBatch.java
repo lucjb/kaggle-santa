@@ -1,6 +1,5 @@
 package pipi;
 
-import java.util.Collection;
 import java.util.Comparator;
 import java.util.Deque;
 import java.util.List;
@@ -35,13 +34,14 @@ public class PresentBatch {
 		this.maxArea = initialArea;
 	}
 
-	public void popPresent() {
+	public OrientedDimension3d popPresent() {
 		QueuedPresent last = this.presentsStack.getLast();
 		this.presentsStack.removeLast();
 		this.area -= last.orientedDimension3d.base.area();
 		this.volume -= last.orientedDimension3d.volume();
 		boolean remove = this.heightsHeap.remove(last);
 		assert remove;
+		return last.orientedDimension3d;
 	}
 
 	public int size() {
@@ -78,7 +78,11 @@ public class PresentBatch {
 	}
 
 	public int maxVolume() {
-		return this.heightsHeap.peek().orientedDimension3d.height * this.maxArea;
+		QueuedPresent peek = this.heightsHeap.peek();
+		if(peek == null){
+			return 0;
+		}
+		return peek.orientedDimension3d.height * this.maxArea;
 	}
 
 	@Override

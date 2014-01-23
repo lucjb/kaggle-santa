@@ -55,6 +55,12 @@ public class Dimension2d {
 		return this.large == other.large & this.small == other.small;
 	}
 	
+	public float squareness(){
+		return (float)this.small / this.large; 
+	}
 	
+	public int perimeter(){
+		return this.small + this.small + this.large + this.large;
+	}
 	
 }
