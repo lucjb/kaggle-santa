@@ -13,8 +13,9 @@ import com.google.common.primitives.Ints;
 public class BrunoMain {
 
 	public static void main(String[] args) throws IOException {
-		// List<Present> presents = new PresentsParser().parse("test.csv");
-		List<Present> presents = new PresentsParser().parse("presents.csv");
+		// List<Present> presents = new PresentsParser().parse("f27k.csv");
+		List<Present> presents = new PresentsParser().parse("test.csv");
+		// List<Present> presents = new PresentsParser().parse("presents.csv");
 		FastXYCompactSleigh sleigh = new FastXYCompactSleigh();
 		// XYZCompactSleigh sleigh = new XYZCompactSleigh();
 
@@ -68,7 +69,7 @@ public class BrunoMain {
 	}
 
 	public static void generateCSV(List<Present> presents) throws IOException {
-		CSVWriter writer = new CSVWriter(new FileWriter("fastxycompactaggressive.csv"), ',', CSVWriter.NO_QUOTE_CHARACTER);
+		CSVWriter writer = new CSVWriter(new FileWriter("areavscolumeSIpushdown.csv"), ',', CSVWriter.NO_QUOTE_CHARACTER);
 		String[] headers = new String[] { "PresentId", "x1", "y1", "z1", "x2", "y2", "z2", "x3", "y3", "z3", "x4", "y4",
 				"z4", "x5", "y5", "z5", "x6", "y6", "z6", "x7", "y7", "z7", "x8", "y8", "z8" };
 		writer.writeNext(headers);
