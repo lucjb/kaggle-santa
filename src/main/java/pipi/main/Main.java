@@ -143,18 +143,19 @@ public class Main {
 
 			while ((popFloor = floorStructure.popFloor()) != null) {
 				fredArea += updatePoppedFloor(buildPacker, popFloor);
-
-				SuperPresent superPresent = fittedPresents.get(fitted);
-				OrientedDimension3d rotation = superPresent.getDimension().getRotation(2);
-				if (rotation.height + floorStructure.getCurrentZ() <= batchZ) {
-					PackResult packPesents = buildPacker.packPesents(Arrays.asList(rotation));
-					if (packPesents.getPutRectangles().size() == 1) {
-						HashMultimap<OrientedDimension3d, SuperPresent> create = HashMultimap.create();
-						create.put(rotation, superPresent);
-						sleigh.emitPresents(packPesents.getPutRectangles(), create, floorStructure);
-						System.out.println("Fitted " + rotation);
-						fitted++;
-						posVolume += rotation.volume();
+				if (fitted < fittedPresents.size()) {
+					SuperPresent superPresent = fittedPresents.get(fitted);
+					OrientedDimension3d rotation = superPresent.getDimension().getRotation(2);
+					if (rotation.height + floorStructure.getCurrentZ() <= batchZ) {
+						PackResult packPesents = buildPacker.packPesents(Arrays.asList(rotation));
+						if (packPesents.getPutRectangles().size() == 1) {
+							HashMultimap<OrientedDimension3d, SuperPresent> create = HashMultimap.create();
+							create.put(rotation, superPresent);
+							sleigh.emitPresents(packPesents.getPutRectangles(), create, floorStructure);
+							System.out.println("Fitted " + rotation);
+							fitted++;
+							posVolume += rotation.volume();
+						}
 					}
 				}
 			}
@@ -338,20 +339,21 @@ public class Main {
 					}
 				});
 
-//		for (;;) {
-//			if (!maximumPresentBatch.canChangeMaximumZ()) {
-//				break;
-//			}
-//			while (maximumPresentBatch.canChangeMaximumZ() && maximumPresentBatch.rotateMaximumZ()) {
-//				;
-//			}
-//
-//			presentBatchs.offer(maximumPresentBatch.copy());
-//			if (!maximumPresentBatch.canChangeMaximumZ()) {
-//				break;
-//			}
-//			maximumPresentBatch.popPresent();
-//		}
+		// for (;;) {
+		// if (!maximumPresentBatch.canChangeMaximumZ()) {
+		// break;
+		// }
+		// while (maximumPresentBatch.canChangeMaximumZ() &&
+		// maximumPresentBatch.rotateMaximumZ()) {
+		// ;
+		// }
+		//
+		// presentBatchs.offer(maximumPresentBatch.copy());
+		// if (!maximumPresentBatch.canChangeMaximumZ()) {
+		// break;
+		// }
+		// maximumPresentBatch.popPresent();
+		// }
 		presentBatchs.offer(maximumPresentBatch);
 		maximumPresentBatch = null;
 
