@@ -9,13 +9,13 @@ import pipi.interval.PutRectangle;
 
 import com.google.common.collect.Multimap;
 
-public class PackResult {
+public class PackedBatch {
 
 	private List<PutRectangle> bestPackedPresents;
 	private Multimap<OrientedDimension3d, SuperPresent> bestPresents;
 	private PresentBatch bestPresentBatch;
 
-	public PackResult(List<PutRectangle> bestPackedPresents, Multimap<OrientedDimension3d, SuperPresent> bestPresents,
+	public PackedBatch(List<PutRectangle> bestPackedPresents, Multimap<OrientedDimension3d, SuperPresent> bestPresents,
 			PresentBatch bestPresentBatch) {
 		this.bestPackedPresents = bestPackedPresents;
 		this.bestPresents = bestPresents;

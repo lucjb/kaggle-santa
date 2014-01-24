@@ -1,19 +1,20 @@
 package pipi.packer;
 
 import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
 
 import pipi.Box2d;
 import pipi.Dimension2d;
 import pipi.OrientedDimension3d;
-import pipi.OutputPresent;
 import pipi.Point2d;
-import pipi.interval.Interval;
 import pipi.interval.MaximumRectangle;
 import pipi.interval.Positioning;
 import pipi.interval.PutRectangle;
 import pipi.interval.Rectangle;
+import pipi.interval.slice.CachedSides;
 import pipi.interval.slice.HeightMisfit;
 import pipi.interval.slice.HeightSlice;
 import pipi.interval.slice.IntervalSlice;
@@ -23,6 +24,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Multiset;
 import com.google.common.collect.Multiset.Entry;
 import com.google.common.collect.Ordering;
+import com.google.common.collect.Sets;
 import com.google.common.primitives.Ints;
 
 public class IntervalPacker implements Packer {
@@ -73,6 +75,11 @@ public class IntervalPacker implements Packer {
 		public int compare(OrientedDimension3d left, OrientedDimension3d right) {
 			return Ints.compare(left.base.large, right.base.large);
 		}
+		
+		@Override
+		public String toString() {
+			return "DIMENSION";
+		}
 	}
 
 	private static final class AreaOrdering extends Ordering<OrientedDimension3d> {
@@ -80,12 +87,22 @@ public class IntervalPacker implements Packer {
 		public int compare(OrientedDimension3d left, OrientedDimension3d right) {
 			return Ints.compare(left.base.area(), right.base.area());
 		}
+		
+		@Override
+		public String toString() {
+			return "AREA";
+		}
 	}
 
 	private static final class PerimeterOrdering extends Ordering<OrientedDimension3d> {
 		@Override
 		public int compare(OrientedDimension3d left, OrientedDimension3d right) {
 			return Ints.compare(left.base.perimeter(), right.base.perimeter());
+		}
+		
+		@Override
+		public String toString() {
+			return "PERIMETER";
 		}
 	}
 
@@ -101,11 +118,15 @@ public class IntervalPacker implements Packer {
 	}
 
 	@Override
-	public List<PutRectangle> packPesents(Collection<OrientedDimension3d> dimensions) {
-		List<OrientedDimension3d> sortedDimensions = orderDimensions(dimensions);
+	public PackResult packPesents(List<OrientedDimension3d> dimensions) {
 		List<PutRectangle> result = Lists.newArrayList();
+		Set<Integer> putIndexes = Sets.newHashSet();
+		Set<Integer> notIndexes = Sets.newHashSet();
+		PackResult packResult = new PackResult(result, putIndexes, notIndexes);
 
-		for (OrientedDimension3d orientedDimension3d : sortedDimensions) {
+		List<Indexed<OrientedDimension3d>> sortedDimensions = orderDimensions(dimensions);
+		for (Indexed<OrientedDimension3d> indexed : sortedDimensions) {
+			OrientedDimension3d orientedDimension3d = indexed.indexee;
 			final Dimension2d base = orientedDimension3d.base;
 			Collection<MaximumRectangle> maximumRectangles = this.currentSlice.getMaximumRectangles(this.perimeterSlice);
 			Collection<MaximumRectangle> fittingRectangles = fittingRectangles(maximumRectangles, base);
@@ -116,12 +137,14 @@ public class IntervalPacker implements Packer {
 				this.fillSlices(bestInsertionPoint.point2d, bestInsertionPoint.orientation, orientedDimension3d.height);
 				result.add(new PutRectangle(new Rectangle(bestInsertionPoint.point2d, bestInsertionPoint.orientation),
 						orientedDimension3d.height));
+				putIndexes.add(indexed.index);
 			} else {
-				return result;
+				notIndexes.add(indexed.index);
+				return packResult;
 			}
 
 		}
-		return result;
+		return packResult;
 	}
 
 	private Positioning bestPositioning(final Dimension2d base, Collection<MaximumRectangle> fittingRectangles, int height) {
@@ -163,8 +186,18 @@ public class IntervalPacker implements Packer {
 		return new PerimeterPositioning().compound(new BoundariesSidesPositioning().reverse());
 	}
 
-	public List<OrientedDimension3d> orderDimensions(Collection<OrientedDimension3d> dimensions) {
-		List<OrientedDimension3d> sortedDimensions = this.getDimensionsOrdering().reverse().sortedCopy(dimensions);
+	public List<Indexed<OrientedDimension3d>> orderDimensions(List<OrientedDimension3d> dimensions) {
+		final Ordering<OrientedDimension3d> ordering = this.getDimensionsOrdering().reverse();
+		List<Indexed<OrientedDimension3d>> sortedDimensions = Indexed.index(dimensions);
+
+		Collections.sort(sortedDimensions, new Comparator<Indexed<OrientedDimension3d>>() {
+
+			@Override
+			public int compare(Indexed<OrientedDimension3d> o1, Indexed<OrientedDimension3d> o2) {
+				return ordering.compare(o1.indexee, o2.indexee);
+			}
+		});
+
 		return sortedDimensions;
 	}
 
@@ -206,22 +239,25 @@ public class IntervalPacker implements Packer {
 	}
 
 	private void addOrientedInsertionPoints(List<Positioning> positionings, Rectangle rectangle, Box2d vertical, int height) {
-		addInsertionPoint(positionings, rectangle.upperLeft(), vertical, height);
+		addInsertionPoint(positionings, rectangle.upperLeft(), vertical, height, rectangle);
 		if (rectangle.getBox2d().dx != vertical.dx) {
-			addInsertionPoint(positionings, rectangle.upperRight(vertical), vertical, height);
+			addInsertionPoint(positionings, rectangle.upperRight(vertical), vertical, height, rectangle);
 		}
 		if (rectangle.getBox2d().dy != vertical.dy) {
-			addInsertionPoint(positionings, rectangle.bottomLeft(vertical), vertical, height);
+			addInsertionPoint(positionings, rectangle.bottomLeft(vertical), vertical, height, rectangle);
 			if (rectangle.getBox2d().dx != vertical.dx) {
-				addInsertionPoint(positionings, rectangle.bottomRight(vertical), vertical, height);
+				addInsertionPoint(positionings, rectangle.bottomRight(vertical), vertical, height, rectangle);
 			}
 		}
 	}
 
-	private boolean addInsertionPoint(List<Positioning> positionings, Point2d point2d, Box2d vertical, int height) {
+	private boolean addInsertionPoint(List<Positioning> positionings, Point2d point2d, Box2d vertical, int height,
+			Rectangle container) {
 
-//		Interval verticalRange = Interval.of(point2d.y, point2d.y + vertical.dy);
-//		Interval horizontalRange = Interval.of(point2d.x, point2d.x + vertical.dx);
+		// Interval verticalRange = Interval.of(point2d.y, point2d.y +
+		// vertical.dy);
+		// Interval horizontalRange = Interval.of(point2d.x, point2d.x +
+		// vertical.dx);
 		//
 		// Multiset<Integer> leftSideInfo =
 		// this.heightSlice.getLeftSides().getSideInfo(horizontalRange.getFrom(),
@@ -261,10 +297,47 @@ public class IntervalPacker implements Packer {
 				point2d.x + vertical.dx == 0 ? vertical.dy : 0, point2d.y == 0 ? vertical.dx : 0,
 				point2d.y + vertical.dy == 0 ? vertical.dx : 0);
 
-		int perimeter = this.perimeterSlice.getPerimeterInt(point2d, vertical);
+//		int perimeterUp = this.perimeterSlice.getPerimeterUp(point2d.y, point2d.x, point2d.x + vertical.dx);
+//		int perimeterDown = this.perimeterSlice
+//				.getPerimeterDown(point2d.y + vertical.dy, point2d.x, point2d.x + vertical.dx);
+
+		// int perimeter = perimeterLeft + perimeterRight + perimeterUp +
+		// perimeterDown;
+
+		int perimeter = 0;
+
+		perimeter += advancedPerimeter(this.perimeterSlice.leftSides, point2d.x, container.point2d.x, point2d.y, point2d.y
+				+ vertical.dy);
+		perimeter += advancedPerimeter(this.perimeterSlice.rightSides, point2d.x + vertical.dx, container.point2d.x
+				+ container.box2d.dx, point2d.y, point2d.y + vertical.dy);
+
+		perimeter += advancedPerimeter(this.perimeterSlice.upSides, point2d.y, container.point2d.y, point2d.x, point2d.x
+				+ vertical.dx);
+
+		perimeter += advancedPerimeter(this.perimeterSlice.downSides, point2d.y + vertical.dy, container.point2d.y
+				+ container.box2d.dy, point2d.x, point2d.x + vertical.dx);
+
+//		perimeter = this.getPerimeter(point2d, vertical);
 		return positionings.add(new Positioning(point2d, vertical, perimeter, null, boundaries));
 		// return positionings.add(new Positioning(point2d, vertical, perimeter,
 		// heightMisfit));
+	}
+
+	public int advancedPerimeter(CachedSides sides, int point, int side, int from, int to) {
+		int perimeterLeft;
+		int leftDistance = Math.abs(point - side);
+		if (leftDistance == 0) {
+			perimeterLeft = sides.perimeter(point, from, to);
+		} else if (leftDistance <= perimeterTolerance()) {
+			perimeterLeft = sides.perimeter(side, from, to);
+		} else {
+			perimeterLeft = 0;
+		}
+		return perimeterLeft;
+	}
+
+	public int perimeterTolerance() {
+		return 0;
 	}
 
 	private HeightMisfit misfit(Multiset<Integer> sideInfo, int height, int length) {
@@ -344,6 +417,6 @@ public class IntervalPacker implements Packer {
 
 	@Override
 	public String toString() {
-		return "IntervalPacker[AREA]";
+		return String.format("IntervalPacker(do=%s)(pt=%d)", this.getDimensionsOrdering(), this.perimeterTolerance());
 	}
 }

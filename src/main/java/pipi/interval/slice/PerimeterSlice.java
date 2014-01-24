@@ -9,10 +9,10 @@ public class PerimeterSlice {
 	private final int width;
 	private final int height;
 
-	private final CachedSides leftSides;
-	private final CachedSides rightSides;
-	private final CachedSides upSides;
-	private final CachedSides downSides;
+	public final CachedSides leftSides;
+	public final CachedSides rightSides;
+	public final CachedSides upSides;
+	public final CachedSides downSides;
 
 	private PerimeterSlice(int width, int height, CachedSides left, CachedSides right, CachedSides up, CachedSides down) {
 		this.width = width;
