@@ -1,6 +1,5 @@
 package pipi;
 
-import java.util.Arrays;
 
 public class Dimension2d {
 
@@ -14,9 +13,7 @@ public class Dimension2d {
 	}
 
 	public static Dimension2d of(int i, int j) {
-		int[] array = new int[] { i, j };
-		Arrays.sort(array);
-		return new Dimension2d(array[0], array[1]);
+		return new Dimension2d(Math.min(i,j), Math.max(i,j));
 	}
 
 	@Override
@@ -54,6 +51,15 @@ public class Dimension2d {
 		Dimension2d other = (Dimension2d) obj;
 		return this.large == other.large & this.small == other.small;
 	}
+	
+	public float squareness(){
+		return (float)this.small / this.large; 
+	}
+	
+	public int perimeter(){
+		return this.small + this.small + this.large + this.large;
+	}
+	
 	
 	
 	

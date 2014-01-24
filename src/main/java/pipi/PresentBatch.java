@@ -1,6 +1,5 @@
 package pipi;
 
-import java.util.Collection;
 import java.util.Comparator;
 import java.util.Deque;
 import java.util.List;
@@ -35,13 +34,14 @@ public class PresentBatch {
 		this.maxArea = initialArea;
 	}
 
-	public void popPresent() {
+	public OrientedDimension3d popPresent() {
 		QueuedPresent last = this.presentsStack.getLast();
 		this.presentsStack.removeLast();
 		this.area -= last.orientedDimension3d.base.area();
 		this.volume -= last.orientedDimension3d.volume();
 		boolean remove = this.heightsHeap.remove(last);
 		assert remove;
+		return last.orientedDimension3d;
 	}
 
 	public int size() {
@@ -78,14 +78,23 @@ public class PresentBatch {
 	}
 
 	public int maxVolume() {
-		return this.heightsHeap.peek().orientedDimension3d.height * this.maxArea;
+		int height = getHeight();
+		return height * this.maxArea;
+	}
+
+	public int getHeight() {
+		QueuedPresent peek = this.heightsHeap.peek();
+		int height = 0;
+		if(peek != null){
+			height = peek.orientedDimension3d.height;
+		}
+		return height;
 	}
 
 	@Override
 	public String toString() {
-		return String.format("Area: %d Max: %d %%: %2.2f | Volume: %d Max: %d %%: %2.2f", this.getArea(), this.maxArea(),
-				(double) this.getArea() / this.maxArea(), this.getVolume(), this.maxVolume(), (double) this.getVolume()
-						/ this.maxVolume());
+		return String.format("Area: %d Max: %d %%: %2.2f | Volume: %d Max: %d %%: %2.4f", this.getArea(), this.maxArea(),
+				(double) this.getArea() / this.maxArea(), this.getVolume(), this.maxVolume(), this.usage());
 	}
 
 	public boolean canChangeMaximumZ() {
@@ -130,5 +139,15 @@ public class PresentBatch {
 			orientedDimension3ds.add(queuedPresent.orientedDimension3d);
 		}
 		return orientedDimension3ds;
+	}
+
+	public PresentBatch copy(){
+		PresentBatch presentBatch = new PresentBatch(this.maxArea);
+		for (QueuedPresent queuedPresent : this.presentsStack) {
+			presentBatch.pushPresent(queuedPresent.dimension, queuedPresent.orientation);
+		}
+		assert presentBatch.area == this.area;
+		assert presentBatch.volume == this.volume;
+		return presentBatch;
 	}
 }

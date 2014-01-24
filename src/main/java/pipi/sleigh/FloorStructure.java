@@ -1,14 +1,17 @@
 package pipi.sleigh;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
-import java.util.PriorityQueue;
 
 import pipi.interval.Rectangle;
 
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.google.common.collect.MinMaxPriorityQueue;
 
 public class FloorStructure {
-	private PriorityQueue<RectangleFloor> floorsHeap = new PriorityQueue<>();
+	private MinMaxPriorityQueue<RectangleFloor> floorsHeap = MinMaxPriorityQueue.create();
 	private Map<Integer, RectangleFloor> floorsMap = Maps.newHashMap();
 	private int currentZ = 0;
 	
@@ -48,4 +51,18 @@ public class FloorStructure {
 		return this.currentZ;
 	}
 
+	public List<RectangleFloor> getRectangleFloors(){
+		RectangleFloor[] array = new RectangleFloor[this.floorsHeap.size()]; 
+		array = this.floorsHeap.toArray(array);
+		Arrays.sort(array);
+		return Lists.newArrayList(array);
+	}
+	
+	public int floorCount(){
+		return this.floorsHeap.size();
+	}
+	
+	public int maxZ(){
+		return this.floorsHeap.peekLast().getHeight();
+	}
 }

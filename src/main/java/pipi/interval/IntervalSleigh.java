@@ -26,7 +26,6 @@ public class IntervalSleigh {
 			FloorStructure floorStructure) {
 		List<OutputPresent> newOutputPresents = Lists.newArrayList();
 
-		PresentBatch presentBatch = new PresentBatch(Integer.MAX_VALUE);
 		for (PutRectangle putRectangle : list) {
 			Rectangle rectangle = putRectangle.rectangle;
 			OrientedDimension3d orientedDimension3d = new OrientedDimension3d(rectangle.box2d.dimension(),
