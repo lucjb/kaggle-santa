@@ -6,6 +6,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.PriorityQueue;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
@@ -35,20 +36,22 @@ import pipi.sleigh.RectangleFloor;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
+import com.google.common.collect.Multimaps;
 import com.google.common.collect.Multiset.Entry;
 import com.google.common.collect.Ordering;
 import com.google.common.collect.SortedMultiset;
 import com.google.common.collect.TreeMultiset;
 import com.google.common.primitives.Doubles;
+import com.google.common.util.concurrent.RateLimiter;
 
 //FAKETIME_STOP_AFTER_SECONDS=20 faketime '2012-12-15 00:00:00' ./yjp.sh
 //FAKETIME_START_AFTER_NUMCALLS???
 /*
  * * CompositePacker que ande bien 																		---DONE---
- ** Ponderar diferente los de los bordes?
- ** Ponderar diferente los que "desperdicien" menos? los que dejen espacio para algun bloque que quede?
+ ** Ponderar diferente los de los bordes?																---DONE---
+ ** Ponderar diferente los que "desperdicien" menos? los que dejen espacio para algun bloque que quede? ---DONE---
  ** Ordenar por perímetro?																				---DONE---
- ** Agregar estadisticas al composite packer																---DONE---
+ ** Agregar estadisticas al composite packer															---DONE---
  * Probar meter en Z sin que joda
  ** Calcular la cantidad máxima que podrian entrar
  ** ir de arriba para abajo (warning, aca hay que mantener el orden!!!)
@@ -76,7 +79,7 @@ public class Main {
 
 		// RateLimiter rateLimiter = RateLimiter.create(0.1);
 
-		ExecutorService newFixedThreadPool = Executors.newFixedThreadPool(6);
+		ExecutorService newFixedThreadPool = Executors.newCachedThreadPool();
 		Packer buildPacker = buildPacker(newFixedThreadPool);
 
 		int initialArea = 1000 * 1000;
@@ -115,36 +118,70 @@ public class Main {
 			// System.out.println("MIN");
 			// printHistogram(minimumHistogram);
 
-			PackedBatch pair = packNextBatch(presents, presentBatch, currentPresentIndex, buildPacker);
+			PackedBatch pair = packNextBatch(presents, presentBatch, currentPresentIndex, buildPacker,
+					floorStructure.getCurrentZ());
 
-			sleigh.emitPresents(pair.getBestPackedPresents(), pair.getBestPresents(), floorStructure);
+			sleigh.emitPresents(pair.getBestPackedPresents().getPutRectangles(), pair.getBestPresents(), floorStructure);
 
-			totalVolume += pair.getBestPresentBatch().getVolume();
+			int preVolume = pair.getBestPresentBatch().getVolume();
+
+			currentPresentIndex += pair.getBestPackedPresents().getPutRectangles().size();
+
+			int posVolume = preVolume;
+
+			// showFloorHeight(pair.getBestPackedPresents(),
+			// floorStructure.getCurrentZ());
+
+			int fitted = 0;
+			List<SuperPresent> fittedPresents = presents.subList(currentPresentIndex, presents.size());
+
+			initialArea = initialArea - presentBatch.getArea();
+			RectangleFloor popFloor;
+
+			int fredArea = 0;
+			int batchZ = presentBatch.getHeight() + floorStructure.getCurrentZ();
+
+			while ((popFloor = floorStructure.popFloor()) != null) {
+				fredArea += updatePoppedFloor(buildPacker, popFloor);
+
+				SuperPresent superPresent = fittedPresents.get(fitted);
+				OrientedDimension3d rotation = superPresent.getDimension().getRotation(2);
+				if (rotation.height + floorStructure.getCurrentZ() <= batchZ) {
+					PackResult packPesents = buildPacker.packPesents(Arrays.asList(rotation));
+					if (packPesents.getPutRectangles().size() == 1) {
+						HashMultimap<OrientedDimension3d, SuperPresent> create = HashMultimap.create();
+						create.put(rotation, superPresent);
+						sleigh.emitPresents(packPesents.getPutRectangles(), create, floorStructure);
+						System.out.println("Fitted " + rotation);
+						fitted++;
+						posVolume += rotation.volume();
+					}
+				}
+			}
+			// showFloorStructure(floorStructure);
+			// pop
+
+			initialArea += fredArea;
+			currentPresentIndex += fitted;
+			// assert initialArea == 1000 * 1000;
+			// assert buildPacker.isEmpty();
+
 			// buildPacker.freeAll(prefill(emitPresents));
 			// if (rateLimiter.tryAcquire()) {
+			totalVolume += posVolume;
 			System.out.printf("Z: %d\n", floorStructure.getCurrentZ());
 			System.out.printf("Progress: %d\n", currentPresentIndex);
-			System.out.printf("%%: %1.8f\n", (double) totalVolume / (floorStructure.maxZ() * 1000000L));
+			System.out.printf("%%: %1.8f\n", (double) totalVolume / (batchZ * 1000000L));
 			System.out.println(buildPacker);
 			// }
 
-			currentPresentIndex += pair.getBestPackedPresents().size();
-
-			initialArea = initialArea - presentBatch.getArea();
-
-			// showFloorStructure(floorStructure);
-
-			initialArea += popFloors(floorStructure, buildPacker);
-
-			// assert initialArea == 1000 * 1000;
-			// assert buildPacker.isEmpty();
 		}
 		while ((floorStructure.popFloor()) != null) {
 			System.out.println("FALTABA POPEAR!!!");
 		}
 
 		int maximumZ = floorStructure.getCurrentZ();
-		OutputPresent.outputPresents(sleigh.getOutputPresents(), maximumZ, "bruno.csv");
+		OutputPresent.outputPresents(sleigh.getOutputPresents(), maximumZ, "testfit.csv");
 		System.out.printf("Total volume: %d\n", totalVolume);
 		System.out.printf("%%: %1.8f\n", (double) totalVolume / (maximumZ * 1000000L));
 		System.out.println("Final score: " + maximumZ * 2);
@@ -251,6 +288,25 @@ public class Main {
 		RectangleView.show(rectangleSets);
 	}
 
+	private static void showFloorHeight(PackResult packResult, int currentZ) {
+		List<RectangleSet> rectangleSets = Lists.newArrayList();
+		Multimap<Integer, Rectangle> multimap = HashMultimap.create();
+		List<PutRectangle> putRectangles = packResult.getPutRectangles();
+
+		for (PutRectangle putRectangle : putRectangles) {
+			multimap.put(putRectangle.height, putRectangle.rectangle);
+		}
+
+		Map<Integer, Collection<Rectangle>> asMap = multimap.asMap();
+		Set<java.util.Map.Entry<Integer, Collection<Rectangle>>> entries = asMap.entrySet();
+		for (java.util.Map.Entry<Integer, Collection<Rectangle>> entry : entries) {
+			float rgb = (float) (entry.getKey() - currentZ) / 250;
+			rectangleSets.add(new RectangleSet(colorForHeight(rgb), entry.getValue()));
+
+		}
+		RectangleView.show(rectangleSets);
+	}
+
 	private static Color[] colors = { Color.BLUE, Color.CYAN.darker(), Color.GREEN, Color.YELLOW, Color.RED };
 
 	public static Color colorForHeight(float heightRatio) {
@@ -271,7 +327,7 @@ public class Main {
 	}
 
 	private static PackedBatch packNextBatch(List<SuperPresent> presents, PresentBatch maximumPresentBatch, int startIndex,
-			Packer buildPacker) {
+			Packer buildPacker, int currentZ) {
 
 		PriorityQueue<PresentBatch> presentBatchs = new PriorityQueue<>(maximumPresentBatch.size(),
 				new Comparator<PresentBatch>() {
@@ -282,23 +338,24 @@ public class Main {
 					}
 				});
 
-		for (;;) {
-			if (!maximumPresentBatch.canChangeMaximumZ()) {
-				break;
-			}
-			while (maximumPresentBatch.canChangeMaximumZ() && maximumPresentBatch.rotateMaximumZ()) {
-				;
-			}
-
-			presentBatchs.offer(maximumPresentBatch.copy());
-			if (!maximumPresentBatch.canChangeMaximumZ()) {
-				break;
-			}
-			maximumPresentBatch.popPresent();
-		}
+//		for (;;) {
+//			if (!maximumPresentBatch.canChangeMaximumZ()) {
+//				break;
+//			}
+//			while (maximumPresentBatch.canChangeMaximumZ() && maximumPresentBatch.rotateMaximumZ()) {
+//				;
+//			}
+//
+//			presentBatchs.offer(maximumPresentBatch.copy());
+//			if (!maximumPresentBatch.canChangeMaximumZ()) {
+//				break;
+//			}
+//			maximumPresentBatch.popPresent();
+//		}
+		presentBatchs.offer(maximumPresentBatch);
 		maximumPresentBatch = null;
 
-		List<PutRectangle> bestPackedPresents;
+		PackResult bestPackedPresents;
 		PresentBatch bestPresentBatch = presentBatchs.peek();
 		double maximumUsage = bestPresentBatch.usage();
 		Multimap<OrientedDimension3d, SuperPresent> bestPresents;
@@ -320,13 +377,16 @@ public class Main {
 					presentBatch.size() - thisPackedPresents.size());
 
 			if (thisPackedPresents.size() == presentBatch.size()) {
-				bestPackedPresents = thisPackedPresents;
+				bestPackedPresents = packResult;
 				break;
 			}
-//			OrientedDimension3d orientedDimension3d = dimensions.get(packResult.getNotIndexes().iterator().next());
-//			System.out.println("No entro: " + orientedDimension3d + " " + orientedDimension3d.base.area());
-//			System.out.println("Quedaba: " + (presentBatch.maxArea() - sumAreaOrdering(thisPackedPresents)));
-//			showFloor(packResult);
+			// OrientedDimension3d orientedDimension3d =
+			// dimensions.get(packResult.getNotIndexes().iterator().next());
+			// System.out.println("No entro: " + orientedDimension3d + " " +
+			// orientedDimension3d.base.area());
+			// System.out.println("Quedaba: " + (presentBatch.maxArea() -
+			// sumAreaOrdering(thisPackedPresents)));
+			// showFloor(packResult);
 
 			packer.freeAll(prefree(thisPackedPresents));
 
@@ -359,46 +419,40 @@ public class Main {
 	}
 
 	public static Packer buildPacker(ExecutorService newFixedThreadPool) {
-		// return new IntervalPacker();
-		return new CompositePacker(newFixedThreadPool, new IntervalPacker(), new IntervalPacker() {
-			@Override
-			protected Ordering<OrientedDimension3d> getDimensionsOrdering() {
-				return IntervalPacker.MAXIMUM_DIMENSION_ORDERING;
-			}
-
-		}, new IntervalPacker() {
-			@Override
-			protected Ordering<OrientedDimension3d> getDimensionsOrdering() {
-				return IntervalPacker.PERIMETER_ORDERING;
-			}
-
-		}, new IntervalPacker() {
-			@Override
-			protected Ordering<OrientedDimension3d> getDimensionsOrdering() {
-				return IntervalPacker.AREA_ORDERING.compound(IntervalPacker.PERIMETER_ORDERING).compound(
-						IntervalPacker.MAXIMUM_DIMENSION_ORDERING);
-			}
-		},new IntervalPacker() {
-			@Override
-			public int perimeterTolerance() {
-				return 1;
-			}
-		}, new IntervalPacker() {
-			@Override
-			public int perimeterTolerance() {
-				return 2;
-			}
-		}, new IntervalPacker() {
-			@Override
-			public int perimeterTolerance() {
-				return 4;
-			}
-		}, new IntervalPacker() {
-			@Override
-			public int perimeterTolerance() {
-				return 8;
-			}
-		});
+		return new IntervalPacker();
+		/*
+		 * return new CompositePacker(newFixedThreadPool, new IntervalPacker(),
+		 * new IntervalPacker() {
+		 * 
+		 * @Override protected Ordering<OrientedDimension3d>
+		 * getDimensionsOrdering() { return
+		 * IntervalPacker.MAXIMUM_DIMENSION_ORDERING; }
+		 * 
+		 * }, new IntervalPacker() {
+		 * 
+		 * @Override protected Ordering<OrientedDimension3d>
+		 * getDimensionsOrdering() { return IntervalPacker.PERIMETER_ORDERING; }
+		 * 
+		 * }, new IntervalPacker() {
+		 * 
+		 * @Override protected Ordering<OrientedDimension3d>
+		 * getDimensionsOrdering() { return
+		 * IntervalPacker.AREA_ORDERING.compound
+		 * (IntervalPacker.PERIMETER_ORDERING).compound(
+		 * IntervalPacker.MAXIMUM_DIMENSION_ORDERING); } }, new IntervalPacker()
+		 * {
+		 * 
+		 * @Override public int perimeterTolerance() { return 1; } }, new
+		 * IntervalPacker() {
+		 * 
+		 * @Override public int perimeterTolerance() { return 2; } }, new
+		 * IntervalPacker() {
+		 * 
+		 * @Override public int perimeterTolerance() { return 4; } }, new
+		 * IntervalPacker() {
+		 * 
+		 * @Override public int perimeterTolerance() { return 8; } });
+		 */
 		// return new BrunoPacker();
 	}
 

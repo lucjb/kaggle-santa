@@ -1,28 +1,26 @@
 package pipi.main;
 
-import java.util.List;
-
 import pipi.OrientedDimension3d;
 import pipi.PresentBatch;
 import pipi.SuperPresent;
-import pipi.interval.PutRectangle;
+import pipi.packer.PackResult;
 
 import com.google.common.collect.Multimap;
 
 public class PackedBatch {
 
-	private List<PutRectangle> bestPackedPresents;
+	private PackResult bestPackedPresents;
 	private Multimap<OrientedDimension3d, SuperPresent> bestPresents;
 	private PresentBatch bestPresentBatch;
 
-	public PackedBatch(List<PutRectangle> bestPackedPresents, Multimap<OrientedDimension3d, SuperPresent> bestPresents,
+	public PackedBatch(PackResult bestPackedPresents2, Multimap<OrientedDimension3d, SuperPresent> bestPresents,
 			PresentBatch bestPresentBatch) {
-		this.bestPackedPresents = bestPackedPresents;
+		this.bestPackedPresents = bestPackedPresents2;
 		this.bestPresents = bestPresents;
 		this.bestPresentBatch = bestPresentBatch;
 	}
 
-	public List<PutRectangle> getBestPackedPresents() {
+	public PackResult getBestPackedPresents() {
 		return this.bestPackedPresents;
 	}
 

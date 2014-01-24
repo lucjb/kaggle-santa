@@ -78,11 +78,17 @@ public class PresentBatch {
 	}
 
 	public int maxVolume() {
+		int height = getHeight();
+		return height * this.maxArea;
+	}
+
+	public int getHeight() {
 		QueuedPresent peek = this.heightsHeap.peek();
-		if(peek == null){
-			return 0;
+		int height = 0;
+		if(peek != null){
+			height = peek.orientedDimension3d.height;
 		}
-		return peek.orientedDimension3d.height * this.maxArea;
+		return height;
 	}
 
 	@Override

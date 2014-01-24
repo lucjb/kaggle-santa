@@ -374,7 +374,7 @@ public class IntervalPacker implements Packer {
 		}.min(fittingRectangles).rectangle;
 	}
 
-	private Collection<MaximumRectangle> fittingRectangles(Collection<MaximumRectangle> maximumRectangles,
+	public static Collection<MaximumRectangle> fittingRectangles(Collection<MaximumRectangle> maximumRectangles,
 			final Dimension2d base) {
 		List<MaximumRectangle> list = Lists.newArrayList();
 		for (MaximumRectangle maximumRectangle : maximumRectangles) {
