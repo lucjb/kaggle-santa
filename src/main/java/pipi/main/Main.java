@@ -36,13 +36,11 @@ import pipi.sleigh.RectangleFloor;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
-import com.google.common.collect.Multimaps;
 import com.google.common.collect.Multiset.Entry;
 import com.google.common.collect.Ordering;
 import com.google.common.collect.SortedMultiset;
 import com.google.common.collect.TreeMultiset;
 import com.google.common.primitives.Doubles;
-import com.google.common.util.concurrent.RateLimiter;
 
 //FAKETIME_STOP_AFTER_SECONDS=20 faketime '2012-12-15 00:00:00' ./yjp.sh
 //FAKETIME_START_AFTER_NUMCALLS???
@@ -53,14 +51,15 @@ import com.google.common.util.concurrent.RateLimiter;
  ** Ordenar por perímetro?																				---DONE---
  ** Agregar estadisticas al composite packer															---DONE---
  * Probar meter en Z sin que joda
- ** Calcular la cantidad máxima que podrian entrar
- ** ir de arriba para abajo (warning, aca hay que mantener el orden!!!)
+ ** Calcular la cantidad máxima que podrian entrar														---DONE---
+ ** ir de arriba para abajo (warning, aca hay que mantener el orden!!!)									---DONE---
+ ** agregar al composite!!!	
  * Empujar en Z
  ** Probar los 4 reflejos
  ** Reordenar paquetes de igual base (antes o despues?)
  * Arreglar el preseleccionado
- ** intentar en un heap hasta que quede el mejor
- ** una vez elegido el maximo, seguir tumbando!
+ ** intentar en un heap hasta que quede el mejor														---DONE---
+ ** una vez elegido el maximo, seguir tumbando!															---DONE---
  */
 
 public class Main {
@@ -127,49 +126,62 @@ public class Main {
 
 			currentPresentIndex += pair.getBestPackedPresents().getPutRectangles().size();
 
-			int posVolume = preVolume;
-
-			// showFloorHeight(pair.getBestPackedPresents(),
-			// floorStructure.getCurrentZ());
-
-			int fitted = 0;
-			List<SuperPresent> fittedPresents = presents.subList(currentPresentIndex, presents.size());
-
-			initialArea = initialArea - presentBatch.getArea();
-			RectangleFloor popFloor;
-
-			int fredArea = 0;
+			totalVolume += preVolume;
 			int batchZ = presentBatch.getHeight() + floorStructure.getCurrentZ();
+			initialArea = initialArea - presentBatch.getArea();
+			if (currentPresentIndex < 1000000) {
+				int posVolume = 0;
 
-			while ((popFloor = floorStructure.popFloor()) != null) {
-				fredArea += updatePoppedFloor(buildPacker, popFloor);
-				if (fitted < fittedPresents.size()) {
-					SuperPresent superPresent = fittedPresents.get(fitted);
-					OrientedDimension3d rotation = superPresent.getDimension().getRotation(2);
-					if (rotation.height + floorStructure.getCurrentZ() <= batchZ) {
-						PackResult packPesents = buildPacker.packPesents(Arrays.asList(rotation));
-						if (packPesents.getPutRectangles().size() == 1) {
-							HashMultimap<OrientedDimension3d, SuperPresent> create = HashMultimap.create();
-							create.put(rotation, superPresent);
-							sleigh.emitPresents(packPesents.getPutRectangles(), create, floorStructure);
-							System.out.println("Fitted " + rotation);
-							fitted++;
-							posVolume += rotation.volume();
+				// showFloorHeight(pair.getBestPackedPresents(),
+				// floorStructure.getCurrentZ());
+
+				int fitted = 0;
+				List<SuperPresent> fittedPresents = presents.subList(currentPresentIndex, presents.size());
+
+				RectangleFloor popFloor;
+
+				int fredArea = 0;
+				int initialRotation = 2;
+				int rotationNum = initialRotation;
+				while ((popFloor = floorStructure.popFloor()) != null) {
+					fredArea += updatePoppedFloor(buildPacker, popFloor);
+					if (fitted < fittedPresents.size()) {
+						while (rotationNum <= 2) {
+							SuperPresent superPresent = fittedPresents.get(fitted);
+							OrientedDimension3d rotation = superPresent.getDimension().getRotation(rotationNum);
+							if (rotation.height + floorStructure.getCurrentZ() <= batchZ) {
+								PackResult packPesents = buildPacker.packPesents(Arrays.asList(rotation));
+								if (packPesents.getPutRectangles().size() == 1) {
+									HashMultimap<OrientedDimension3d, SuperPresent> create = HashMultimap.create();
+									create.put(rotation, superPresent);
+									sleigh.emitPresents(packPesents.getPutRectangles(), create, floorStructure);
+									fredArea -= rotation.base.area();
+									System.out.println("Fitted " + rotation);
+									fitted++;
+									posVolume += rotation.volume();
+									// break;
+								}
+							}
+							rotationNum++;
 						}
+						rotationNum = initialRotation;
 					}
 				}
+				initialArea += fredArea;
+				currentPresentIndex += fitted;
+				totalVolume += posVolume;
+				assert initialArea == 1000 * 1000;
+				assert buildPacker.isEmpty();
+			} else {
+				initialArea += nextPopFloor(floorStructure, buildPacker);
 			}
 			// showFloorStructure(floorStructure);
 			// pop
 
-			initialArea += fredArea;
-			currentPresentIndex += fitted;
-			// assert initialArea == 1000 * 1000;
-			// assert buildPacker.isEmpty();
+			// initialArea = 1000 * 1000;
 
 			// buildPacker.freeAll(prefill(emitPresents));
 			// if (rateLimiter.tryAcquire()) {
-			totalVolume += posVolume;
 			System.out.printf("Z: %d\n", floorStructure.getCurrentZ());
 			System.out.printf("Progress: %d\n", currentPresentIndex);
 			System.out.printf("%%: %1.8f\n", (double) totalVolume / (batchZ * 1000000L));
@@ -182,7 +194,7 @@ public class Main {
 		}
 
 		int maximumZ = floorStructure.getCurrentZ();
-		OutputPresent.outputPresents(sleigh.getOutputPresents(), maximumZ, "testfit.csv");
+		OutputPresent.outputPresents(sleigh.getOutputPresents(), maximumZ, "chaia.csv");
 		System.out.printf("Total volume: %d\n", totalVolume);
 		System.out.printf("%%: %1.8f\n", (double) totalVolume / (maximumZ * 1000000L));
 		System.out.println("Final score: " + maximumZ * 2);
@@ -339,22 +351,21 @@ public class Main {
 					}
 				});
 
-		// for (;;) {
-		// if (!maximumPresentBatch.canChangeMaximumZ()) {
-		// break;
-		// }
-		// while (maximumPresentBatch.canChangeMaximumZ() &&
-		// maximumPresentBatch.rotateMaximumZ()) {
-		// ;
-		// }
-		//
-		// presentBatchs.offer(maximumPresentBatch.copy());
-		// if (!maximumPresentBatch.canChangeMaximumZ()) {
-		// break;
-		// }
-		// maximumPresentBatch.popPresent();
-		// }
-		presentBatchs.offer(maximumPresentBatch);
+		for (;;) {
+			if (!maximumPresentBatch.canChangeMaximumZ()) {
+				break;
+			}
+			while (maximumPresentBatch.canChangeMaximumZ() && maximumPresentBatch.rotateMaximumZ()) {
+				;
+			}
+
+			presentBatchs.offer(maximumPresentBatch.copy());
+			if (!maximumPresentBatch.canChangeMaximumZ()) {
+				break;
+			}
+			maximumPresentBatch.popPresent();
+		}
+		// presentBatchs.offer(maximumPresentBatch);
 		maximumPresentBatch = null;
 
 		PackResult bestPackedPresents;
@@ -421,40 +432,103 @@ public class Main {
 	}
 
 	public static Packer buildPacker(ExecutorService newFixedThreadPool) {
-		return new IntervalPacker();
-		/*
-		 * return new CompositePacker(newFixedThreadPool, new IntervalPacker(),
-		 * new IntervalPacker() {
-		 * 
-		 * @Override protected Ordering<OrientedDimension3d>
-		 * getDimensionsOrdering() { return
-		 * IntervalPacker.MAXIMUM_DIMENSION_ORDERING; }
-		 * 
-		 * }, new IntervalPacker() {
-		 * 
-		 * @Override protected Ordering<OrientedDimension3d>
-		 * getDimensionsOrdering() { return IntervalPacker.PERIMETER_ORDERING; }
-		 * 
-		 * }, new IntervalPacker() {
-		 * 
-		 * @Override protected Ordering<OrientedDimension3d>
-		 * getDimensionsOrdering() { return
-		 * IntervalPacker.AREA_ORDERING.compound
-		 * (IntervalPacker.PERIMETER_ORDERING).compound(
-		 * IntervalPacker.MAXIMUM_DIMENSION_ORDERING); } }, new IntervalPacker()
-		 * {
-		 * 
-		 * @Override public int perimeterTolerance() { return 1; } }, new
-		 * IntervalPacker() {
-		 * 
-		 * @Override public int perimeterTolerance() { return 2; } }, new
-		 * IntervalPacker() {
-		 * 
-		 * @Override public int perimeterTolerance() { return 4; } }, new
-		 * IntervalPacker() {
-		 * 
-		 * @Override public int perimeterTolerance() { return 8; } });
-		 */
+		// return new IntervalPacker();
+
+		return new CompositePacker(newFixedThreadPool, new IntervalPacker(), new IntervalPacker() {
+
+			@Override
+			protected Ordering<OrientedDimension3d> getDimensionsOrdering() {
+				return IntervalPacker.MAXIMUM_DIMENSION_ORDERING;
+			}
+
+		}, new IntervalPacker() {
+
+			@Override
+			protected Ordering<OrientedDimension3d> getDimensionsOrdering() {
+				return IntervalPacker.PERIMETER_ORDERING;
+			}
+
+		}, new IntervalPacker() {
+
+			@Override
+			protected Ordering<OrientedDimension3d> getDimensionsOrdering() {
+				return IntervalPacker.AREA_ORDERING.compound(IntervalPacker.PERIMETER_ORDERING).compound(
+						IntervalPacker.MAXIMUM_DIMENSION_ORDERING);
+			}
+		}, new IntervalPacker() {
+
+			@Override
+			public int perimeterTolerance() {
+				return 1;
+			}
+		}, new IntervalPacker() {
+
+			@Override
+			public int perimeterTolerance() {
+				return 2;
+			}
+		}, new IntervalPacker() {
+
+			@Override
+			public int perimeterTolerance() {
+				return 4;
+			}
+		}, new IntervalPacker() {
+
+			@Override
+			public int perimeterTolerance() {
+				return 8;
+			}
+		}, new IntervalPacker() {
+
+			@Override
+			protected Ordering<OrientedDimension3d> getDimensionsOrdering() {
+				return IntervalPacker.PERIMETER_ORDERING;
+			}
+
+			@Override
+			public int perimeterTolerance() {
+				return 1;
+			}
+
+		}, new IntervalPacker() {
+
+			@Override
+			protected Ordering<OrientedDimension3d> getDimensionsOrdering() {
+				return IntervalPacker.PERIMETER_ORDERING;
+			}
+
+			@Override
+			public int perimeterTolerance() {
+				return 2;
+			}
+
+		}, new IntervalPacker() {
+
+			@Override
+			protected Ordering<OrientedDimension3d> getDimensionsOrdering() {
+				return IntervalPacker.PERIMETER_ORDERING;
+			}
+
+			@Override
+			public int perimeterTolerance() {
+				return 4;
+			}
+
+		}, new IntervalPacker() {
+
+			@Override
+			protected Ordering<OrientedDimension3d> getDimensionsOrdering() {
+				return IntervalPacker.PERIMETER_ORDERING;
+			}
+
+			@Override
+			public int perimeterTolerance() {
+				return 8;
+			}
+
+		});
+
 		// return new BrunoPacker();
 	}
 
