@@ -7,11 +7,11 @@ import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.SortedSet;
 import java.util.TreeSet;
 
 import au.com.bytecode.opencsv.CSVWriter;
@@ -106,10 +106,10 @@ public class FastXYCompactSleigh {
 		int zLevel = 0;
 		int maxPresentHeight = 0;
 		private BitSet surface = new BitSet(MAX * MAX);
-		SortedSet<Point2D> blInsertionPoints;
-		SortedSet<Point2D> tlInsertionPoints;
-		SortedSet<Point2D> brInsertionPoints;
-		SortedSet<Point2D> trInsertionPoints;
+		TreeSet<Point2D> blInsertionPoints;
+		TreeSet<Point2D> tlInsertionPoints;
+		TreeSet<Point2D> brInsertionPoints;
+		TreeSet<Point2D> trInsertionPoints;
 		int[][] top = new int[1000][1000];
 		int[][] topBackup = cloneTop(top);
 
@@ -167,9 +167,26 @@ public class FastXYCompactSleigh {
 
 		private int maxZBelow(Present present) {
 			Point insertPoint = present.location();
+			return maxZBelow(present, insertPoint);
+		}
+
+		private int maxZBelow(Present present, Point insertPoint) {
 			int maxZBelow = 0;
 			for (int xi = insertPoint.x - 1; xi < insertPoint.x - 1 + present.xSize; xi++) {
 				for (int yi = insertPoint.y - 1; yi < insertPoint.y - 1 + present.ySize; yi++) {
+					int zi = topBackup[xi][yi];
+					if (zi > maxZBelow) {
+						maxZBelow = zi;
+					}
+				}
+			}
+			return maxZBelow;
+		}
+
+		private int maxZBelow(Present present, Point2D insertPoint) {
+			int maxZBelow = 0;
+			for (int xi = insertPoint.x; xi < insertPoint.x + present.xSize; xi++) {
+				for (int yi = insertPoint.y; yi < insertPoint.y + present.ySize; yi++) {
 					int zi = topBackup[xi][yi];
 					if (zi > maxZBelow) {
 						maxZBelow = zi;
@@ -184,47 +201,15 @@ public class FastXYCompactSleigh {
 		}
 
 		private void initInsertionPoints() {
-			blInsertionPoints = new TreeSet<Point2D>(new Comparator<FastXYCompactSleigh.Point2D>() {
-				@Override
-				public int compare(Point2D o1, Point2D o2) {
-					int sumComp = Integer.compare(o1.x + o1.y, o2.x + o2.y);
-					if (sumComp != 0)
-						return sumComp;
-					return Integer.compare(o1.x, o2.x);
-				}
-			});
+			blInsertionPoints = new TreeSet<FastXYCompactSleigh.Point2D>();
 			blInsertionPoints.add(new Point2D(0, 0));
-			brInsertionPoints = new TreeSet<Point2D>(new Comparator<FastXYCompactSleigh.Point2D>() {
-				@Override
-				public int compare(Point2D o1, Point2D o2) {
-					int sumComp = Integer.compare(o1.x + o1.y, o2.x + o2.y);
-					if (sumComp != 0)
-						return sumComp;
-					return -Integer.compare(o1.x, o2.x);
-				}
-			});
+			brInsertionPoints = new TreeSet<FastXYCompactSleigh.Point2D>();
 			brInsertionPoints.add(new Point2D(MAX - 1, 0));
 
-			tlInsertionPoints = new TreeSet<Point2D>(new Comparator<FastXYCompactSleigh.Point2D>() {
-				@Override
-				public int compare(Point2D o1, Point2D o2) {
-					int sumComp = -Integer.compare(o1.x + o1.y, o2.x + o2.y);
-					if (sumComp != 0)
-						return sumComp;
-					return Integer.compare(o1.x, o2.x);
-				}
-			});
+			tlInsertionPoints = new TreeSet<FastXYCompactSleigh.Point2D>();
 			tlInsertionPoints.add(new Point2D(0, MAX - 1));
 
-			trInsertionPoints = new TreeSet<Point2D>(new Comparator<FastXYCompactSleigh.Point2D>() {
-				@Override
-				public int compare(Point2D o1, Point2D o2) {
-					int sumComp = -Integer.compare(o1.x + o1.y, o2.x + o2.y);
-					if (sumComp != 0)
-						return sumComp;
-					return -Integer.compare(o1.x, o2.x);
-				}
-			});
+			trInsertionPoints = new TreeSet<FastXYCompactSleigh.Point2D>();
 			trInsertionPoints.add(new Point2D(MAX - 1, MAX - 1));
 
 		}
@@ -260,10 +245,10 @@ public class FastXYCompactSleigh {
 		protected Object clone() throws CloneNotSupportedException {
 			Surface2D clone = new Surface2D();
 			clone.surface = (BitSet) surface.clone();
-			clone.blInsertionPoints = (SortedSet<Point2D>) ((TreeSet<Point2D>) blInsertionPoints).clone();
-			clone.brInsertionPoints = (SortedSet<Point2D>) ((TreeSet<Point2D>) brInsertionPoints).clone();
-			clone.tlInsertionPoints = (SortedSet<Point2D>) ((TreeSet<Point2D>) tlInsertionPoints).clone();
-			clone.trInsertionPoints = (SortedSet<Point2D>) ((TreeSet<Point2D>) trInsertionPoints).clone();
+			clone.blInsertionPoints = (TreeSet<Point2D>) blInsertionPoints.clone();
+			clone.brInsertionPoints = (TreeSet<Point2D>) brInsertionPoints.clone();
+			clone.tlInsertionPoints = (TreeSet<Point2D>) tlInsertionPoints.clone();
+			clone.trInsertionPoints = (TreeSet<Point2D>) trInsertionPoints.clone();
 
 			clone.zLevel = zLevel;
 			clone.maxPresentHeight = maxPresentHeight;
@@ -363,39 +348,53 @@ public class FastXYCompactSleigh {
 
 		Surface2D floor = new Surface2D();
 		Surface2D floor2 = new Surface2D();
+		Surface2D floor3 = new Surface2D();
 
 		List<Present> presents2 = clonePresents(presents);
+		List<Present> presents3 = clonePresents(presents);
 
 		int added1 = 0;
 		int added2 = 0;
+		int added3 = 0;
 		while (i < presents.size()) {
 			added1 = fillLayerReordering(presents, i, floor, minusAreaComparator());
-			added2 = fillLayerReordering(presents2, i, floor2, areaComparator());
+			double score1 = volumePrecentage(presents, i, floor, added1);
+			added2 = fillLayerReordering(presents2, i, floor2, totalAreaComparator());
+			double score2 = volumePrecentage(presents2, i, floor2, added2);
+			added3 = fillLayerReordering(presents3, i, floor3, areaComparator());
+			double score3 = volumePrecentage(presents3, i, floor3, added3);
 
-			int added;
-			if (added1 >= added2) {
+			int added = 0;
+			if (score1 >= score2 && score1 >= score3) {
+				System.out.println("volume");
 				floor2.maxPresentHeight = floor.maxPresentHeight;
-				floor2.top = floor.top;
-				List<Present> presentsInLayer = Lists.newLinkedList();
-				for (int j = 0; j < added1; j++) {
-					presentsInLayer.add(presents.get(i + j));
-				}
-				floor.pushDown(presentsInLayer, floor);
+				floor3.maxPresentHeight = floor.maxPresentHeight;
 
 				added = added1;
-			} else {
+				System.out.println(score1);
+			} else if (score2 >= score1 && score2 >= score3) {
+				System.out.println("Total Area");
 				floor.maxPresentHeight = floor2.maxPresentHeight;
-				floor.top = floor2.top;
+				floor3.maxPresentHeight = floor2.maxPresentHeight;
+
 				for (int j = i; j < i + added2; j++) {
 					presents.get(j).boundaries = presents2.get(j).boundaries;
 				}
-				List<Present> presentsInLayer = Lists.newLinkedList();
-				for (int j = 0; j < added2; j++) {
-					presentsInLayer.add(presents2.get(i + j));
-				}
-				floor2.pushDown(presentsInLayer, floor2);
 
 				added = added2;
+				System.out.println(score2);
+
+			} else {
+				System.out.println("Area");
+				floor.maxPresentHeight = floor3.maxPresentHeight;
+				floor2.maxPresentHeight = floor3.maxPresentHeight;
+
+				for (int j = i; j < i + added3; j++) {
+					presents.get(j).boundaries = presents3.get(j).boundaries;
+				}
+				System.out.println(score3);
+
+				added = added3;
 			}
 
 			int next = i + added;
@@ -415,13 +414,29 @@ public class FastXYCompactSleigh {
 			if (i < presents.size()) {
 				startNewLayer(floor);
 				startNewLayer(floor2);
+				startNewLayer(floor3);
+
 			}
 		}
 
-		if (added1 >= added2) {
+		if (added1 >= added2 && added1 >= added3) {
 			return floor.zLevel + floor.maxPresentHeight;
-		} else
+		} else if (added2 >= added1 && added2 >= added3)
 			return floor2.zLevel + floor2.maxPresentHeight;
+		else {
+			return floor3.zLevel + floor3.maxPresentHeight;
+		}
+
+	}
+
+	private double volumePrecentage(List<Present> presents, int i, Surface2D floor, int added1) {
+		double score1 = 0;
+		for (int j = i; j < i + added1; j++) {
+			Present present = presents.get(j);
+			score1 += present.xSize * present.ySize * present.zSize;
+		}
+		score1 = score1 / (double) (MAX * MAX * floor.maxPresentHeight);
+		return score1;
 	}
 
 	int h = -1;
@@ -452,8 +467,8 @@ public class FastXYCompactSleigh {
 
 					lowestFitH = -1;
 					boolean fit = true;
+					sortedLayer = new ArrayList<Present>(layerOrder);
 					while (fit) {
-
 						Rotator tumbador = new Rotator() {
 
 							@Override
@@ -740,13 +755,14 @@ public class FastXYCompactSleigh {
 		}
 	}
 
-	public Comparator<Present> perimeterTouchCriterion(final Surface2D surface, final boolean solidFill) {
+	public Comparator<Present> perimeterTouchCriterion(final Surface2D surface, final boolean solidFill,
+			final Rotator rotator) {
 		return new Comparator<Present>() {
 
 			@Override
 			public int compare(Present o1, Present o2) {
-				int i = -Double
-						.compare(maxPerimeterTouch(surface, solidFill, o1), maxPerimeterTouch(surface, solidFill, o2));
+				int i = -Double.compare(maxPerimeterTouch(surface, solidFill, o1, rotator),
+						maxPerimeterTouch(surface, solidFill, o2, rotator));
 				if (i != 0)
 					return i;
 				int areaComp = -Ints.compare(o1.xSize * o1.ySize, o2.xSize * o2.ySize);
@@ -755,32 +771,6 @@ public class FastXYCompactSleigh {
 				return -Ints.compare(o1.xSize, o2.xSize);
 			}
 
-			private double maxPerimeterTouch(final Surface2D surface, final boolean solidFill, Present present) {
-				bestRotation(present, surface);
-				Point2D bl = findBLInsertionPoint(present, surface, solidFill);
-				Point2D br = findBRInsertionPoint(present, surface, solidFill);
-				Point2D tr = findTRInsertionPoint(present, surface, solidFill);
-				Point2D tl = findTLInsertionPoint(present, surface, solidFill);
-
-				double blpt = perimeterTouch(present, bl, surface, solidFill);
-				double brpt = perimeterTouch(present, br, surface, solidFill);
-				double trpt = perimeterTouch(present, tr, surface, solidFill);
-				double tlpt = perimeterTouch(present, tl, surface, solidFill);
-
-				present.rotateMedMinMax();
-				Point2D rbl = findBLInsertionPoint(present, surface, solidFill);
-				Point2D rbr = findBRInsertionPoint(present, surface, solidFill);
-				Point2D rtr = findTRInsertionPoint(present, surface, solidFill);
-				Point2D rtl = findTLInsertionPoint(present, surface, solidFill);
-
-				double rblpt = perimeterTouch(present, rbl, surface, solidFill);
-				double rbrpt = perimeterTouch(present, rbr, surface, solidFill);
-				double rtrpt = perimeterTouch(present, rtr, surface, solidFill);
-				double rtlpt = perimeterTouch(present, rtl, surface, solidFill);
-
-				double maxpt = Ordering.natural().max(brpt, blpt, trpt, tlpt, rbrpt, rblpt, rtrpt, rtlpt);
-				return maxpt;
-			}
 		};
 	}
 
@@ -796,13 +786,40 @@ public class FastXYCompactSleigh {
 			fitsIn3DAtLevel = fitsIn3DAtLevel(nextPresent, floor.zLevel, surfaceAtHeight);
 			if (fitsIn3DAtLevel != null)
 				return fitsIn3DAtLevel;
-			bestRotation(nextPresent, surfaceAtHeight);
+			nextPresent.rotateMedMinMax();
 			fitsIn3DAtLevel = fitsIn3DAtLevel(nextPresent, floor.zLevel, surfaceAtHeight);
 			if (fitsIn3DAtLevel != null)
 				return fitsIn3DAtLevel;
 		}
 
 		return null;
+	}
+
+	private double maxPerimeterTouch(final Surface2D surface, final boolean solidFill, Present present, Rotator rotator) {
+		rotator.rotate(present, surface);
+		Point2D bl = findBLInsertionPoint(present, surface, solidFill);
+		Point2D br = findBRInsertionPoint(present, surface, solidFill);
+		Point2D tr = findTRInsertionPoint(present, surface, solidFill);
+		Point2D tl = findTLInsertionPoint(present, surface, solidFill);
+
+		double blpt = perimeterTouch(present, bl, surface, solidFill);
+		double brpt = perimeterTouch(present, br, surface, solidFill);
+		double trpt = perimeterTouch(present, tr, surface, solidFill);
+		double tlpt = perimeterTouch(present, tl, surface, solidFill);
+
+		present.rotate();
+		Point2D rbl = findBLInsertionPoint(present, surface, solidFill);
+		Point2D rbr = findBRInsertionPoint(present, surface, solidFill);
+		Point2D rtr = findTRInsertionPoint(present, surface, solidFill);
+		Point2D rtl = findTLInsertionPoint(present, surface, solidFill);
+
+		double rblpt = perimeterTouch(present, rbl, surface, solidFill);
+		double rbrpt = perimeterTouch(present, rbr, surface, solidFill);
+		double rtrpt = perimeterTouch(present, rtr, surface, solidFill);
+		double rtlpt = perimeterTouch(present, rtl, surface, solidFill);
+
+		double maxpt = Ordering.natural().max(brpt, blpt, trpt, tlpt, rbrpt, rblpt, rtrpt, rtlpt);
+		return maxpt;
 	}
 
 	private Point fitsIn3DAtLevel(Present present, int floorZLevel, Surface2D surface) {
@@ -833,6 +850,35 @@ public class FastXYCompactSleigh {
 				return false;
 			}
 		}
+		return true;
+	}
+
+	private boolean addSorting(List<Present> sortedCopy, Surface2D surface, boolean solidFill, Rotator rotator,
+			Comparator sortingCriterion) {
+		// return addAll(sortedCopy, surface, solidFill, rotator);
+		List<Present> workingCopy = Ordering.from(sortingCriterion).sortedCopy(sortedCopy);
+		List<Present> backup = new ArrayList<Present>(workingCopy);
+
+		sortedCopy.clear();
+		for (; !workingCopy.isEmpty();) {
+			double maxPT = -1;
+			Present bestPresent = null;
+			for (Present present : workingCopy) {
+				double maxPerimeterTouch = maxPerimeterTouch(surface, solidFill, present, rotator);
+				if (maxPerimeterTouch > maxPT) {
+					maxPT = maxPerimeterTouch;
+					bestPresent = present;
+				}
+			}
+			workingCopy.remove(bestPresent);
+			if (!add(bestPresent, surface, solidFill, rotator)) {
+				sortedCopy.clear();
+				sortedCopy.addAll(backup);
+				return false;
+			}
+			sortedCopy.add(bestPresent);
+		}
+
 		return true;
 	}
 
@@ -1488,7 +1534,7 @@ public class FastXYCompactSleigh {
 			}
 		}
 
-		return -((double) perimeterTouch - (present.xSize * 2 + present.ySize * 2));
+		return (double) perimeterTouch;
 		// return (double) perimeterTouch / (present.xSize * 2 + present.ySize *
 		// 2);
 	}

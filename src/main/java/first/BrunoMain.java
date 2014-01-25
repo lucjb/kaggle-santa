@@ -5,6 +5,8 @@ import java.io.IOException;
 import java.util.Comparator;
 import java.util.List;
 
+import javax.management.RuntimeErrorException;
+
 import au.com.bytecode.opencsv.CSVWriter;
 
 import com.google.common.collect.Ordering;
@@ -28,10 +30,12 @@ public class BrunoMain {
 		printEvaluation(presents);
 	}
 
-	private static void printEvaluation(List<Present> presents) {
+	public static void printEvaluation(List<Present> presents) {
 		int maxZ = 0;
 		int worstZ = 0;
 		for (Present present : presents) {
+			if (present.minZ() < 1)
+				throw new RuntimeException(present.toString());
 			int z = present.maxZ();
 			worstZ += Ordering.natural().max(present.xSize, present.ySize, present.zSize);
 			if (z > maxZ) {
@@ -69,14 +73,11 @@ public class BrunoMain {
 	}
 
 	public static void generateCSV(List<Present> presents) throws IOException {
-		CSVWriter writer = new CSVWriter(new FileWriter("areavscolumeSIpushdown.csv"), ',', CSVWriter.NO_QUOTE_CHARACTER);
+		CSVWriter writer = new CSVWriter(new FileWriter("chaiapusheddown.csv"), ',', CSVWriter.NO_QUOTE_CHARACTER);
 		String[] headers = new String[] { "PresentId", "x1", "y1", "z1", "x2", "y2", "z2", "x3", "y3", "z3", "x4", "y4",
 				"z4", "x5", "y5", "z5", "x6", "y6", "z6", "x7", "y7", "z7", "x8", "y8", "z8" };
 		writer.writeNext(headers);
 		for (Present present : presents) {
-
-			if (present.boundaries.isEmpty())
-				break;
 
 			String[] line = new String[25];
 

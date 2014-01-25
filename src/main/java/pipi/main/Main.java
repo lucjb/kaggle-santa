@@ -66,7 +66,7 @@ import com.google.common.util.concurrent.RateLimiter;
 public class Main {
 
 	public static void main(String[] args) throws Exception {
-		runMain("presents.csv");
+		runMain("test.csv");
 	}
 
 	public static void runMain(String inputFileName) throws IOException {
