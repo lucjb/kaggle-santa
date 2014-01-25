@@ -36,13 +36,11 @@ import pipi.sleigh.RectangleFloor;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
-import com.google.common.collect.Multimaps;
 import com.google.common.collect.Multiset.Entry;
 import com.google.common.collect.Ordering;
 import com.google.common.collect.SortedMultiset;
 import com.google.common.collect.TreeMultiset;
 import com.google.common.primitives.Doubles;
-import com.google.common.util.concurrent.RateLimiter;
 
 //FAKETIME_STOP_AFTER_SECONDS=20 faketime '2012-12-15 00:00:00' ./yjp.sh
 //FAKETIME_START_AFTER_NUMCALLS???
@@ -161,7 +159,7 @@ public class Main {
 									System.out.println("Fitted " + rotation);
 									fitted++;
 									posVolume += rotation.volume();
-//									break;
+									// break;
 								}
 							}
 							rotationNum++;
@@ -196,7 +194,7 @@ public class Main {
 		}
 
 		int maximumZ = floorStructure.getCurrentZ();
-		OutputPresent.outputPresents(sleigh.getOutputPresents(), maximumZ, "testfit.csv");
+		OutputPresent.outputPresents(sleigh.getOutputPresents(), maximumZ, "chaia.csv");
 		System.out.printf("Total volume: %d\n", totalVolume);
 		System.out.printf("%%: %1.8f\n", (double) totalVolume / (maximumZ * 1000000L));
 		System.out.println("Final score: " + maximumZ * 2);
@@ -353,22 +351,21 @@ public class Main {
 					}
 				});
 
-		// for (;;) {
-		// if (!maximumPresentBatch.canChangeMaximumZ()) {
-		// break;
-		// }
-		// while (maximumPresentBatch.canChangeMaximumZ() &&
-		// maximumPresentBatch.rotateMaximumZ()) {
-		// ;
-		// }
-		//
-		// presentBatchs.offer(maximumPresentBatch.copy());
-		// if (!maximumPresentBatch.canChangeMaximumZ()) {
-		// break;
-		// }
-		// maximumPresentBatch.popPresent();
-		// }
-		presentBatchs.offer(maximumPresentBatch);
+		for (;;) {
+			if (!maximumPresentBatch.canChangeMaximumZ()) {
+				break;
+			}
+			while (maximumPresentBatch.canChangeMaximumZ() && maximumPresentBatch.rotateMaximumZ()) {
+				;
+			}
+
+			presentBatchs.offer(maximumPresentBatch.copy());
+			if (!maximumPresentBatch.canChangeMaximumZ()) {
+				break;
+			}
+			maximumPresentBatch.popPresent();
+		}
+		// presentBatchs.offer(maximumPresentBatch);
 		maximumPresentBatch = null;
 
 		PackResult bestPackedPresents;
@@ -435,40 +432,103 @@ public class Main {
 	}
 
 	public static Packer buildPacker(ExecutorService newFixedThreadPool) {
-		return new IntervalPacker();
-		/*
-		 * return new CompositePacker(newFixedThreadPool, new IntervalPacker(),
-		 * new IntervalPacker() {
-		 * 
-		 * @Override protected Ordering<OrientedDimension3d>
-		 * getDimensionsOrdering() { return
-		 * IntervalPacker.MAXIMUM_DIMENSION_ORDERING; }
-		 * 
-		 * }, new IntervalPacker() {
-		 * 
-		 * @Override protected Ordering<OrientedDimension3d>
-		 * getDimensionsOrdering() { return IntervalPacker.PERIMETER_ORDERING; }
-		 * 
-		 * }, new IntervalPacker() {
-		 * 
-		 * @Override protected Ordering<OrientedDimension3d>
-		 * getDimensionsOrdering() { return
-		 * IntervalPacker.AREA_ORDERING.compound
-		 * (IntervalPacker.PERIMETER_ORDERING).compound(
-		 * IntervalPacker.MAXIMUM_DIMENSION_ORDERING); } }, new IntervalPacker()
-		 * {
-		 * 
-		 * @Override public int perimeterTolerance() { return 1; } }, new
-		 * IntervalPacker() {
-		 * 
-		 * @Override public int perimeterTolerance() { return 2; } }, new
-		 * IntervalPacker() {
-		 * 
-		 * @Override public int perimeterTolerance() { return 4; } }, new
-		 * IntervalPacker() {
-		 * 
-		 * @Override public int perimeterTolerance() { return 8; } });
-		 */
+		// return new IntervalPacker();
+
+		return new CompositePacker(newFixedThreadPool, new IntervalPacker(), new IntervalPacker() {
+
+			@Override
+			protected Ordering<OrientedDimension3d> getDimensionsOrdering() {
+				return IntervalPacker.MAXIMUM_DIMENSION_ORDERING;
+			}
+
+		}, new IntervalPacker() {
+
+			@Override
+			protected Ordering<OrientedDimension3d> getDimensionsOrdering() {
+				return IntervalPacker.PERIMETER_ORDERING;
+			}
+
+		}, new IntervalPacker() {
+
+			@Override
+			protected Ordering<OrientedDimension3d> getDimensionsOrdering() {
+				return IntervalPacker.AREA_ORDERING.compound(IntervalPacker.PERIMETER_ORDERING).compound(
+						IntervalPacker.MAXIMUM_DIMENSION_ORDERING);
+			}
+		}, new IntervalPacker() {
+
+			@Override
+			public int perimeterTolerance() {
+				return 1;
+			}
+		}, new IntervalPacker() {
+
+			@Override
+			public int perimeterTolerance() {
+				return 2;
+			}
+		}, new IntervalPacker() {
+
+			@Override
+			public int perimeterTolerance() {
+				return 4;
+			}
+		}, new IntervalPacker() {
+
+			@Override
+			public int perimeterTolerance() {
+				return 8;
+			}
+		}, new IntervalPacker() {
+
+			@Override
+			protected Ordering<OrientedDimension3d> getDimensionsOrdering() {
+				return IntervalPacker.PERIMETER_ORDERING;
+			}
+
+			@Override
+			public int perimeterTolerance() {
+				return 1;
+			}
+
+		}, new IntervalPacker() {
+
+			@Override
+			protected Ordering<OrientedDimension3d> getDimensionsOrdering() {
+				return IntervalPacker.PERIMETER_ORDERING;
+			}
+
+			@Override
+			public int perimeterTolerance() {
+				return 2;
+			}
+
+		}, new IntervalPacker() {
+
+			@Override
+			protected Ordering<OrientedDimension3d> getDimensionsOrdering() {
+				return IntervalPacker.PERIMETER_ORDERING;
+			}
+
+			@Override
+			public int perimeterTolerance() {
+				return 4;
+			}
+
+		}, new IntervalPacker() {
+
+			@Override
+			protected Ordering<OrientedDimension3d> getDimensionsOrdering() {
+				return IntervalPacker.PERIMETER_ORDERING;
+			}
+
+			@Override
+			public int perimeterTolerance() {
+				return 8;
+			}
+
+		});
+
 		// return new BrunoPacker();
 	}
 
